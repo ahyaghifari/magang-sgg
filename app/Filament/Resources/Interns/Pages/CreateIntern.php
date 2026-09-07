@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Filament\Resources\Institutions\Pages;
+namespace App\Filament\Resources\Interns\Pages;
 
 use App\Filament\Concerns\HasBackAction;
-use App\Filament\Resources\Institutions\InstitutionResource;
+use App\Filament\Resources\Interns\InternResource;
 use Filament\Resources\Pages\CreateRecord;
 
-class CreateInstitution extends CreateRecord
+class CreateIntern extends CreateRecord
 {
     use HasBackAction;
 
-    protected static string $resource = InstitutionResource::class;
+    protected static string $resource = InternResource::class;
 
     protected function getHeaderActions(): array
     {

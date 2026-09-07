@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Filament\Resources\Institutions\Pages;
+namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Concerns\HasBackAction;
-use App\Filament\Resources\Institutions\InstitutionResource;
+use App\Filament\Resources\Users\UserResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
-class EditInstitution extends EditRecord
+class EditUser extends EditRecord
 {
     use HasBackAction;
 
-    protected static string $resource = InstitutionResource::class;
+    protected static string $resource = UserResource::class;
 
     protected function getHeaderActions(): array
     {
