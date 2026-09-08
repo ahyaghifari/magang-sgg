@@ -2,17 +2,21 @@
 
 namespace App\Filament\Resources\Institutions\Pages;
 
+use App\Filament\Concerns\HasBackAction;
 use App\Filament\Resources\Institutions\InstitutionResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
 class EditInstitution extends EditRecord
 {
+    use HasBackAction;
+
     protected static string $resource = InstitutionResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            $this->backAction(),
             DeleteAction::make(),
         ];
     }
