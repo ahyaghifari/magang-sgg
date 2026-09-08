@@ -12,21 +12,19 @@ class Home extends Component
 {
     public bool $journalSaved = false;
 
+    public function mount()
+    {
+        // Pembimbing tidak punya beranda peserta — arahkan ke feed kegiatan intern.
+        if (auth()->user()->isPembimbing()) {
+            return $this->redirect(route('pembimbing.activities'), navigate: true);
+        }
+    }
+
     #[On('journal-saved')]
     public function onJournalSaved(): void
     {
         // Cukup menandai; render() otomatis menghitung ulang statistik & jurnal terbaru.
         $this->journalSaved = true;
-    }
-
-    public function logout()
-    {
-        auth()->guard('web')->logout();
-
-        session()->invalidate();
-        session()->regenerateToken();
-
-        return $this->redirect(route('login'), navigate: true);
     }
 
     public function render()

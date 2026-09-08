@@ -2,7 +2,7 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -11,6 +11,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -30,12 +31,14 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Magang Syifa Global Group · Admin')
+            ->brandLogo(fn (): string => \App\Support\Brand::logoUrl())
+            ->brandLogoHeight('2.75rem')
+            ->favicon(fn (): string => \App\Support\Brand::logoUrl())
             ->font('Plus Jakarta Sans')
             ->colors([
-                // Tipografi & netral sama dengan portal, tapi warna aksen dibedakan
-                // supaya panel admin jelas beda dari portal peserta (navy).
-                'primary' => Color::hex('#7c3aed'), // violet — identitas panel admin
-                'success' => Color::hex('#047c54'), // success green (sesuai DESIGN.md)
+                // Disamakan dengan portal peserta: navy sebagai warna utama, hijau brand, netral slate.
+                'primary' => Color::hex('#042c6c'), // brand navy (logo Syifa Global Group)
+                'success' => Color::hex('#1c8a4d'), // brand green
                 'gray' => Color::Slate,             // slate neutrals (sesuai DESIGN.md)
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
@@ -43,6 +46,17 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            // Samakan tampilan panel (kartu sign in, background, sudut) dengan portal peserta.
+            ->renderHook(
+                PanelsRenderHook::STYLES_AFTER,
+                fn () => view('filament.portal-match'),
+            )
+            // Tombol kembali di bawah form login admin.
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn (): string => '<a href="'.e(url('/')).'" class="portal-back-link">'
+                    .'<span aria-hidden="true">&larr;</span> Kembali</a>',
+            )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
@@ -63,6 +77,8 @@ class AdminPanelProvider extends PanelProvider
                 FilamentShieldPlugin::make(),
             ])
             ->authMiddleware([
+                // Subclass Filament\...\Authenticate: non-admin yang sudah login
+                // diarahkan ke portal, bukan kena 403.
                 Authenticate::class,
             ]);
     }

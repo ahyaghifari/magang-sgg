@@ -25,6 +25,8 @@ class Index extends Component
         $journals = $intern
             ? $intern->journals()
                 ->with('attachments')
+                ->withAvg('reviews', 'rating')
+                ->withCount('reviews')
                 ->orderByDesc('date')
                 ->orderByDesc('id')
                 ->paginate(10)

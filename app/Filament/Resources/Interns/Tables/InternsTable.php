@@ -35,6 +35,11 @@ class InternsTable
                     ->label('Institusi')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('unit.name')
+                    ->label('Unit')
+                    ->badge()
+                    ->placeholder('Belum ditempatkan')
+                    ->sortable(),
                 TextColumn::make('user.name')
                     ->label('Pengguna')
                     ->searchable()

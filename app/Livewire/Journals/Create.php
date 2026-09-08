@@ -20,6 +20,9 @@ class Create extends Component
 
     public bool $hasIntern = true;
 
+    /** Kecilkan (kompres) foto di sisi klien sebelum diunggah. Dibaca oleh JS lewat $wire.compressImages. */
+    public bool $compressImages = true;
+
     public string $date = '';
 
     public string $activity = '';
@@ -58,9 +61,10 @@ class Create extends Component
         $this->date = Carbon::today()->toDateString();
     }
 
-    public function addItem(string $type): void
+    public function addItem(string $type, bool $capture = false): void
     {
-        $this->items[] = ['type' => $type, 'file' => null, 'url' => '', 'label' => ''];
+        // $capture=true → input file dibuka langsung ke kamera di HP (atribut capture).
+        $this->items[] = ['type' => $type, 'file' => null, 'url' => '', 'label' => '', 'capture' => $capture];
     }
 
     public function removeItem(int $index): void
@@ -79,6 +83,7 @@ class Create extends Component
             'items.*.file' => ['nullable', 'file', 'max:5120'],
             'items.*.url' => ['nullable', 'url', 'max:2048'],
             'items.*.label' => ['nullable', 'string', 'max:255'],
+            'items.*.capture' => ['boolean'],
         ];
     }
 

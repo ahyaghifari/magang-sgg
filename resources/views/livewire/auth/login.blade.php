@@ -10,13 +10,18 @@
 
         {{-- brand --}}
         <div class="flex items-center justify-center" style="flex-direction: column; margin-bottom: 1.75rem;">
-            <span class="flex items-center justify-center"
-                  style="width: 52px; height: 52px; border-radius: 15px; background: linear-gradient(135deg,#042c6c 0%,#0b47a1 100%); color:#fff; font-size:1.25rem; box-shadow: 0 8px 20px -6px rgba(4,44,108,.5);">
-                <i class="fa-solid fa-book-open-reader"></i>
-            </span>
-            <h1 style="margin-top: 0.9rem; font-size: 1.25rem; font-weight: 700; text-align: center; line-height: 1.3;">Magang<br>Syifa Global Group</h1>
-            <p class="text-sm" style="color: var(--text-muted); margin-top: 0.35rem;">Masuk untuk mengisi jurnal harian</p>
+            <x-app-logo class="auth-logo" />
+            <h1 style="margin-top: 1.1rem; font-size: 1.2rem; font-weight: 700; text-align: center;">Masuk</h1>
+            <p class="text-sm" style="color: var(--text-muted); margin-top: 0.25rem;">Portal Magang — masuk untuk mengisi jurnal harian</p>
         </div>
+
+        @if (session('status'))
+            <div class="surface-card flex items-center"
+                 style="gap:0.7rem; padding:0.8rem 1rem; margin-bottom:1rem; border-color:#a7f3d0;">
+                <i class="fa-solid fa-circle-check" style="color:var(--brand-success);"></i>
+                <span class="text-sm" style="color:var(--text-body);">{{ session('status') }}</span>
+            </div>
+        @endif
 
         <form wire:submit="login" class="auth-card" style="padding: 1.5rem;">
             <div style="margin-bottom: 1.1rem;">
@@ -72,6 +77,11 @@
         </form>
 
         <p class="text-sm" style="text-align:center; color:var(--text-muted); margin-top:1.5rem;">
+            Belum punya akun?
+            <a href="{{ route('register') }}" wire:navigate style="font-weight:600; color:var(--brand);">Daftar di sini</a>
+        </p>
+
+        <p class="text-sm" style="text-align:center; color:var(--text-muted); margin-top:0.5rem;">
             Admin?
             <a href="/admin/login" style="font-weight:600; color:var(--brand);">Masuk lewat panel admin</a>
         </p>

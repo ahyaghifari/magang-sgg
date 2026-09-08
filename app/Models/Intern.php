@@ -16,6 +16,7 @@ class Intern extends Model
     protected $fillable = [
         'user_id',
         'institusi_id',
+        'unit_id',
         'nama',
         'jenis_kelamin',
     ];
@@ -29,11 +30,19 @@ class Intern extends Model
     }
 
     /**
-     * Intern terhubung ke satu Institusi (tabel: institutions).
+     * Intern terhubung ke satu Institusi (tabel: institutions) — asal sekolah/kampus.
      */
     public function institusi(): BelongsTo
     {
         return $this->belongsTo(Institution::class, 'institusi_id');
+    }
+
+    /**
+     * Unit (IT, Humas, dst) tempat intern ini ditempatkan magang.
+     */
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     /**

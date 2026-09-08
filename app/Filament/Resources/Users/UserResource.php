@@ -38,6 +38,23 @@ class UserResource extends Resource
         return UsersTable::configure($table);
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $pending = User::query()->whereNull('approved_at')->count();
+
+        return $pending > 0 ? (string) $pending : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'warning';
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Pendaftar menunggu persetujuan';
+    }
+
     public static function getRelations(): array
     {
         return [

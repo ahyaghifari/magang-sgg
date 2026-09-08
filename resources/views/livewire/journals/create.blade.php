@@ -73,9 +73,30 @@
                                 </p>
                             @enderror
 
-                            <div class="flex" style="flex-wrap:wrap; gap:0.5rem; margin-bottom:0.85rem;">
+                            {{-- Input kamera tersembunyi. Tombol "Kamera" mengklik ini langsung dalam
+                                 gesture tap user, jadi kamera HP terbuka seketika (tanpa tap kedua). --}}
+                            <input type="file" accept="image/*" capture="environment" x-ref="cameraInput"
+                                   style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;"
+                                   x-on:change="
+                                       const input = $event.target;
+                                       const picked = input.files && input.files[0];
+                                       input.value = '';
+                                       if (!picked) return;
+                                       let file = picked;
+                                       if ($wire.compressImages) {
+                                           try { file = await window.compressImageFile(picked); } catch (e) { file = picked; }
+                                       }
+                                       await $wire.addItem('photo', true);
+                                       const idx = (($wire.items && $wire.items.length) || 1) - 1;
+                                       $wire.upload('items.' + idx + '.file', file, () => {}, () => {}, () => {});
+                                   ">
+
+                            <div class="flex" style="flex-wrap:wrap; gap:0.5rem; margin-bottom:0.7rem;">
                                 <button type="button" wire:click="addItem('photo')" class="btn-ghost" style="padding:0.5rem 0.85rem;">
                                     <i class="fa-regular fa-image"></i> Foto
+                                </button>
+                                <button type="button" x-on:click="$refs.cameraInput.click()" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                                    <i class="fa-solid fa-camera"></i> Kamera
                                 </button>
                                 <button type="button" wire:click="addItem('document')" class="btn-ghost" style="padding:0.5rem 0.85rem;">
                                     <i class="fa-regular fa-file-pdf"></i> PDF
@@ -85,12 +106,21 @@
                                 </button>
                             </div>
 
+                            <label class="flex items-center text-sm"
+                                   style="gap:0.5rem; color:var(--text-muted); margin-bottom:0.85rem; cursor:pointer;">
+                                <input type="checkbox" wire:model.live="compressImages"
+                                       style="width:1rem; height:1rem; border-radius:4px; accent-color:var(--brand); flex-shrink:0;">
+                                Kecilkan ukuran foto otomatis sebelum diunggah
+                            </label>
+
                             @forelse ($items as $i => $item)
                                 <div wire:key="item-{{ $i }}"
                                      style="border:1px solid var(--border); border-radius:12px; padding:0.9rem; margin-bottom:0.65rem; background:var(--surface-alt);">
                                     <div class="flex items-center justify-between" style="margin-bottom:0.6rem;">
                                         <span class="badge badge-neutral">
-                                            @if ($item['type'] === 'photo')
+                                            @if ($item['type'] === 'photo' && ($item['capture'] ?? false))
+                                                <i class="fa-solid fa-camera"></i> Kamera
+                                            @elseif ($item['type'] === 'photo')
                                                 <i class="fa-regular fa-image"></i> Foto
                                             @elseif ($item['type'] === 'document')
                                                 <i class="fa-regular fa-file-pdf"></i> PDF
@@ -110,13 +140,45 @@
                                     @if ($item['type'] === 'link')
                                         <input type="url" wire:model="items.{{ $i }}.url" class="form-input"
                                                placeholder="https://...">
-                                    @else
+                                    @elseif ($item['type'] === 'document')
                                         <input type="file" wire:model="items.{{ $i }}.file" class="file-box"
-                                               accept="{{ $item['type'] === 'document' ? 'application/pdf' : 'image/*' }}">
+                                               accept="application/pdf">
                                         <div wire:loading wire:target="items.{{ $i }}.file"
                                              class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
                                             <i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...
                                         </div>
+                                    @else
+                                        {{-- Foto: bila opsi "kecilkan otomatis" aktif, kompres dulu di browser lalu unggah manual.
+                                             capture="environment" → di HP langsung buka kamera belakang. --}}
+                                        <input type="file" class="file-box" accept="image/*"
+                                               @if ($item['capture'] ?? false) capture="environment" @endif
+                                               wire:key="photo-input-{{ $i }}"
+                                               x-data
+                                               x-on:change="
+                                                   const inp = $event.target;
+                                                   let f = inp.files[0];
+                                                   if (!f) return;
+                                                   inp.disabled = true;
+                                                   if ($wire.compressImages) { f = await window.compressImageFile(f); }
+                                                   $wire.upload('items.{{ $i }}.file', f,
+                                                       () => { inp.disabled = false; },
+                                                       () => { inp.disabled = false; },
+                                                       () => {});
+                                               ">
+                                        <div wire:loading wire:target="items.{{ $i }}.file"
+                                             class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
+                                            <i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...
+                                        </div>
+                                        @if ($item['file'])
+                                            <p class="text-sm" wire:loading.remove wire:target="items.{{ $i }}.file"
+                                               style="color:var(--brand-success); margin-top:0.3rem;">
+                                                <i class="fa-solid fa-circle-check" style="margin-right:0.3rem;"></i>Foto terpasang — pilih/ambil lagi untuk mengganti.
+                                            </p>
+                                        @elseif ($compressImages)
+                                            <p class="text-sm" style="color:var(--text-faint); margin-top:0.3rem;">
+                                                <i class="fa-solid fa-wand-magic-sparkles" style="margin-right:0.3rem;"></i>Foto akan dikecilkan otomatis.
+                                            </p>
+                                        @endif
                                     @endif
 
                                     @error("items.$i.file")

@@ -35,9 +35,29 @@ class Login extends Component
             ]);
         }
 
+        // Akun hasil pendaftaran mandiri harus disetujui admin dulu (admin sendiri dikecualikan).
+        $user = Auth::user();
+
+        if (! $user->isApproved() && ! $user->isAdmin()) {
+            Auth::logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Akun kamu belum disetujui oleh admin. Silakan tunggu konfirmasi.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
 
         session()->regenerate();
+
+        // Selaraskan hash password di sesi dengan user yang baru login. Panel /admin memakai
+        // middleware AuthenticateSession; kalau nilai ini masih milik sesi admin sebelumnya di
+        // browser yang sama, membuka /admin akan me-logout sesi ini lalu "cookie ingat saya"
+        // milik akun admin lama ikut aktif — akun terlihat berganti sendiri.
+        session()->put(
+            'password_hash_' . config('auth.defaults.guard'),
+            $user->getAuthPassword(),
+        );
 
         return $this->redirectIntended(route('home'), navigate: true);
     }

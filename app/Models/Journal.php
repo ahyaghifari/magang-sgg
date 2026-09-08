@@ -43,4 +43,12 @@ class Journal extends Model
     {
         return $this->hasMany(JournalAttachment::class);
     }
+
+    /**
+     * Penilaian bintang (1..5) dari pembimbing. Rata-ratanya dihitung antar-pembimbing.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(JournalReview::class);
+    }
 }

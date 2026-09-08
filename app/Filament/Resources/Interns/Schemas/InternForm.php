@@ -19,11 +19,18 @@ class InternForm
                     ->preload()
                     ->required(),
                 Select::make('institusi_id')
-                    ->label('Institusi')
+                    ->label('Institusi (asal sekolah/kampus)')
                     ->relationship('institusi', 'name')
                     ->searchable()
                     ->preload()
                     ->required(),
+                Select::make('unit_id')
+                    ->label('Unit penempatan')
+                    ->relationship('unit', 'name')
+                    ->getOptionLabelFromRecordUsing(fn ($record): string => "{$record->company->name} — {$record->name}")
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Belum ditempatkan'),
                 TextInput::make('nama')
                     ->label('Nama')
                     ->required()

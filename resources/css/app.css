@@ -31,9 +31,11 @@
     --text-body: #334155;
     --text-muted: #64748b; /* minimum for readable text */
     --text-faint: #94a3b8; /* decorative / native placeholder only */
+    /* Brand palette — Syifa Global Group logo (navy / green / magenta). */
     --brand: #042c6c;
     --brand-hover: #032356;
-    --brand-success: #047c54;
+    --brand-success: #1c8a4d;
+    --brand-accent: #c74ba0; /* magenta — decorative only (logo accent line), never a primary UI color */
     --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
@@ -50,6 +52,7 @@ html.dark {
     --brand: #6ea8e0;
     --brand-hover: #8fbce9;
     --brand-success: #34d399;
+    --brand-accent: #e879c0;
     --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
@@ -237,11 +240,37 @@ html.dark .stat-card-deco {
     box-shadow: var(--shadow-card);
 }
 
+/* Logo lockup has a white background — seamless on the light auth card,
+   so only wrap it in a white "chip" for dark mode. */
+.auth-logo {
+    display: block;
+    width: 210px;
+    max-width: 70%;
+    height: auto;
+    margin: 0 auto;
+}
+html.dark .auth-logo {
+    background: #fff;
+    padding: 0.7rem 1rem;
+    border-radius: 16px;
+}
+
 .auth-card {
+    position: relative;
+    overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 20px;
     box-shadow: 0 18px 50px -18px rgba(4, 44, 108, 0.25);
+}
+.auth-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #042c6c 0%, #1c8a4d 55%, #c74ba0 100%);
 }
 html.dark .auth-card {
     box-shadow: 0 18px 50px -18px rgba(0, 0, 0, 0.6);
@@ -259,7 +288,7 @@ html.dark .auth-card {
 }
 .badge-approved {
     background: #dcfce7;
-    color: #047c54;
+    color: #1c8a4d;
 }
 .badge-pending {
     background: #fef3c7;
@@ -369,4 +398,260 @@ html.dark .file-box::file-selector-button {
 }
 html.dark .file-box::file-selector-button:hover {
     background: #2563eb;
+}
+
+/* =========================================================================
+   Portal shell — sidebar dashboard layout (added 2026-09-08)
+   Left sidebar nav + slim topbar + big page titles, matching the dashboard
+   mockup. Only wraps authenticated portal pages (see layouts/app.blade.php);
+   the login screen renders bare. All real CSS (compiles reliably) — the
+   responsive behaviour is baked into media queries here, not Tailwind
+   utilities, per the "inline over new utility classes" rule above.
+   ========================================================================= */
+
+.portal-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---- Sidebar ---------------------------------------------------------------- */
+.portal-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 264px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 0.9rem;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+}
+.portal-sidebar.is-open {
+    transform: translateX(0);
+}
+/* brand accent strip — navy → green → magenta, echoes the logo */
+.portal-sidebar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #042c6c 0%, #1c8a4d 55%, #c74ba0 100%);
+}
+
+.portal-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    flex-shrink: 0;
+    padding: 0.15rem 0.5rem 0.9rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-soft);
+}
+.portal-brand-logo {
+    display: block;
+    width: 150px;
+    max-width: 100%;
+    height: auto;
+}
+.portal-brand-tagline {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+/* logo aslinya berlatar putih — beri "chip" putih hanya di dark mode supaya menyatu rapi */
+html.dark .portal-brand-logo {
+    background: #fff;
+    padding: 7px 11px;
+    border-radius: 12px;
+}
+
+.portal-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+.portal-nav-label {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+.portal-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-body);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.portal-nav-link:hover {
+    background: var(--surface-alt);
+    color: var(--text-heading);
+}
+.portal-nav-link i {
+    width: 1.15rem;
+    text-align: center;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    transition: color 0.15s ease;
+}
+.portal-nav-link.active {
+    background: #0b1739;
+    color: #fff;
+}
+.portal-nav-link.active i {
+    color: #fff;
+}
+html.dark .portal-nav-link.active {
+    background: #1d4ed8;
+}
+
+.portal-sidebar-foot {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-soft);
+}
+.portal-user {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.5rem;
+}
+.portal-user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #042c6c 0%, #0b47a1 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.portal-logout {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    margin-top: 0.3rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-body);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.portal-logout i {
+    width: 1.15rem;
+    text-align: center;
+}
+.portal-logout:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+html.dark .portal-logout:hover {
+    background: rgba(220, 38, 38, 0.14);
+    color: #f87171;
+}
+
+/* ---- Content column ------------------------------------------------------- */
+.portal-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.portal-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.7rem 1.15rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.portal-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-left: auto;
+}
+
+.portal-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.portal-icon-btn:hover {
+    background: var(--surface-alt);
+    color: var(--text-body);
+}
+.portal-hamburger {
+    display: inline-flex;
+}
+
+.portal-main {
+    width: 100%;
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 1.6rem 1.15rem 3rem;
+}
+
+.portal-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-heading);
+}
+
+/* ---- Mobile drawer backdrop -------------------------------------------------- */
+.portal-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(2, 6, 23, 0.5);
+}
+
+/* ---- Desktop: static, always-visible sidebar ---------------------------------- */
+@media (min-width: 1024px) {
+    .portal-sidebar {
+        transform: none;
+    }
+    .portal-content {
+        margin-left: 264px;
+    }
+    .portal-hamburger {
+        display: none;
+    }
+    .portal-scrim {
+        display: none !important;
+    }
 }
