@@ -47,35 +47,4 @@
     .fi-simple-main .fi-btn.fi-color-primary:hover {
         background-color: #032356;
     }
-
-    /* Tombol "Kembali" di bawah form login (dari AUTH_LOGIN_FORM_AFTER). */
-    .fi-simple-main .portal-back-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.45rem;
-        margin-top: 1.25rem;
-        padding: 0.7rem 1rem;
-        border-radius: 0.75rem;
-        border: 1px solid #cbd5e1;
-        color: #475569;
-        font-size: 0.875rem;
-        font-weight: 600;
-        text-decoration: none;
-        transition: background 0.15s ease, border-color 0.15s ease;
-    }
-    .fi-simple-main .portal-back-link:hover {
-        background: #f1f5f9;
-        border-color: #94a3b8;
-        color: #042c6c;
-    }
-    .dark .fi-simple-main .portal-back-link {
-        border-color: #334155;
-        color: #cbd5e1;
-    }
-    .dark .fi-simple-main .portal-back-link:hover {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: #475569;
-        color: #fff;
-    }
 </style>

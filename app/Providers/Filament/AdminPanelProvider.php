@@ -51,12 +51,6 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::STYLES_AFTER,
                 fn () => view('filament.portal-match'),
             )
-            // Tombol kembali di bawah form login admin.
-            ->renderHook(
-                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
-                fn (): string => '<a href="'.e(url('/')).'" class="portal-back-link">'
-                    .'<span aria-hidden="true">&larr;</span> Kembali</a>',
-            )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,

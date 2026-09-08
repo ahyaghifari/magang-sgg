@@ -76,14 +76,21 @@
             </button>
         </form>
 
+        {{-- ponytail: tombol selalu tampil. Kalau KEYCLOAK_* belum diisi, klik → halaman error Socialite.
+             Sembunyikan lagi dengan @if(config('services.keycloak.base_url')) kalau mau aman saat SSO mati. --}}
+        <div class="flex items-center" style="gap:0.75rem; margin:1.25rem 0 0.9rem;">
+            <span style="flex:1; height:1px; background:var(--border, #e5e7eb);"></span>
+            <span class="text-sm" style="color:var(--text-muted);">atau</span>
+            <span style="flex:1; height:1px; background:var(--border, #e5e7eb);"></span>
+        </div>
+        <a href="{{ route('sso.redirect') }}" class="btn-primary"
+           style="display:block; width:100%; text-align:center; padding:0.7rem 0; text-decoration:none;">
+            <i class="fa-solid fa-key" style="margin-right:0.45rem;"></i>Masuk dengan SSO
+        </a>
+
         <p class="text-sm" style="text-align:center; color:var(--text-muted); margin-top:1.5rem;">
             Belum punya akun?
             <a href="{{ route('register') }}" wire:navigate style="font-weight:600; color:var(--brand);">Daftar di sini</a>
-        </p>
-
-        <p class="text-sm" style="text-align:center; color:var(--text-muted); margin-top:0.5rem;">
-            Admin?
-            <a href="/admin/login" style="font-weight:600; color:var(--brand);">Masuk lewat panel admin</a>
         </p>
     </div>
 </div>
