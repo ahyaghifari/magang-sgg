@@ -180,33 +180,61 @@ html.dark .form-input:focus {
     background: linear-gradient(135deg, #042c6c 0%, #0b47a1 100%);
     color: #fff;
 }
+/* Card presensi hari ini — sama seperti welcome-card, gradien pink. */
+.presensi-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #9d174d 0%, #ec4899 100%);
+    color: #fff;
+}
 .welcome-card .w-deco-1,
 .welcome-card .w-deco-2,
-.welcome-card .w-deco-3 {
+.welcome-card .w-deco-3,
+.presensi-card .w-deco-1,
+.presensi-card .w-deco-2,
+.presensi-card .w-deco-3 {
     position: absolute;
     border-radius: 9999px;
     pointer-events: none;
 }
-.welcome-card .w-deco-1 {
+.welcome-card .w-deco-1,
+.presensi-card .w-deco-1 {
     width: 240px;
     height: 240px;
     top: -100px;
     right: -70px;
     background: rgba(255, 255, 255, 0.08);
 }
-.welcome-card .w-deco-2 {
+.welcome-card .w-deco-2,
+.presensi-card .w-deco-2 {
     width: 150px;
     height: 150px;
     bottom: -80px;
     right: 90px;
     background: rgba(255, 255, 255, 0.06);
 }
-.welcome-card .w-deco-3 {
+.welcome-card .w-deco-3,
+.presensi-card .w-deco-3 {
     width: 90px;
     height: 90px;
     bottom: 18px;
     left: -32px;
     background: rgba(255, 255, 255, 0.05);
+}
+
+/* Badge status di dalam presensi-card (mis. "Hadir") — pill putih transparan. */
+.presensi-card .p-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
 }
 
 /* plain white stat card */

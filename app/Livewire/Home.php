@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Models\AttendanceRecord;
+use App\Models\CompanyFixedSchedule;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -10,6 +12,9 @@ use Livewire\Component;
 #[Layout('components.layouts.app')]
 class Home extends Component
 {
+    /** Semua jam mesin absensi memakai waktu WITA (samakan dengan Attendance\Index). */
+    private const TZ = 'Asia/Makassar';
+
     public bool $journalSaved = false;
 
     public function mount()
@@ -30,13 +35,34 @@ class Home extends Component
     public function render()
     {
         $user = auth()->user();
-        $intern = $user->intern;
+        $intern = $user->loadMissing('intern.unit')->intern;
 
         $journalsQuery = $intern?->journals();
+
+        $now = Carbon::now(self::TZ);
+        $schedule = null;
+        $todayAttendance = null;
+
+        if ($intern && filled($intern->nip)) {
+            $companyId = $intern->unit?->company_id;
+
+            $schedule = $companyId
+                ? CompanyFixedSchedule::where('company_id', $companyId)
+                    ->where('day_of_week', $now->dayOfWeek) // 0=Minggu … 6=Sabtu
+                    ->first()
+                : null;
+
+            $todayAttendance = AttendanceRecord::where('nip', $intern->nip)
+                ->whereDate('date', $now->toDateString())
+                ->first();
+        }
 
         return view('livewire.home', [
             'user' => $user,
             'intern' => $intern,
+            'now' => $now,
+            'schedule' => $schedule,
+            'todayAttendance' => $todayAttendance,
             'recentJournals' => $journalsQuery
                 ? (clone $journalsQuery)->latest('date')->take(5)->get()
                 : collect(),

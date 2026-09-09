@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Attendance\Index as AttendanceIndex;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Home;
@@ -21,6 +22,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', Home::class)->name('home');
 
     Route::get('/jurnal', JournalIndex::class)->name('journals.index');
+
+    Route::get('/presensi', AttendanceIndex::class)->name('attendance.index');
 
     Route::get('/kegiatan', PembimbingActivities::class)->name('pembimbing.activities');
 
