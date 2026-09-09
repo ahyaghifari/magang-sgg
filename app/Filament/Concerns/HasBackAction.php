@@ -14,6 +14,8 @@ trait HasBackAction
     {
         return Action::make('kembali')
             ->label('Kembali')
+            ->hiddenLabel()
+            ->tooltip('Kembali')
             ->icon('heroicon-o-arrow-left')
             ->color('gray')
             ->url($this->getResource()::getUrl('index'));

@@ -240,20 +240,19 @@ html.dark .stat-card-deco {
     box-shadow: var(--shadow-card);
 }
 
-/* Logo lockup has a white background — seamless on the light auth card,
-   so only wrap it in a white "chip" for dark mode. */
+/* Logo lockup is trimmed tight to its artwork (519x304, no baked-in padding),
+   so spacing is controlled here. Seamless on the light auth card; only wrapped
+   in a white "chip" for dark mode. */
 .auth-logo {
     display: block;
-    width: 210px;
-    max-width: 70%;
+    width: 140px;
+    max-width: 52%;
     height: auto;
+    aspect-ratio: 519 / 304;
+    object-fit: contain;
     margin: 0 auto;
 }
-html.dark .auth-logo {
-    background: #fff;
-    padding: 0.7rem 1rem;
-    border-radius: 16px;
-}
+/* Dark mode: tanpa "chip" putih, logo tampil polos di atas kartu. */
 
 .auth-card {
     position: relative;
@@ -457,9 +456,11 @@ html.dark .file-box::file-selector-button:hover {
 }
 .portal-brand-logo {
     display: block;
-    width: 150px;
+    width: 104px;
     max-width: 100%;
     height: auto;
+    aspect-ratio: 519 / 304;
+    object-fit: contain;
 }
 .portal-brand-tagline {
     font-size: 0.7rem;
@@ -468,12 +469,7 @@ html.dark .file-box::file-selector-button:hover {
     text-transform: uppercase;
     color: var(--text-muted);
 }
-/* logo aslinya berlatar putih — beri "chip" putih hanya di dark mode supaya menyatu rapi */
-html.dark .portal-brand-logo {
-    background: #fff;
-    padding: 7px 11px;
-    border-radius: 12px;
-}
+/* Dark mode: tanpa "chip" putih, logo tampil polos. */
 
 .portal-nav {
     display: flex;

@@ -62,6 +62,31 @@ return [
             ]) : [],
         ],
 
+        /*
+        | Database HRIS (read-only) — sumber tabel mentah `access_logs` dari mesin
+        | absensi. Project ini TIDAK membuat/menyalin tabel itu; semua akses lewat
+        | DB::connection('hris'). Biarkan HRIS_DB_* kosong sampai kredensial ada;
+        | `attendance:sync` belum bisa jalan sebelum ini diisi.
+        */
+        'hris' => [
+            'driver' => 'mysql',
+            'url' => env('HRIS_DB_URL'),
+            'host' => env('HRIS_DB_HOST', '127.0.0.1'),
+            'port' => env('HRIS_DB_PORT', '3306'),
+            'database' => env('HRIS_DB_DATABASE', 'hris'),
+            'username' => env('HRIS_DB_USERNAME', ''),
+            'password' => env('HRIS_DB_PASSWORD', ''),
+            'charset' => env('HRIS_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('HRIS_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

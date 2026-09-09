@@ -134,7 +134,7 @@
                             @foreach ($journal->reviews as $rv)
                                 <span class="text-sm" style="color:var(--text-muted);">
                                     {{ $rv->reviewer->name ?? '—' }}:
-                                    <span style="color:#f59e0b;">{{ str_repeat('★', $rv->rating) }}{{ str_repeat('☆', 5 - $rv->rating) }}</span>
+                                    <span style="color:#f59e0b;">{{ str_repeat('★', $rv->rating) }}</span>
                                 </span>
                             @endforeach
                         </div>

@@ -76,6 +76,7 @@ class Register extends Component
                 'institusi_id' => $data['institusi_id'],
                 'nama' => $data['name'],
                 'jenis_kelamin' => $data['jenis_kelamin'],
+                // NIP dikosongkan dulu — diisi manual oleh admin lewat panel.
             ]);
         });
 

@@ -35,6 +35,11 @@ class InternForm
                     ->label('Nama')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('nip')
+                    ->label('NIP')
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true)
+                    ->helperText('Nomor Induk Pegawai — opsional, diisi manual oleh admin.'),
                 Select::make('jenis_kelamin')
                     ->label('Jenis Kelamin')
                     ->options([

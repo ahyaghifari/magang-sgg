@@ -80,10 +80,5 @@
             Belum punya akun?
             <a href="{{ route('register') }}" wire:navigate style="font-weight:600; color:var(--brand);">Daftar di sini</a>
         </p>
-
-        <p class="text-sm" style="text-align:center; color:var(--text-muted); margin-top:0.5rem;">
-            Admin?
-            <a href="/admin/login" style="font-weight:600; color:var(--brand);">Masuk lewat panel admin</a>
-        </p>
     </div>
 </div>

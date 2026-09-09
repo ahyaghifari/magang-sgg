@@ -18,6 +18,11 @@ class InternsTable
                     ->label('Nama')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('nip')
+                    ->label('NIP')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('—'),
                 TextColumn::make('jenis_kelamin')
                     ->label('Jenis Kelamin')
                     ->badge()

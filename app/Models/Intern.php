@@ -18,6 +18,7 @@ class Intern extends Model
         'institusi_id',
         'unit_id',
         'nama',
+        'nip',
         'jenis_kelamin',
     ];
 
@@ -51,5 +52,14 @@ class Intern extends Model
     public function journals(): HasMany
     {
         return $this->hasMany(Journal::class);
+    }
+
+    /**
+     * Rekap presensi harian (tabel attendance_records), dicocokkan lewat NIP.
+     * Diisi oleh pipeline `attendance:sync` dari dump mesin absensi.
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class, 'nip', 'nip');
     }
 }
