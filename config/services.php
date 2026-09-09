@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    // SSO Keycloak (OIDC). Kosongkan KEYCLOAK_BASE_URL untuk mematikan tombol SSO;
+    // login lokal (email + password) tetap jalan.
+    'keycloak' => [
+        'client_id' => env('KEYCLOAK_CLIENT_ID'),
+        'client_secret' => env('KEYCLOAK_CLIENT_SECRET'),
+        'redirect' => env('KEYCLOAK_REDIRECT_URI'),
+        'base_url' => env('KEYCLOAK_BASE_URL'),   // https://sso.example.com (tanpa trailing slash)
+        'realms' => env('KEYCLOAK_REALM'),        // nama realm, mis. "perusahaan"
+    ],
+
 ];
