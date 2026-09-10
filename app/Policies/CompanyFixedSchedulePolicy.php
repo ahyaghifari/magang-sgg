@@ -4,72 +4,77 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\CompanyFixedSchedule;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Setelah Filament Shield dilepas, akses penuh ke panel /admin hanya untuk super
+ * admin (email di config('access.super_admin_emails')). Semua kemampuan resource
+ * mengikuti aturan itu.
+ */
 class CompanyFixedSchedulePolicy
 {
     use HandlesAuthorization;
-    
-    public function viewAny(AuthUser $authUser): bool
+
+    public function viewAny(User $user): bool
     {
-        return $authUser->can('ViewAny:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function view(AuthUser $authUser, CompanyFixedSchedule $companyFixedSchedule): bool
+    public function view(User $user, CompanyFixedSchedule $companyFixedSchedule): bool
     {
-        return $authUser->can('View:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function create(AuthUser $authUser): bool
+    public function create(User $user): bool
     {
-        return $authUser->can('Create:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function update(AuthUser $authUser, CompanyFixedSchedule $companyFixedSchedule): bool
+    public function update(User $user, CompanyFixedSchedule $companyFixedSchedule): bool
     {
-        return $authUser->can('Update:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function delete(AuthUser $authUser, CompanyFixedSchedule $companyFixedSchedule): bool
+    public function delete(User $user, CompanyFixedSchedule $companyFixedSchedule): bool
     {
-        return $authUser->can('Delete:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function deleteAny(AuthUser $authUser): bool
+    public function deleteAny(User $user): bool
     {
-        return $authUser->can('DeleteAny:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function restore(AuthUser $authUser, CompanyFixedSchedule $companyFixedSchedule): bool
+    public function restore(User $user, CompanyFixedSchedule $companyFixedSchedule): bool
     {
-        return $authUser->can('Restore:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDelete(AuthUser $authUser, CompanyFixedSchedule $companyFixedSchedule): bool
+    public function forceDelete(User $user, CompanyFixedSchedule $companyFixedSchedule): bool
     {
-        return $authUser->can('ForceDelete:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDeleteAny(AuthUser $authUser): bool
+    public function forceDeleteAny(User $user): bool
     {
-        return $authUser->can('ForceDeleteAny:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function restoreAny(AuthUser $authUser): bool
+    public function restoreAny(User $user): bool
     {
-        return $authUser->can('RestoreAny:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function replicate(AuthUser $authUser, CompanyFixedSchedule $companyFixedSchedule): bool
+    public function replicate(User $user, CompanyFixedSchedule $companyFixedSchedule): bool
     {
-        return $authUser->can('Replicate:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
-    public function reorder(AuthUser $authUser): bool
+    public function reorder(User $user): bool
     {
-        return $authUser->can('Reorder:CompanyFixedSchedule');
+        return $user->isSuperAdmin();
     }
 
 }

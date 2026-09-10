@@ -4,72 +4,77 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Intern;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Setelah Filament Shield dilepas, akses penuh ke panel /admin hanya untuk super
+ * admin (email di config('access.super_admin_emails')). Semua kemampuan resource
+ * mengikuti aturan itu.
+ */
 class InternPolicy
 {
     use HandlesAuthorization;
-    
-    public function viewAny(AuthUser $authUser): bool
+
+    public function viewAny(User $user): bool
     {
-        return $authUser->can('ViewAny:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function view(AuthUser $authUser, Intern $intern): bool
+    public function view(User $user, Intern $intern): bool
     {
-        return $authUser->can('View:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function create(AuthUser $authUser): bool
+    public function create(User $user): bool
     {
-        return $authUser->can('Create:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function update(AuthUser $authUser, Intern $intern): bool
+    public function update(User $user, Intern $intern): bool
     {
-        return $authUser->can('Update:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function delete(AuthUser $authUser, Intern $intern): bool
+    public function delete(User $user, Intern $intern): bool
     {
-        return $authUser->can('Delete:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function deleteAny(AuthUser $authUser): bool
+    public function deleteAny(User $user): bool
     {
-        return $authUser->can('DeleteAny:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function restore(AuthUser $authUser, Intern $intern): bool
+    public function restore(User $user, Intern $intern): bool
     {
-        return $authUser->can('Restore:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDelete(AuthUser $authUser, Intern $intern): bool
+    public function forceDelete(User $user, Intern $intern): bool
     {
-        return $authUser->can('ForceDelete:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDeleteAny(AuthUser $authUser): bool
+    public function forceDeleteAny(User $user): bool
     {
-        return $authUser->can('ForceDeleteAny:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function restoreAny(AuthUser $authUser): bool
+    public function restoreAny(User $user): bool
     {
-        return $authUser->can('RestoreAny:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function replicate(AuthUser $authUser, Intern $intern): bool
+    public function replicate(User $user, Intern $intern): bool
     {
-        return $authUser->can('Replicate:Intern');
+        return $user->isSuperAdmin();
     }
 
-    public function reorder(AuthUser $authUser): bool
+    public function reorder(User $user): bool
     {
-        return $authUser->can('Reorder:Intern');
+        return $user->isSuperAdmin();
     }
 
 }

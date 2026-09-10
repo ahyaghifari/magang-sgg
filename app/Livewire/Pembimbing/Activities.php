@@ -2,14 +2,17 @@
 
 namespace App\Livewire\Pembimbing;
 
+use App\Livewire\Concerns\HasCommentThread;
 use App\Models\Intern;
 use App\Models\Journal;
 use App\Models\JournalReview;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -21,7 +24,7 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.app')]
 class Activities extends Component
 {
-    use WithPagination;
+    use HasCommentThread, WithPagination;
 
     /** Jumlah HARI kegiatan per halaman (bukan jumlah jurnal) — satu hari tak pernah terpotong. */
     private const DAYS_PER_PAGE = 7;
@@ -29,6 +32,12 @@ class Activities extends Component
     public string $internId = '';
 
     public string $search = '';
+
+    #[Url]
+    public string $dateFrom = '';
+
+    #[Url]
+    public string $dateTo = '';
 
     public function mount()
     {
@@ -40,9 +49,24 @@ class Activities extends Component
 
     public function updated($property): void
     {
-        if (in_array($property, ['internId', 'search'], true)) {
+        if (in_array($property, ['internId', 'search', 'dateFrom', 'dateTo'], true)) {
             $this->resetPage();
         }
+    }
+
+    public function resetDateFilter(): void
+    {
+        $this->reset(['dateFrom', 'dateTo']);
+        $this->resetPage();
+    }
+
+    protected function resolveCommentable(string $type, int $id): ?Model
+    {
+        if ($type !== 'journal' || ! $this->allowed()) {
+            return null;
+        }
+
+        return Journal::whereKey($id)->first();
     }
 
     protected function allowed(): bool
@@ -91,6 +115,8 @@ class Activities extends Component
     {
         return Journal::query()
             ->when($this->internId !== '', fn ($q) => $q->where('intern_id', $this->internId))
+            ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
+            ->when($this->dateTo !== '', fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
             ->when($this->search !== '', fn ($q) => $q->where(function ($q) {
                 $q->where('activity', 'like', '%' . $this->search . '%')
                     ->orWhereHas('intern', fn ($q) => $q->where('nama', 'like', '%' . $this->search . '%'));
@@ -115,7 +141,7 @@ class Activities extends Component
 
         // 2) Ambil SEMUA jurnal untuk hari-hari tersebut (satu hari tidak akan terpotong).
         $items = $this->baseQuery()
-            ->with(['intern.institusi', 'intern.unit', 'attachments', 'reviews.reviewer'])
+            ->with(['intern.institusi', 'intern.unit', 'attachments', 'reviews.reviewer', 'comments.author'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->when($dates !== [], fn ($q) => $q->whereIn('date', $dates), fn ($q) => $q->whereRaw('1 = 0'))

@@ -32,6 +32,23 @@
             </p>
         </div>
     @else
+        {{-- ===== Filter tanggal ===== --}}
+        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:flex; flex-wrap:wrap; align-items:flex-end; gap:0.75rem;">
+            <div>
+                <label for="j-from" class="form-label">Dari tanggal</label>
+                <input id="j-from" type="date" wire:model.live="dateFrom" class="form-input" style="max-width:12rem;">
+            </div>
+            <div>
+                <label for="j-to" class="form-label">Sampai tanggal</label>
+                <input id="j-to" type="date" wire:model.live="dateTo" class="form-input" style="max-width:12rem;">
+            </div>
+            @if ($dateFrom !== '' || $dateTo !== '')
+                <button type="button" wire:click="resetDateFilter" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                    <i class="fa-solid fa-xmark"></i> Reset
+                </button>
+            @endif
+        </div>
+
         <div class="flex" style="flex-direction:column; gap:0.85rem;">
             @forelse ($journals as $journal)
                 <article class="surface-card" style="padding:1.1rem 1.15rem;">
@@ -90,6 +107,8 @@
                             <span class="text-sm" style="color:var(--text-faint);">Belum dinilai</span>
                         @endif
                     </div>
+
+                    @include('livewire.partials.comment-thread', ['type' => 'journal', 'model' => $journal])
                 </article>
             @empty
                 <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">

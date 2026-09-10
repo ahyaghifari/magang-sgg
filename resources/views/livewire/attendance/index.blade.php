@@ -30,11 +30,25 @@
             </p>
         </div>
     @else
-        {{-- ===== Ringkasan bulan ini ===== --}}
+        {{-- ===== Pemilih bulan + Ringkasan ===== --}}
+        <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap; margin-bottom:0.85rem;">
+            <p class="text-sm" style="font-weight:700; color:var(--text-heading);">
+                Ringkasan {{ $isCurrentMonth ? 'Bulan Ini' : $selectedMonth->translatedFormat('F Y') }}
+            </p>
+            <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
+                <input type="month" wire:model.live="month" class="form-input" style="max-width:11rem;">
+                @unless ($isCurrentMonth)
+                    <button type="button" wire:click="resetMonth" class="btn-ghost" style="padding:0.45rem 0.8rem;">
+                        <i class="fa-solid fa-rotate-left"></i> Bulan ini
+                    </button>
+                @endunless
+            </div>
+        </div>
+
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem;">
             <div class="stat-card" style="padding:1.1rem 1.15rem;">
                 <span class="stat-card-deco"></span>
-                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Hadir Bulan Ini</p>
+                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Hari Hadir</p>
                 <p style="margin-top:0.3rem; font-size:1.65rem; font-weight:700; color:var(--brand);">{{ $monthStats['hadir'] }}</p>
             </div>
             <div class="stat-card" style="padding:1.1rem 1.15rem;">
@@ -107,7 +121,9 @@
         </div>
 
         {{-- ===== Riwayat ===== --}}
-        <h2 class="text-sm" style="font-weight:700; color:var(--text-heading); margin:1.6rem 0 0.7rem;">Riwayat Presensi</h2>
+        <h2 class="text-sm" style="font-weight:700; color:var(--text-heading); margin:1.6rem 0 0.7rem;">
+            Riwayat Presensi &middot; {{ $selectedMonth->translatedFormat('F Y') }}
+        </h2>
 
         <div class="flex" style="flex-direction:column; gap:0.6rem;">
             @forelse ($records as $row)

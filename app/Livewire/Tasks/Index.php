@@ -2,8 +2,12 @@
 
 namespace App\Livewire\Tasks;
 
+use App\Livewire\Concerns\HasCommentThread;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -15,9 +19,15 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.app')]
 class Index extends Component
 {
-    use WithFileUploads, WithPagination;
+    use HasCommentThread, WithFileUploads, WithPagination;
 
     public string $status = '';
+
+    #[Url]
+    public string $dateFrom = '';
+
+    #[Url]
+    public string $dateTo = '';
 
     /** id tugas yang sedang ditandai selesai (menampilkan modal unggah foto bukti). */
     public ?int $completingTaskId = null;
@@ -39,6 +49,53 @@ class Index extends Component
 
     public function updatingStatus(): void
     {
+        $this->resetPage();
+    }
+
+    public function updatingDateFrom(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingDateTo(): void
+    {
+        $this->resetPage();
+    }
+
+    public function resetDateFilter(): void
+    {
+        $this->reset(['dateFrom', 'dateTo']);
+        $this->resetPage();
+    }
+
+    protected function resolveCommentable(string $type, int $id): ?Model
+    {
+        if ($type !== 'task') {
+            return null;
+        }
+
+        return auth()->user()->intern?->tasks()->whereKey($id)->first();
+    }
+
+    /** Intern menghapus tugasnya yang salah kirim — hanya yang belum selesai. */
+    public function deleteTask(int $taskId): void
+    {
+        $intern = auth()->user()->intern;
+
+        $task = $intern?->tasks()
+            ->whereKey($taskId)
+            ->where('status', '!=', 'done')
+            ->first();
+
+        if (! $task) {
+            return;
+        }
+
+        if ($task->completion_photo_path) {
+            Storage::disk('public')->delete($task->completion_photo_path);
+        }
+
+        $task->delete();
         $this->resetPage();
     }
 
@@ -150,8 +207,10 @@ class Index extends Component
 
         $tasks = $intern
             ? $intern->tasks()
-                ->with('assignedBy')
+                ->with(['assignedBy', 'comments.author'])
                 ->when($this->status !== '', fn ($q) => $q->where('status', $this->status))
+                ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
+                ->when($this->dateTo !== '', fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
                 ->orderByRaw("field(status, 'pending', 'in_progress', 'done')")
                 ->orderByDesc('created_at')
                 ->paginate(10)

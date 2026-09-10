@@ -12,12 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -100,11 +99,22 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Apakah user ini admin — dari enum `role` maupun peran Shield (super admin/admin).
+     * Super admin ditentukan lewat daftar email di config('access.super_admin_emails').
+     * Merekalah satu-satunya yang punya akses penuh ke panel Filament (/admin).
+     */
+    public function isSuperAdmin(): bool
+    {
+        $email = mb_strtolower(trim((string) $this->email));
+
+        return $email !== '' && in_array($email, config('access.super_admin_emails', []), true);
+    }
+
+    /**
+     * Apakah user ini admin — dari enum `role` maupun super admin (email).
      */
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::Admin || $this->hasAnyRole(['admin', 'super_admin']);
+        return $this->role === UserRole::Admin || $this->isSuperAdmin();
     }
 
     /**
@@ -124,21 +134,12 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Hanya pemilik peran Shield admin/super_admin yang boleh masuk panel Filament (/admin) —
-     * itulah yang benar-benar punya izin ke resource-nya. Enum `role = admin` saja tidak cukup
-     * (nanti bisa masuk panel tapi kena 403 di tiap resource). Peserta/pembimbing diarahkan
-     * ke portal oleh RedirectNonAdminFromPanel, bukan dilempar 403.
+     * Hanya super admin (email terdaftar di config) yang boleh masuk panel Filament
+     * (/admin). Peserta/pembimbing/admin biasa diarahkan ke portal oleh
+     * App\Http\Middleware\Authenticate, bukan dilempar 403.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasAnyRole(['admin', 'super_admin']);
-    }
-
-    /**
-     * Apakah user ini peserta magang (alias lama, berbasis peran Shield).
-     */
-    public function isPeserta(): bool
-    {
-        return $this->hasRole('peserta');
+        return $this->isSuperAdmin();
     }
 }

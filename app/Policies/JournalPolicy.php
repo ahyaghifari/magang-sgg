@@ -4,72 +4,77 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Journal;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Setelah Filament Shield dilepas, akses penuh ke panel /admin hanya untuk super
+ * admin (email di config('access.super_admin_emails')). Semua kemampuan resource
+ * mengikuti aturan itu.
+ */
 class JournalPolicy
 {
     use HandlesAuthorization;
-    
-    public function viewAny(AuthUser $authUser): bool
+
+    public function viewAny(User $user): bool
     {
-        return $authUser->can('ViewAny:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function view(AuthUser $authUser, Journal $journal): bool
+    public function view(User $user, Journal $journal): bool
     {
-        return $authUser->can('View:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function create(AuthUser $authUser): bool
+    public function create(User $user): bool
     {
-        return $authUser->can('Create:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function update(AuthUser $authUser, Journal $journal): bool
+    public function update(User $user, Journal $journal): bool
     {
-        return $authUser->can('Update:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function delete(AuthUser $authUser, Journal $journal): bool
+    public function delete(User $user, Journal $journal): bool
     {
-        return $authUser->can('Delete:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function deleteAny(AuthUser $authUser): bool
+    public function deleteAny(User $user): bool
     {
-        return $authUser->can('DeleteAny:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function restore(AuthUser $authUser, Journal $journal): bool
+    public function restore(User $user, Journal $journal): bool
     {
-        return $authUser->can('Restore:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDelete(AuthUser $authUser, Journal $journal): bool
+    public function forceDelete(User $user, Journal $journal): bool
     {
-        return $authUser->can('ForceDelete:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDeleteAny(AuthUser $authUser): bool
+    public function forceDeleteAny(User $user): bool
     {
-        return $authUser->can('ForceDeleteAny:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function restoreAny(AuthUser $authUser): bool
+    public function restoreAny(User $user): bool
     {
-        return $authUser->can('RestoreAny:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function replicate(AuthUser $authUser, Journal $journal): bool
+    public function replicate(User $user, Journal $journal): bool
     {
-        return $authUser->can('Replicate:Journal');
+        return $user->isSuperAdmin();
     }
 
-    public function reorder(AuthUser $authUser): bool
+    public function reorder(User $user): bool
     {
-        return $authUser->can('Reorder:Journal');
+        return $user->isSuperAdmin();
     }
 
 }

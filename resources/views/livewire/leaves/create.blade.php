@@ -87,8 +87,12 @@
 
                         {{-- Lampiran --}}
                         <div style="margin-bottom:1.25rem;">
-                            <label for="l-attachment" class="form-label">Lampiran <span style="color:var(--text-faint); font-weight:400;">(opsional, contoh surat dokter)</span></label>
+                            <span class="form-label">Lampiran <span style="color:var(--text-faint); font-weight:400;">(opsional, contoh surat dokter)</span></span>
                             <input id="l-attachment" type="file" wire:model="attachment" class="file-box">
+                            <label class="btn-ghost" style="margin-top:0.5rem; padding:0.5rem 0.85rem; cursor:pointer; display:inline-flex;">
+                                <i class="fa-solid fa-camera"></i>&nbsp; Foto dari kamera
+                                <input type="file" wire:model="attachment" accept="image/*" capture="environment" style="display:none;">
+                            </label>
                             <div wire:loading wire:target="attachment" class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
                                 <i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...
                             </div>

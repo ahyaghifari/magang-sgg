@@ -4,72 +4,77 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Unit;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Setelah Filament Shield dilepas, akses penuh ke panel /admin hanya untuk super
+ * admin (email di config('access.super_admin_emails')). Semua kemampuan resource
+ * mengikuti aturan itu.
+ */
 class UnitPolicy
 {
     use HandlesAuthorization;
-    
-    public function viewAny(AuthUser $authUser): bool
+
+    public function viewAny(User $user): bool
     {
-        return $authUser->can('ViewAny:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function view(AuthUser $authUser, Unit $unit): bool
+    public function view(User $user, Unit $unit): bool
     {
-        return $authUser->can('View:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function create(AuthUser $authUser): bool
+    public function create(User $user): bool
     {
-        return $authUser->can('Create:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function update(AuthUser $authUser, Unit $unit): bool
+    public function update(User $user, Unit $unit): bool
     {
-        return $authUser->can('Update:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function delete(AuthUser $authUser, Unit $unit): bool
+    public function delete(User $user, Unit $unit): bool
     {
-        return $authUser->can('Delete:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function deleteAny(AuthUser $authUser): bool
+    public function deleteAny(User $user): bool
     {
-        return $authUser->can('DeleteAny:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function restore(AuthUser $authUser, Unit $unit): bool
+    public function restore(User $user, Unit $unit): bool
     {
-        return $authUser->can('Restore:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDelete(AuthUser $authUser, Unit $unit): bool
+    public function forceDelete(User $user, Unit $unit): bool
     {
-        return $authUser->can('ForceDelete:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDeleteAny(AuthUser $authUser): bool
+    public function forceDeleteAny(User $user): bool
     {
-        return $authUser->can('ForceDeleteAny:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function restoreAny(AuthUser $authUser): bool
+    public function restoreAny(User $user): bool
     {
-        return $authUser->can('RestoreAny:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function replicate(AuthUser $authUser, Unit $unit): bool
+    public function replicate(User $user, Unit $unit): bool
     {
-        return $authUser->can('Replicate:Unit');
+        return $user->isSuperAdmin();
     }
 
-    public function reorder(AuthUser $authUser): bool
+    public function reorder(User $user): bool
     {
-        return $authUser->can('Reorder:Unit');
+        return $user->isSuperAdmin();
     }
 
 }
