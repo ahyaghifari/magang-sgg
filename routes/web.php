@@ -5,7 +5,11 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Home;
 use App\Livewire\Journals\Index as JournalIndex;
+use App\Livewire\Leaves\Index as LeaveIndex;
 use App\Livewire\Pembimbing\Activities as PembimbingActivities;
+use App\Livewire\Pembimbing\Leaves as PembimbingLeaves;
+use App\Livewire\Pembimbing\Tasks as PembimbingTasks;
+use App\Livewire\Tasks\Index as TaskIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +30,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/presensi', AttendanceIndex::class)->name('attendance.index');
 
     Route::get('/kegiatan', PembimbingActivities::class)->name('pembimbing.activities');
+
+    Route::get('/tugas', TaskIndex::class)->name('tasks.index');
+    Route::get('/tugas-intern', PembimbingTasks::class)->name('pembimbing.tasks');
+
+    Route::get('/izin', LeaveIndex::class)->name('leaves.index');
+    Route::get('/izin-intern', PembimbingLeaves::class)->name('pembimbing.leaves');
 
     Route::post('/logout', function () {
         $wasSso = request()->session()->get('sso');

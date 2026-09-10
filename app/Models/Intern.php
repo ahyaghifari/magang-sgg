@@ -62,4 +62,20 @@ class Intern extends Model
     {
         return $this->hasMany(AttendanceRecord::class, 'nip', 'nip');
     }
+
+    /**
+     * Satu Intern punya banyak Task (tugas dari pembimbing / dicatat sendiri).
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * Satu Intern punya banyak pengajuan izin/sakit.
+     */
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
 }

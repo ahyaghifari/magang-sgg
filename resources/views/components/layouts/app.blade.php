@@ -54,10 +54,25 @@
                 <nav class="portal-nav">
                     <span class="portal-nav-label">Menu</span>
                     @if ($portalUser->isPembimbing() || $portalUser->isAdmin())
+                        <a href="{{ route('home') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Beranda</span>
+                        </a>
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
-                           class="portal-nav-link {{ request()->routeIs('pembimbing.*') ? 'active' : '' }}">
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
                             <span>Kegiatan Intern</span>
+                        </a>
+                        <a href="{{ route('pembimbing.tasks') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.tasks') ? 'active' : '' }}">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <span>Tugas Intern</span>
+                        </a>
+                        <a href="{{ route('pembimbing.leaves') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                            <span>Izin Intern</span>
                         </a>
                     @else
                         <a href="{{ route('home') }}" wire:navigate @click="nav = false"
@@ -69,6 +84,16 @@
                            class="portal-nav-link {{ request()->routeIs('journals.*') ? 'active' : '' }}">
                             <i class="fa-solid fa-book"></i>
                             <span>Jurnal Harian</span>
+                        </a>
+                        <a href="{{ route('tasks.index') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <span>Tugas</span>
+                        </a>
+                        <a href="{{ route('leaves.index') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                            <span>Izin</span>
                         </a>
                     @endif
                 </nav>
