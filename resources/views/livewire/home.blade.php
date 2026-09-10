@@ -43,6 +43,52 @@
         </div>
     </section>
 
+    {{-- ===== Presensi hari ini ===== --}}
+    @if ($intern && filled($intern->nip))
+        @php($libur = ! $schedule || $schedule->is_off_day)
+        @php($fmtTime = fn ($t) => $t ? \Illuminate\Support\Carbon::parse($t)->format('H:i') : '—')
+        @php($statusLabel = match ($todayAttendance?->status) {
+            'present' => 'Hadir',
+            'late' => 'Telat',
+            'absent' => 'Alfa',
+            default => null,
+        })
+
+        <section class="presensi-card" style="padding: 1.5rem; margin-top: 0.85rem;">
+            <span class="w-deco-1"></span>
+            <span class="w-deco-2"></span>
+            <span class="w-deco-3"></span>
+
+            <div style="position: relative; z-index: 1;">
+                <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; opacity:0.85;">
+                    <i class="fa-regular fa-clock" style="margin-right:0.4rem;"></i>Presensi Hari Ini
+                </p>
+                <div class="flex" style="gap:2.5rem; margin-top:1.1rem;">
+                    <div>
+                        <p style="font-size:0.75rem; opacity:0.8;">Jam Masuk</p>
+                        <p style="margin-top:0.2rem; font-size:1.5rem; font-weight:700;">{{ $fmtTime($todayAttendance?->check_in_time) }}</p>
+                    </div>
+                    <div>
+                        <p style="font-size:0.75rem; opacity:0.8;">Jam Keluar</p>
+                        <p style="margin-top:0.2rem; font-size:1.5rem; font-weight:700;">{{ $fmtTime($todayAttendance?->check_out_time) }}</p>
+                    </div>
+                </div>
+
+                <div style="margin-top:1rem;">
+                    @if ($statusLabel)
+                        <span class="p-badge">
+                            <i class="fa-solid fa-circle-check"></i> {{ $statusLabel }}
+                        </span>
+                    @elseif ($libur)
+                        <span class="p-badge"><i class="fa-solid fa-mug-hot"></i> Libur</span>
+                    @else
+                        <span class="p-badge"><i class="fa-regular fa-circle"></i> Belum presensi</span>
+                    @endif
+                </div>
+            </div>
+        </section>
+    @endif
+
     @if (! $intern)
         {{-- ===== No intern state ===== --}}
         <div class="surface-card flex items-center"

@@ -54,10 +54,25 @@
                 <nav class="portal-nav">
                     <span class="portal-nav-label">Menu</span>
                     @if ($portalUser->isPembimbing() || $portalUser->isAdmin())
+                        <a href="{{ route('home') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Beranda</span>
+                        </a>
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
-                           class="portal-nav-link {{ request()->routeIs('pembimbing.*') ? 'active' : '' }}">
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
                             <span>Kegiatan Intern</span>
+                        </a>
+                        <a href="{{ route('pembimbing.tasks') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.tasks') ? 'active' : '' }}">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <span>Tugas Intern</span>
+                        </a>
+                        <a href="{{ route('pembimbing.leaves') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                            <span>Izin Intern</span>
                         </a>
                     @else
                         <a href="{{ route('home') }}" wire:navigate @click="nav = false"
@@ -70,16 +85,34 @@
                             <i class="fa-solid fa-book"></i>
                             <span>Jurnal Harian</span>
                         </a>
+                        <a href="{{ route('tasks.index') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-clipboard-list"></i>
+                            <span>Tugas</span>
+                        </a>
+                        <a href="{{ route('leaves.index') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                            <span>Izin</span>
+                        </a>
                     @endif
                 </nav>
 
                 <div class="portal-sidebar-foot">
-                    <div class="portal-user">
-                        <span class="portal-user-avatar">{{ strtoupper(substr($portalUser->name, 0, 1)) }}</span>
-                        <span style="min-width:0; line-height:1.25;">
-                            <span style="display:block; font-weight:700; font-size:0.82rem; color:var(--text-heading); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->name }}</span>
-                            <span style="display:block; font-size:0.72rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->email }}</span>
-                        </span>
+                    <div class="portal-user flex items-center justify-between">
+                        <div class="flex items-center" style="gap:0.65rem; min-width:0;">
+                            <span class="portal-user-avatar">{{ strtoupper(substr($portalUser->name, 0, 1)) }}</span>
+                            <span style="min-width:0; line-height:1.25;">
+                                <span style="display:block; font-weight:700; font-size:0.82rem; color:var(--text-heading); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->name }}</span>
+                                <span style="display:block; font-size:0.72rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->email }}</span>
+                            </span>
+                        </div>
+                        @unless ($portalUser->isPembimbing() || $portalUser->isAdmin())
+                            <a href="{{ route('home') }}" wire:navigate @click="nav = false"
+                               class="portal-icon-btn" style="flex-shrink:0;" aria-label="Beranda">
+                                <i class="fa-solid fa-house"></i>
+                            </a>
+                        @endunless
                     </div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
