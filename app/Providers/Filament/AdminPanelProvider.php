@@ -3,7 +3,6 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\Authenticate;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -51,6 +50,11 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::STYLES_AFTER,
                 fn () => view('filament.portal-match'),
             )
+            ->renderHook(
+                PanelsRenderHook::FOOTER,
+                fn (): string => '<div style="text-align:center;padding:1rem;font-size:0.75rem;color:var(--gray-400);">&copy; '
+                    . date('Y') . ' M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.</div>',
+            )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
@@ -66,9 +70,6 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-            ])
-            ->plugins([
-                FilamentShieldPlugin::make(),
             ])
             ->authMiddleware([
                 // Subclass Filament\...\Authenticate: non-admin yang sudah login

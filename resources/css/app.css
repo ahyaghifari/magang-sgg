@@ -513,7 +513,10 @@ html.dark .file-box::file-selector-button:hover {
     text-transform: uppercase;
     color: var(--text-muted);
 }
-.portal-nav-link {
+.portal-nav-link,
+.portal-nav-link:link,
+.portal-nav-link:visited,
+.portal-nav-link:active {
     display: flex;
     align-items: center;
     gap: 0.8rem;
@@ -522,9 +525,12 @@ html.dark .file-box::file-selector-button:hover {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-body);
+    -webkit-tap-highlight-color: transparent;
     transition: background 0.15s ease, color 0.15s ease;
 }
-.portal-nav-link:hover {
+.portal-nav-link:hover,
+.portal-nav-link:focus,
+.portal-nav-link:focus-visible {
     background: var(--surface-alt);
     color: var(--text-heading);
 }

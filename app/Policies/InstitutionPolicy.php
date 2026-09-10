@@ -4,72 +4,77 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\Institution;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Setelah Filament Shield dilepas, akses penuh ke panel /admin hanya untuk super
+ * admin (email di config('access.super_admin_emails')). Semua kemampuan resource
+ * mengikuti aturan itu.
+ */
 class InstitutionPolicy
 {
     use HandlesAuthorization;
-    
-    public function viewAny(AuthUser $authUser): bool
+
+    public function viewAny(User $user): bool
     {
-        return $authUser->can('ViewAny:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function view(AuthUser $authUser, Institution $institution): bool
+    public function view(User $user, Institution $institution): bool
     {
-        return $authUser->can('View:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function create(AuthUser $authUser): bool
+    public function create(User $user): bool
     {
-        return $authUser->can('Create:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function update(AuthUser $authUser, Institution $institution): bool
+    public function update(User $user, Institution $institution): bool
     {
-        return $authUser->can('Update:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function delete(AuthUser $authUser, Institution $institution): bool
+    public function delete(User $user, Institution $institution): bool
     {
-        return $authUser->can('Delete:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function deleteAny(AuthUser $authUser): bool
+    public function deleteAny(User $user): bool
     {
-        return $authUser->can('DeleteAny:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function restore(AuthUser $authUser, Institution $institution): bool
+    public function restore(User $user, Institution $institution): bool
     {
-        return $authUser->can('Restore:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDelete(AuthUser $authUser, Institution $institution): bool
+    public function forceDelete(User $user, Institution $institution): bool
     {
-        return $authUser->can('ForceDelete:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDeleteAny(AuthUser $authUser): bool
+    public function forceDeleteAny(User $user): bool
     {
-        return $authUser->can('ForceDeleteAny:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function restoreAny(AuthUser $authUser): bool
+    public function restoreAny(User $user): bool
     {
-        return $authUser->can('RestoreAny:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function replicate(AuthUser $authUser, Institution $institution): bool
+    public function replicate(User $user, Institution $institution): bool
     {
-        return $authUser->can('Replicate:Institution');
+        return $user->isSuperAdmin();
     }
 
-    public function reorder(AuthUser $authUser): bool
+    public function reorder(User $user): bool
     {
-        return $authUser->can('Reorder:Institution');
+        return $user->isSuperAdmin();
     }
 
 }

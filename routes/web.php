@@ -7,6 +7,7 @@ use App\Livewire\Home;
 use App\Livewire\Journals\Index as JournalIndex;
 use App\Livewire\Leaves\Index as LeaveIndex;
 use App\Livewire\Pembimbing\Activities as PembimbingActivities;
+use App\Livewire\Pembimbing\Attendance as PembimbingAttendance;
 use App\Livewire\Pembimbing\Leaves as PembimbingLeaves;
 use App\Livewire\Pembimbing\Tasks as PembimbingTasks;
 use App\Livewire\Tasks\Index as TaskIndex;
@@ -28,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/jurnal', JournalIndex::class)->name('journals.index');
 
     Route::get('/presensi', AttendanceIndex::class)->name('attendance.index');
+    Route::get('/presensi-intern', PembimbingAttendance::class)->name('pembimbing.attendance');
 
     Route::get('/kegiatan', PembimbingActivities::class)->name('pembimbing.activities');
 

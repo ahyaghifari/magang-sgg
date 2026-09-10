@@ -4,72 +4,77 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\AttendanceRecord;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
+/**
+ * Setelah Filament Shield dilepas, akses penuh ke panel /admin hanya untuk super
+ * admin (email di config('access.super_admin_emails')). Semua kemampuan resource
+ * mengikuti aturan itu.
+ */
 class AttendanceRecordPolicy
 {
     use HandlesAuthorization;
-    
-    public function viewAny(AuthUser $authUser): bool
+
+    public function viewAny(User $user): bool
     {
-        return $authUser->can('ViewAny:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function view(AuthUser $authUser, AttendanceRecord $attendanceRecord): bool
+    public function view(User $user, AttendanceRecord $attendanceRecord): bool
     {
-        return $authUser->can('View:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function create(AuthUser $authUser): bool
+    public function create(User $user): bool
     {
-        return $authUser->can('Create:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function update(AuthUser $authUser, AttendanceRecord $attendanceRecord): bool
+    public function update(User $user, AttendanceRecord $attendanceRecord): bool
     {
-        return $authUser->can('Update:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function delete(AuthUser $authUser, AttendanceRecord $attendanceRecord): bool
+    public function delete(User $user, AttendanceRecord $attendanceRecord): bool
     {
-        return $authUser->can('Delete:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function deleteAny(AuthUser $authUser): bool
+    public function deleteAny(User $user): bool
     {
-        return $authUser->can('DeleteAny:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function restore(AuthUser $authUser, AttendanceRecord $attendanceRecord): bool
+    public function restore(User $user, AttendanceRecord $attendanceRecord): bool
     {
-        return $authUser->can('Restore:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDelete(AuthUser $authUser, AttendanceRecord $attendanceRecord): bool
+    public function forceDelete(User $user, AttendanceRecord $attendanceRecord): bool
     {
-        return $authUser->can('ForceDelete:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function forceDeleteAny(AuthUser $authUser): bool
+    public function forceDeleteAny(User $user): bool
     {
-        return $authUser->can('ForceDeleteAny:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function restoreAny(AuthUser $authUser): bool
+    public function restoreAny(User $user): bool
     {
-        return $authUser->can('RestoreAny:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function replicate(AuthUser $authUser, AttendanceRecord $attendanceRecord): bool
+    public function replicate(User $user, AttendanceRecord $attendanceRecord): bool
     {
-        return $authUser->can('Replicate:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
-    public function reorder(AuthUser $authUser): bool
+    public function reorder(User $user): bool
     {
-        return $authUser->can('Reorder:AttendanceRecord');
+        return $user->isSuperAdmin();
     }
 
 }

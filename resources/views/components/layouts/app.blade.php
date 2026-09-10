@@ -54,11 +54,6 @@
                 <nav class="portal-nav">
                     <span class="portal-nav-label">Menu</span>
                     @if ($portalUser->isPembimbing() || $portalUser->isAdmin())
-                        <a href="{{ route('home') }}" wire:navigate @click="nav = false"
-                           class="portal-nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
-                            <i class="fa-solid fa-house"></i>
-                            <span>Beranda</span>
-                        </a>
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
@@ -69,17 +64,17 @@
                             <i class="fa-solid fa-clipboard-list"></i>
                             <span>Tugas Intern</span>
                         </a>
+                        <a href="{{ route('pembimbing.attendance') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.attendance') ? 'active' : '' }}">
+                            <i class="fa-solid fa-fingerprint"></i>
+                            <span>Presensi Intern</span>
+                        </a>
                         <a href="{{ route('pembimbing.leaves') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
                             <i class="fa-solid fa-calendar-xmark"></i>
                             <span>Izin Intern</span>
                         </a>
                     @else
-                        <a href="{{ route('home') }}" wire:navigate @click="nav = false"
-                           class="portal-nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
-                            <i class="fa-solid fa-house"></i>
-                            <span>Beranda</span>
-                        </a>
                         <a href="{{ route('journals.index') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('journals.*') ? 'active' : '' }}">
                             <i class="fa-solid fa-book"></i>
@@ -142,10 +137,17 @@
                 <main class="portal-main">
                     {{ $slot }}
                 </main>
+
+                <footer style="text-align:center; padding:1.25rem 1rem 1.75rem; font-size:0.75rem; color:var(--text-faint);">
+                    &copy; {{ date('Y') }} M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.
+                </footer>
             </div>
         </div>
     @else
         {{ $slot }}
+        <footer style="text-align:center; padding:1.25rem 1rem 1.75rem; font-size:0.75rem; color:var(--text-faint);">
+            &copy; {{ date('Y') }} M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.
+        </footer>
     @endauth
 
     <script>

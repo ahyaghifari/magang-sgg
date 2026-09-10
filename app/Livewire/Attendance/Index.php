@@ -7,6 +7,7 @@ use App\Models\AttendanceRecord;
 use App\Models\CompanyFixedSchedule;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -23,11 +24,39 @@ class Index extends Component
     /** Semua jam mesin absensi memakai waktu WITA. */
     private const TZ = 'Asia/Makassar';
 
+    /** Bulan yang ditampilkan pada Riwayat & Ringkasan (format Y-m). Kosong = bulan berjalan. */
+    #[Url]
+    public string $month = '';
+
+    public function updatingMonth(): void
+    {
+        $this->resetPage();
+    }
+
+    public function resetMonth(): void
+    {
+        $this->month = '';
+        $this->resetPage();
+    }
+
     public function render()
     {
         $intern = auth()->user()->loadMissing('intern.unit')->intern;
         $now = Carbon::now(self::TZ);
         $todayStr = $now->toDateString();
+
+        // Bulan terpilih (default: bulan berjalan). Divalidasi longgar: kalau formatnya
+        // aneh, jatuh ke bulan berjalan.
+        try {
+            $selectedMonth = $this->month !== ''
+                ? Carbon::createFromFormat('Y-m', $this->month, self::TZ)->startOfMonth()
+                : $now->copy()->startOfMonth();
+        } catch (\Throwable) {
+            $selectedMonth = $now->copy()->startOfMonth();
+        }
+
+        $monthStart = $selectedMonth->copy()->startOfMonth()->toDateString();
+        $monthEnd = $selectedMonth->copy()->endOfMonth()->toDateString();
 
         $schedule = null;
         $today = null;
@@ -49,6 +78,7 @@ class Index extends Component
                 ->first();
 
             $records = AttendanceRecord::where('nip', $intern->nip)
+                ->whereBetween('date', [$monthStart, $monthEnd])
                 ->orderByDesc('date')
                 ->paginate(14);
 
@@ -58,10 +88,7 @@ class Index extends Component
                 ->get();
 
             $monthRows = AttendanceRecord::where('nip', $intern->nip)
-                ->whereBetween('date', [
-                    $now->copy()->startOfMonth()->toDateString(),
-                    $now->copy()->endOfMonth()->toDateString(),
-                ])
+                ->whereBetween('date', [$monthStart, $monthEnd])
                 ->get();
 
             $monthStats = [
@@ -74,6 +101,8 @@ class Index extends Component
         return view('livewire.attendance.index', [
             'intern' => $intern,
             'now' => $now,
+            'selectedMonth' => $selectedMonth,
+            'isCurrentMonth' => $selectedMonth->isSameMonth($now),
             'schedule' => $schedule,
             'today' => $today,
             'todayTaps' => $todayTaps,

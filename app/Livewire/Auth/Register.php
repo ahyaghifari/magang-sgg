@@ -12,7 +12,6 @@ use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use Spatie\Permission\Models\Role;
 
 #[Layout('components.layouts.app')]
 class Register extends Component
@@ -66,11 +65,6 @@ class Register extends Component
                 'role' => UserRole::Intern,
                 // approved_at sengaja dibiarkan null — menunggu persetujuan admin.
             ]);
-
-            // Beri peran "peserta" bila perannya sudah ada (dikelola lewat Shield).
-            if (Role::where('name', 'peserta')->where('guard_name', 'web')->exists()) {
-                $user->assignRole('peserta');
-            }
 
             $user->intern()->create([
                 'institusi_id' => $data['institusi_id'],

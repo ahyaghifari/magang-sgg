@@ -2,10 +2,13 @@
 
 namespace App\Livewire\Pembimbing;
 
+use App\Livewire\Concerns\HasCommentThread;
 use App\Models\Intern;
 use App\Models\Task;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,11 +20,17 @@ use Livewire\WithPagination;
 #[Layout('components.layouts.app')]
 class Tasks extends Component
 {
-    use WithPagination;
+    use HasCommentThread, WithPagination;
 
     public string $internId = '';
 
     public string $status = '';
+
+    #[Url]
+    public string $dateFrom = '';
+
+    #[Url]
+    public string $dateTo = '';
 
     // ===== Form pemberian tugas =====
     public bool $showForm = false;
@@ -43,9 +52,24 @@ class Tasks extends Component
 
     public function updated($property): void
     {
-        if (in_array($property, ['internId', 'status'], true)) {
+        if (in_array($property, ['internId', 'status', 'dateFrom', 'dateTo'], true)) {
             $this->resetPage();
         }
+    }
+
+    public function resetDateFilter(): void
+    {
+        $this->reset(['dateFrom', 'dateTo']);
+        $this->resetPage();
+    }
+
+    protected function resolveCommentable(string $type, int $id): ?Model
+    {
+        if ($type !== 'task' || ! $this->allowed()) {
+            return null;
+        }
+
+        return Task::whereKey($id)->first();
     }
 
     protected function allowed(): bool
@@ -139,9 +163,11 @@ class Tasks extends Component
     public function render()
     {
         $tasks = Task::query()
-            ->with(['intern.unit', 'assignedBy'])
+            ->with(['intern.unit', 'assignedBy', 'comments.author'])
             ->when($this->internId !== '', fn ($q) => $q->where('intern_id', $this->internId))
             ->when($this->status !== '', fn ($q) => $q->where('status', $this->status))
+            ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo !== '', fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
             ->orderByRaw("field(status, 'pending', 'in_progress', 'done')")
             ->orderByDesc('created_at')
             ->paginate(10);

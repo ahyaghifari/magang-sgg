@@ -60,6 +60,21 @@
                 <option value="done">Selesai</option>
             </select>
         </div>
+        <div>
+            <label for="f-from" class="form-label">Dari tanggal</label>
+            <input id="f-from" type="date" wire:model.live="dateFrom" class="form-input">
+        </div>
+        <div>
+            <label for="f-to" class="form-label">Sampai tanggal</label>
+            <input id="f-to" type="date" wire:model.live="dateTo" class="form-input">
+        </div>
+        @if ($dateFrom !== '' || $dateTo !== '')
+            <div style="display:flex; align-items:flex-end;">
+                <button type="button" wire:click="resetDateFilter" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                    <i class="fa-solid fa-xmark"></i> Reset tanggal
+                </button>
+            </div>
+        @endif
     </div>
 
     {{-- ===== Daftar tugas ===== --}}
@@ -135,6 +150,8 @@
                         <i class="fa-solid fa-trash"></i> Hapus
                     </button>
                 </div>
+
+                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task])
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">
