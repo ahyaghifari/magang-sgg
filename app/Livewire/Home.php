@@ -20,7 +20,8 @@ class Home extends Component
     public function mount()
     {
         // Pembimbing tidak punya beranda peserta — arahkan ke feed kegiatan intern.
-        if (auth()->user()->isPembimbing()) {
+        // Super admin dikecualikan: di portal dia diperlakukan seperti intern biasa.
+        if (auth()->user()->isPortalMentor()) {
             return $this->redirect(route('pembimbing.activities'), navigate: true);
         }
     }

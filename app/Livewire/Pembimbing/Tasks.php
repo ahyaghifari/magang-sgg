@@ -76,7 +76,7 @@ class Tasks extends Component
     {
         $user = auth()->user();
 
-        return $user && ($user->isPembimbing() || $user->isAdmin());
+        return $user && $user->isPortalMentor();
     }
 
     public function openForm(): void

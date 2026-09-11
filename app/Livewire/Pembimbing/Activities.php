@@ -73,7 +73,7 @@ class Activities extends Component
     {
         $user = auth()->user();
 
-        return $user && ($user->isPembimbing() || $user->isAdmin());
+        return $user && $user->isPortalMentor();
     }
 
     protected function canReview(): bool

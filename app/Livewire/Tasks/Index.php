@@ -42,7 +42,7 @@ class Index extends Component
         // Bukan intern → arahkan ke portal masing-masing, jangan lempar 403.
         $user = auth()->user();
 
-        if ($user->isPembimbing() || $user->isAdmin()) {
+        if ($user->isPortalMentor()) {
             return $this->redirect(route('pembimbing.tasks'), navigate: true);
         }
     }

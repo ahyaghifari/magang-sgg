@@ -58,7 +58,7 @@ trait HasCommentThread
             return;
         }
 
-        if ($comment->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
+        if ($comment->user_id !== auth()->id() && ! auth()->user()->isPortalMentor()) {
             return;
         }
 
