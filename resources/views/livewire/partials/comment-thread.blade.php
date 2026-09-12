@@ -25,7 +25,7 @@
                     <span class="text-sm" style="font-weight:700; color:var(--text-heading);">
                         {{ $comment->author?->name ?? 'Pengguna dihapus' }}
                     </span>
-                    @if ($comment->author && $comment->author->isAdmin())
+                    @if ($comment->author && $comment->author->hasAdminRole())
                         <span class="badge" style="background:#e0e7ff; color:#3730a3;">Admin</span>
                     @elseif ($comment->author && $comment->author->isPembimbing())
                         <span class="badge" style="background:#dcfce7; color:#15803d;">Pembimbing</span>
@@ -33,7 +33,7 @@
                     <span class="text-sm" style="color:var(--text-faint);">
                         {{ $comment->created_at?->diffForHumans() }}
                     </span>
-                    @if ($comment->user_id === $__authId || auth()->user()->isAdmin())
+                    @if ($comment->user_id === $__authId || auth()->user()->isPortalMentor())
                         <button type="button" wire:click="deleteComment({{ $comment->id }})"
                                 wire:confirm="Hapus komentar ini?"
                                 class="text-sm" style="color:var(--text-muted); text-decoration:underline; margin-left:auto;">

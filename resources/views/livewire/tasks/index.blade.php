@@ -1,5 +1,5 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; margin-bottom:1.4rem;">
+    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
         <div>
             <h1 class="portal-title">Tugas</h1>
             <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
@@ -7,10 +7,20 @@
             </p>
         </div>
         @if ($intern)
-            <button type="button" wire:click="$dispatch('open-task-modal')" class="btn-primary" style="flex-shrink:0;">
-                <i class="fa-solid fa-plus"></i>
-                <span>Catat Tugas</span>
-            </button>
+            <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap;">
+                <button type="button"
+                        x-data="{ state: (typeof Notification !== 'undefined' && Notification.permission === 'granted') ? 'on' : 'off' }"
+                        x-show="state !== 'on'"
+                        x-on:click="enablePushNotifications().then(ok => { state = ok ? 'on' : 'off' })"
+                        class="btn-ghost">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Aktifkan Notifikasi</span>
+                </button>
+                <button type="button" wire:click="$dispatch('open-task-modal')" class="btn-primary">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Catat Tugas</span>
+                </button>
+            </div>
         @endif
     </div>
 
@@ -63,7 +73,7 @@
 
         <div class="flex" style="flex-direction:column; gap:0.85rem;">
             @forelse ($tasks as $task)
-                <article class="surface-card" style="padding:1.1rem 1.15rem;">
+                <article class="surface-card task-entry task-entry-{{ $task->status }}" style="padding:1.1rem 1.15rem;">
                     <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
                         <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
                             <span style="font-weight:700; color:var(--text-heading);">{{ $task->title }}</span>
@@ -72,7 +82,7 @@
                             @elseif ($task->status === 'in_progress')
                                 <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
                             @else
-                                <span class="badge badge-neutral"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
+                                <span class="badge" style="background:#ffedd5; color:#c2410c;"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
                             @endif
                             <span class="badge badge-neutral">
                                 @if ($task->source === 'web')

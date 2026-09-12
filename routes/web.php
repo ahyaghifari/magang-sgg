@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PushSubscriptionController;
 use App\Livewire\Attendance\Index as AttendanceIndex;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
@@ -38,6 +39,21 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/izin', LeaveIndex::class)->name('leaves.index');
     Route::get('/izin-intern', PembimbingLeaves::class)->name('pembimbing.leaves');
+
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+
+    // Toggle "lihat sebagai intern" untuk admin/pembimbing yang juga punya data Intern
+    // sendiri — dipakai lewat tombol di sidebar portal (components/layouts/app.blade.php).
+    Route::post('/portal/lihat-sebagai-intern', function () {
+        abort_unless(Auth::user()->canToggleIntern(), 403);
+
+        request()->session()->put(
+            'portal_view_as_intern',
+            ! request()->session()->get('portal_view_as_intern', false),
+        );
+
+        return redirect()->route('home');
+    })->name('portal.toggle-intern-view');
 
     Route::post('/logout', function () {
         $wasSso = request()->session()->get('sso');

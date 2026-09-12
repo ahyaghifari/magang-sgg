@@ -1,5 +1,5 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; margin-bottom:1.4rem;">
+    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
         <div>
             <h1 class="portal-title">Izin</h1>
             <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
@@ -34,7 +34,7 @@
     @else
         <div class="flex" style="flex-direction:column; gap:0.85rem;">
             @forelse ($leaves as $leave)
-                <article class="surface-card" style="padding:1.1rem 1.15rem;">
+                <article class="surface-card leave-entry leave-entry-{{ $leave->status }}" style="padding:1.1rem 1.15rem;">
                     <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
                         <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
                             <span class="badge badge-neutral" style="text-transform:capitalize;">

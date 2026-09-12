@@ -43,7 +43,7 @@ class Leaves extends Component
     {
         $user = auth()->user();
 
-        return $user && ($user->isPembimbing() || $user->isAdmin());
+        return $user && $user->isPortalMentor();
     }
 
     public function approve(int $leaveId): void

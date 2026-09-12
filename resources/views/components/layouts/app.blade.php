@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
 
     <title>{{ $title ?? 'Magang Syifa Global Group' }}</title>
 
@@ -53,7 +54,7 @@
 
                 <nav class="portal-nav">
                     <span class="portal-nav-label">Menu</span>
-                    @if ($portalUser->isPembimbing() || $portalUser->isAdmin())
+                    @if ($portalUser->isPortalMentor())
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
@@ -102,13 +103,29 @@
                                 <span style="display:block; font-size:0.72rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->email }}</span>
                             </span>
                         </div>
-                        @unless ($portalUser->isPembimbing() || $portalUser->isAdmin())
+                        @unless ($portalUser->isPortalMentor())
                             <a href="{{ route('home') }}" wire:navigate @click="nav = false"
                                class="portal-icon-btn" style="flex-shrink:0;" aria-label="Beranda">
                                 <i class="fa-solid fa-house"></i>
                             </a>
                         @endunless
                     </div>
+                    @if ($portalUser->canToggleIntern())
+                        <form method="POST" action="{{ route('portal.toggle-intern-view') }}">
+                            @csrf
+                            @if ($portalUser->isViewingAsIntern())
+                                <button type="submit" class="portal-logout">
+                                    <i class="fa-solid fa-user-shield"></i>
+                                    <span>Kembali ke Admin</span>
+                                </button>
+                            @else
+                                <button type="submit" class="portal-logout">
+                                    <i class="fa-solid fa-user-graduate"></i>
+                                    <span>Lihat sebagai Intern</span>
+                                </button>
+                            @endif
+                        </form>
+                    @endif
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="portal-logout">

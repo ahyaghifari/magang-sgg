@@ -5,6 +5,7 @@ namespace App\Livewire\Pembimbing;
 use App\Livewire\Concerns\HasCommentThread;
 use App\Models\Intern;
 use App\Models\Task;
+use App\Notifications\TaskAssigned;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -76,7 +77,7 @@ class Tasks extends Component
     {
         $user = auth()->user();
 
-        return $user && ($user->isPembimbing() || $user->isAdmin());
+        return $user && $user->isPortalMentor();
     }
 
     public function openForm(): void
@@ -119,7 +120,7 @@ class Tasks extends Component
 
         $this->validate();
 
-        Task::create([
+        $task = Task::create([
             'intern_id' => $this->formInternId,
             'assigned_by' => auth()->id(),
             'title' => $this->title,
@@ -128,6 +129,8 @@ class Tasks extends Component
             'status' => 'pending',
             'due_date' => $this->dueDate !== '' ? $this->dueDate : null,
         ]);
+
+        $task->intern->user?->notify(new TaskAssigned($task));
 
         $this->closeForm();
         $this->dispatch('task-assigned');

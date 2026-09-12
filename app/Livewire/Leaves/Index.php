@@ -20,7 +20,7 @@ class Index extends Component
     {
         $user = auth()->user();
 
-        if ($user->isPembimbing() || $user->isAdmin()) {
+        if ($user->isPortalMentor()) {
             return $this->redirect(route('pembimbing.leaves'), navigate: true);
         }
     }

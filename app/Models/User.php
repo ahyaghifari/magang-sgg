@@ -12,11 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasPushSubscriptions, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -111,9 +112,14 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Apakah user ini admin — dari enum `role` maupun super admin (email).
+     * Tidak berlaku selama user sedang "melihat sebagai intern" (lihat isViewingAsIntern()).
      */
     public function isAdmin(): bool
     {
+        if ($this->isViewingAsIntern()) {
+            return false;
+        }
+
         return $this->role === UserRole::Admin || $this->isSuperAdmin();
     }
 
@@ -134,12 +140,62 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Apakah `role` user ini Admin. Cek MURNI `role` — TIDAK melibatkan super admin
+     * (email). Untuk kebutuhan panel /admin pakai isSuperAdmin() / isAdmin().
+     */
+    public function hasAdminRole(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
+
+    /**
+     * Apakah user ini memakai sisi "pembimbing" di portal (menu & halaman intern).
+     *
+     * Super admin TIDAK PERNAH dianggap pembimbing di portal — kuasa super admin
+     * hanya berlaku di panel /admin. Di portal, super admin diperlakukan persis
+     * seperti intern biasa, apa pun nilai `role`-nya. Selain super admin, sisi
+     * pembimbing ditentukan murni dari `role` (pembimbing atau admin).
+     */
+    public function isPortalMentor(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isViewingAsIntern()) {
+            return false;
+        }
+
+        return $this->isPembimbing() || $this->hasAdminRole();
+    }
+
+    /**
      * Hanya super admin (email terdaftar di config) yang boleh masuk panel Filament
      * (/admin). Peserta/pembimbing/admin biasa diarahkan ke portal oleh
      * App\Http\Middleware\Authenticate, bukan dilempar 403.
+     *
+     * Selama "melihat sebagai intern" akses panel ditutup juga untuk super admin —
+     * mode intern berarti benar-benar tanpa akses admin, termasuk lewat URL /admin langsung.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() && ! $this->isViewingAsIntern();
+    }
+
+    /**
+     * Boleh tidaknya user ini pakai toggle "lihat sebagai intern": harus punya sisi
+     * admin/pembimbing di portal DAN punya data Intern sendiri (supaya beranda,
+     * jurnal, dst tetap terisi wajar saat berperan sebagai intern).
+     */
+    public function canToggleIntern(): bool
+    {
+        return ($this->hasAdminRole() || $this->isPembimbing() || $this->isSuperAdmin())
+            && $this->intern()->exists();
+    }
+
+    /**
+     * Mode sementara (per sesi login) di mana user admin/pembimbing memilih tampil
+     * sebagai peserta magang biasa — tidak ada menu maupun akses admin selama aktif.
+     * Diset lewat toggle di sidebar portal, tersimpan di session, hilang saat logout.
+     */
+    public function isViewingAsIntern(): bool
+    {
+        return $this->canToggleIntern() && session('portal_view_as_intern') === true;
     }
 }

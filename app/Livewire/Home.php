@@ -20,7 +20,8 @@ class Home extends Component
     public function mount()
     {
         // Pembimbing tidak punya beranda peserta — arahkan ke feed kegiatan intern.
-        if (auth()->user()->isPembimbing()) {
+        // Super admin dikecualikan: di portal dia diperlakukan seperti intern biasa.
+        if (auth()->user()->isPortalMentor()) {
             return $this->redirect(route('pembimbing.activities'), navigate: true);
         }
     }
@@ -57,12 +58,18 @@ class Home extends Component
                 ->first();
         }
 
+        $pendingTasks = $intern
+            ? $intern->tasks()->where('status', '!=', 'done')->latest()->take(3)->get()
+            : collect();
+
         return view('livewire.home', [
             'user' => $user,
             'intern' => $intern,
             'now' => $now,
             'schedule' => $schedule,
             'todayAttendance' => $todayAttendance,
+            'pendingTasks' => $pendingTasks,
+            'pendingTasksCount' => $intern ? $intern->tasks()->where('status', '!=', 'done')->count() : 0,
             'recentJournals' => $journalsQuery
                 ? (clone $journalsQuery)->latest('date')->take(5)->get()
                 : collect(),
