@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Sinkron presensi dari DB HRIS (no-op selama koneksi 'hris' belum dikonfigurasi).
-Schedule::command('attendance:sync')->everyTenSeconds()->withoutOverlapping();
+Schedule::command('attendance:sync')->everyThirtySeconds()->withoutOverlapping();
