@@ -58,12 +58,18 @@ class Home extends Component
                 ->first();
         }
 
+        $pendingTasks = $intern
+            ? $intern->tasks()->where('status', '!=', 'done')->latest()->take(3)->get()
+            : collect();
+
         return view('livewire.home', [
             'user' => $user,
             'intern' => $intern,
             'now' => $now,
             'schedule' => $schedule,
             'todayAttendance' => $todayAttendance,
+            'pendingTasks' => $pendingTasks,
+            'pendingTasksCount' => $intern ? $intern->tasks()->where('status', '!=', 'done')->count() : 0,
             'recentJournals' => $journalsQuery
                 ? (clone $journalsQuery)->latest('date')->take(5)->get()
                 : collect(),

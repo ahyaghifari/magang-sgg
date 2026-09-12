@@ -1,5 +1,5 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; margin-bottom:1.4rem;">
+    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
         <div>
             <h1 class="portal-title">Jurnal Harian</h1>
             <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
@@ -51,10 +51,10 @@
 
         <div class="flex" style="flex-direction:column; gap:0.85rem;">
             @forelse ($journals as $journal)
-                <article class="surface-card" style="padding:1.1rem 1.15rem;">
+                <article class="surface-card j-entry" style="padding:1.1rem 1.15rem;">
                     <div class="flex items-center justify-between" style="gap:0.75rem;">
-                        <p style="font-size:0.8rem; font-weight:700; color:var(--brand);">
-                            <i class="fa-regular fa-calendar-check" style="margin-right:0.4rem;"></i>
+                        <p class="flex items-center" style="gap:0.55rem; font-size:0.8rem; font-weight:700; color:var(--text-heading);">
+                            <span class="j-date-badge"><i class="fa-regular fa-calendar-check"></i></span>
                             {{ \Illuminate\Support\Carbon::parse($journal->date)->translatedFormat('l, d F Y') }}
                         </p>
                         @if ($journal->attachments->isNotEmpty())
@@ -93,18 +93,15 @@
                     @endif
 
                     {{-- Penilaian pembimbing (rata-rata) --}}
-                    <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap; margin-top:0.85rem; padding-top:0.7rem; border-top:1px solid var(--border-soft);">
-                        <span class="text-sm" style="font-weight:600; color:var(--text-muted);">Penilaian pembimbing:</span>
+                    <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap; margin-top:0.85rem; padding-top:0.7rem; border-top:1px solid var(--border-soft);">
                         @if ($journal->reviews_count)
-                            <span style="color:#f59e0b; letter-spacing:1px;">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    <i class="fa-{{ $i <= round($journal->reviews_avg_rating) ? 'solid' : 'regular' }} fa-star"></i>
-                                @endfor
+                            <span class="j-rating-pill">
+                                <i class="fa-solid fa-star"></i>
+                                {{ number_format($journal->reviews_avg_rating, 1) }}
                             </span>
-                            <span class="text-sm" style="font-weight:700; color:var(--text-heading);">{{ number_format($journal->reviews_avg_rating, 1) }}</span>
-                            <span class="text-sm" style="color:var(--text-muted);">({{ $journal->reviews_count }} pembimbing)</span>
+                            <span class="text-sm" style="color:var(--text-muted);">dari {{ $journal->reviews_count }} pembimbing</span>
                         @else
-                            <span class="text-sm" style="color:var(--text-faint);">Belum dinilai</span>
+                            <span class="badge badge-neutral"><i class="fa-regular fa-star"></i> Belum dinilai</span>
                         @endif
                     </div>
 

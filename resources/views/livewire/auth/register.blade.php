@@ -1,4 +1,7 @@
-<div class="flex min-h-full items-center justify-center" style="padding: 3rem 1rem;">
+<div class="auth-page">
+    <x-auth-hero />
+
+    <div class="auth-form-panel">
     <div style="width: 100%; max-width: 400px;">
 
         {{-- theme toggle --}}
@@ -8,10 +11,9 @@
             </button>
         </div>
 
-        {{-- brand --}}
+        {{-- brand (mobile only — desktop sudah ada di auth-hero) --}}
         <div class="flex items-center justify-center" style="flex-direction: column; margin-bottom: 1.75rem;">
-            <x-app-logo class="auth-logo" />
-            <h1 style="margin-top: 1.1rem; font-size: 1.2rem; font-weight: 700; text-align: center;">Daftar Akun</h1>
+            <h1 style="font-size: 1.2rem; font-weight: 700; text-align: center;">Daftar Akun</h1>
             <p class="text-sm" style="color: var(--text-muted); margin-top: 0.25rem; text-align: center;">Akun baru akan aktif setelah disetujui admin</p>
         </div>
 
@@ -134,5 +136,6 @@
             Sudah punya akun?
             <a href="{{ route('login') }}" wire:navigate style="font-weight:600; color:var(--brand);">Masuk di sini</a>
         </p>
+    </div>
     </div>
 </div>

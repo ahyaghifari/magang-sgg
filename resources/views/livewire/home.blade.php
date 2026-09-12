@@ -43,6 +43,32 @@
         </div>
     </section>
 
+    {{-- ===== Tugas belum dikerjakan ===== --}}
+    @if ($pendingTasksCount > 0)
+        <a href="{{ route('tasks.index') }}" wire:navigate class="task-card" style="padding:1.15rem 1.25rem; margin-top:0.85rem;">
+            <span class="t-deco-1"></span>
+            <span class="t-deco-2"></span>
+
+            <div class="flex items-center" style="gap:0.9rem; position:relative; z-index:1;">
+                <span class="t-icon-badge">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                </span>
+
+                <div style="min-width:0; flex:1;">
+                    <div class="flex items-center" style="gap:0.5rem;">
+                        <p style="font-weight:700; font-size:0.95rem;">Tugas belum selesai</p>
+                        <span class="t-count-badge">{{ $pendingTasksCount }}</span>
+                    </div>
+                    <p style="margin-top:0.2rem; font-size:0.8rem; opacity:0.9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ $pendingTasks->pluck('title')->join(', ') }}
+                    </p>
+                </div>
+
+                <i class="fa-solid fa-chevron-right" style="opacity:0.8; flex-shrink:0;"></i>
+            </div>
+        </a>
+    @endif
+
     {{-- ===== Presensi hari ini ===== --}}
     @if ($intern && filled($intern->nip))
         @php($libur = ! $schedule || $schedule->is_off_day)
@@ -101,22 +127,24 @@
         </div>
     @else
         {{-- ===== Intern info ===== --}}
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0.85rem; margin-top:1.25rem;">
-            <div class="surface-card" style="padding:0.95rem 1.05rem;">
-                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">
-                    <i class="fa-solid fa-building" style="margin-right:0.35rem;"></i>Institusi
-                </p>
-                <p class="text-sm" style="margin-top:0.35rem; font-weight:600; color:var(--text-heading);">
-                    {{ $intern->institusi->name ?? '—' }}
-                </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.85rem; margin-top:1.25rem;">
+            <div class="surface-card flex items-center" style="padding:0.95rem 1.05rem; gap:0.8rem;">
+                <span class="info-icon-badge navy"><i class="fa-solid fa-building"></i></span>
+                <div style="min-width:0;">
+                    <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Institusi</p>
+                    <p class="text-sm" style="margin-top:0.2rem; font-weight:700; color:var(--text-heading); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ $intern->institusi->name ?? '—' }}
+                    </p>
+                </div>
             </div>
-            <div class="surface-card" style="padding:0.95rem 1.05rem;">
-                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">
-                    <i class="fa-solid fa-id-badge" style="margin-right:0.35rem;"></i>Nama Peserta
-                </p>
-                <p class="text-sm" style="margin-top:0.35rem; font-weight:600; color:var(--text-heading);">
-                    {{ $intern->nama }}
-                </p>
+            <div class="surface-card flex items-center" style="padding:0.95rem 1.05rem; gap:0.8rem;">
+                <span class="info-icon-badge green"><i class="fa-solid fa-id-badge"></i></span>
+                <div style="min-width:0;">
+                    <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Nama Peserta</p>
+                    <p class="text-sm" style="margin-top:0.2rem; font-weight:700; color:var(--text-heading); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        {{ $intern->nama }}
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -124,18 +152,21 @@
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-top:0.85rem;">
             <div class="stat-card" style="padding:1.1rem 1.15rem;">
                 <span class="stat-card-deco"></span>
-                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Total Jurnal</p>
-                <p style="margin-top:0.3rem; font-size:1.65rem; font-weight:700; color:var(--brand);">{{ $totalJournals }}</p>
+                <span class="stat-card-icon navy"><i class="fa-solid fa-book"></i></span>
+                <p style="margin-top:0.7rem; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Total Jurnal</p>
+                <p style="margin-top:0.2rem; font-size:1.75rem; font-weight:800; color:var(--brand);">{{ $totalJournals }}</p>
             </div>
             <div class="stat-card" style="padding:1.1rem 1.15rem;">
                 <span class="stat-card-deco"></span>
-                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Bulan Ini</p>
-                <p style="margin-top:0.3rem; font-size:1.65rem; font-weight:700; color:var(--brand);">{{ $journalsThisMonth }}</p>
+                <span class="stat-card-icon green"><i class="fa-solid fa-calendar-days"></i></span>
+                <p style="margin-top:0.7rem; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Bulan Ini</p>
+                <p style="margin-top:0.2rem; font-size:1.75rem; font-weight:800; color:var(--brand-success);">{{ $journalsThisMonth }}</p>
             </div>
             <div class="stat-card" style="padding:1.1rem 1.15rem;">
                 <span class="stat-card-deco"></span>
-                <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Jurnal Terakhir</p>
-                <p class="text-sm" style="margin-top:0.55rem; font-weight:600; color:var(--text-heading);">
+                <span class="stat-card-icon magenta"><i class="fa-regular fa-clock"></i></span>
+                <p style="margin-top:0.7rem; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Jurnal Terakhir</p>
+                <p class="text-sm" style="margin-top:0.3rem; font-weight:700; color:var(--text-heading);">
                     {{ $lastJournalDate ? \Illuminate\Support\Carbon::parse($lastJournalDate)->translatedFormat('d M Y') : 'Belum ada' }}
                 </p>
             </div>

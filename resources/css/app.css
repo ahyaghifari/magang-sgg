@@ -237,6 +237,68 @@ html.dark .form-input:focus {
     border-radius: 9999px;
 }
 
+/* Card tugas belum selesai (Home, intern) — gradien amber, domain "tugas". */
+.task-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #9a3412 0%, #ea580c 55%, #fb923c 100%);
+    color: #fff;
+    text-decoration: none;
+    display: block;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.task-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -8px rgba(154, 52, 18, 0.45);
+}
+.task-card .t-deco-1,
+.task-card .t-deco-2 {
+    position: absolute;
+    border-radius: 9999px;
+    pointer-events: none;
+}
+.task-card .t-deco-1 {
+    width: 180px;
+    height: 180px;
+    top: -80px;
+    right: -50px;
+    background: rgba(255, 255, 255, 0.08);
+}
+.task-card .t-deco-2 {
+    width: 110px;
+    height: 110px;
+    bottom: -60px;
+    left: 40%;
+    background: rgba(255, 255, 255, 0.06);
+}
+.task-card .t-icon-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+.task-card .t-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding: 0 0.45rem;
+    border-radius: 9999px;
+    background: #fff;
+    color: #9a3412;
+    font-weight: 800;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
 /* plain white stat card */
 .stat-card {
     position: relative;
@@ -258,6 +320,49 @@ html.dark .form-input:focus {
 }
 html.dark .stat-card-deco {
     background: rgba(110, 168, 224, 0.08);
+}
+.stat-card-icon {
+    position: relative;
+    z-index: 1;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+}
+.stat-card-icon.navy {
+    background: rgba(4, 44, 108, 0.1);
+    color: var(--brand);
+}
+.stat-card-icon.green {
+    background: rgba(28, 138, 77, 0.12);
+    color: var(--brand-success);
+}
+.stat-card-icon.magenta {
+    background: rgba(199, 75, 160, 0.12);
+    color: var(--brand-accent);
+}
+
+/* small colored icon badge used in compact info rows (Home intern info cards) */
+.info-icon-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.info-icon-badge.navy {
+    background: rgba(4, 44, 108, 0.1);
+    color: var(--brand);
+}
+.info-icon-badge.green {
+    background: rgba(28, 138, 77, 0.12);
+    color: var(--brand-success);
 }
 
 /* generic themed surface card */
@@ -281,6 +386,146 @@ html.dark .stat-card-deco {
     margin: 0 auto;
 }
 /* Dark mode: tanpa "chip" putih, logo tampil polos di atas kartu. */
+
+/* ---- Auth split layout (Login/Register) ------------------------------------ */
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+@media (min-width: 1024px) {
+    .auth-page {
+        flex-direction: row;
+    }
+}
+
+.auth-hero {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(160deg, #042c6c 0%, #0b3e8f 45%, #1c8a4d 130%);
+    color: #fff;
+    padding: 2.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+@media (min-width: 1024px) {
+    .auth-hero {
+        flex: 0 0 44%;
+        padding: 3rem 3rem;
+    }
+}
+.auth-hero-deco-1,
+.auth-hero-deco-2,
+.auth-hero-deco-3 {
+    position: absolute;
+    border-radius: 9999px;
+    pointer-events: none;
+}
+.auth-hero-deco-1 {
+    width: 320px;
+    height: 320px;
+    top: -140px;
+    right: -90px;
+    background: rgba(255, 255, 255, 0.08);
+}
+.auth-hero-deco-2 {
+    width: 200px;
+    height: 200px;
+    bottom: -110px;
+    left: -60px;
+    background: rgba(199, 75, 160, 0.18);
+}
+.auth-hero-deco-3 {
+    width: 120px;
+    height: 120px;
+    bottom: 20%;
+    right: 12%;
+    background: rgba(255, 255, 255, 0.06);
+}
+.auth-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 420px;
+}
+.auth-hero-logo {
+    width: 130px;
+    max-width: 40%;
+    height: auto;
+    aspect-ratio: 519 / 304;
+    object-fit: contain;
+    background: #fff;
+    padding: 0.6rem 0.85rem;
+    border-radius: 14px;
+}
+.auth-hero-content .auth-hero-title {
+    margin-top: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+}
+.auth-hero-subtitle {
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+}
+.auth-feature-list {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    list-style: none;
+    padding: 0;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.92);
+}
+.auth-feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+.auth-feature-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Mobile: hero jadi banner ringkas, sembunyikan tagline panjang & feature list. */
+@media (max-width: 1023.98px) {
+    .auth-hero {
+        padding: 1.75rem 1.5rem;
+    }
+    .auth-hero-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .auth-hero-content .auth-hero-title {
+        font-size: 1.15rem;
+        margin-top: 1rem;
+    }
+    .auth-hero-subtitle,
+    .auth-feature-list {
+        display: none;
+    }
+}
+
+.auth-form-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.25rem;
+}
 
 .auth-card {
     position: relative;
@@ -367,6 +612,66 @@ html.dark .badge-neutral {
 }
 .j-row:last-child {
     border-bottom: 0;
+}
+
+/* Jurnal entry card (Jurnal Harian list) — aksen navy kiri + badge tanggal. */
+.j-entry {
+    border-left: 3px solid var(--brand);
+}
+.j-date-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(4, 44, 108, 0.1);
+    color: var(--brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+.j-rating-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+}
+html.dark .j-rating-pill {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+}
+
+/* Task card (Tugas) — aksen kiri sesuai status. */
+.task-entry {
+    border-left: 3px solid var(--border);
+}
+.task-entry-pending {
+    border-left-color: #ea580c;
+}
+.task-entry-in_progress {
+    border-left-color: #d97706;
+}
+.task-entry-done {
+    border-left-color: var(--brand-success);
+}
+
+/* Leave request card (Izin) — aksen kiri sesuai status. */
+.leave-entry {
+    border-left: 3px solid var(--border);
+}
+.leave-entry-pending {
+    border-left-color: #d97706;
+}
+.leave-entry-approved {
+    border-left-color: var(--brand-success);
+}
+.leave-entry-rejected {
+    border-left-color: #dc2626;
 }
 
 /* line clamp helper (avoid depending on Tailwind's line-clamp utility) */

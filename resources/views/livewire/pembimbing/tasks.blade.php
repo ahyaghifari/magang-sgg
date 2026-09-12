@@ -1,5 +1,5 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; margin-bottom:1.4rem;">
+    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
         <div>
             <h1 class="portal-title">Tugas Intern</h1>
             <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
