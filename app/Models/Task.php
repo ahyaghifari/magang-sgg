@@ -25,10 +25,11 @@ class Task extends Model
         'due_date',
         'completed_at',
         'completion_photo_path',
+        'rejection_reason',
     ];
 
     protected $casts = [
-        'due_date' => 'date',
+        'due_date' => 'datetime',
         'completed_at' => 'datetime',
     ];
 
@@ -51,5 +52,10 @@ class Task extends Model
     public function isDone(): bool
     {
         return $this->status === 'done';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
     }
 }

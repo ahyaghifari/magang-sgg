@@ -44,6 +44,15 @@ class Tasks extends Component
 
     public string $dueDate = '';
 
+    // ===== Form edit tugas =====
+    public ?int $editingTaskId = null;
+
+    public string $editTitle = '';
+
+    public string $editDescription = '';
+
+    public string $editDueDate = '';
+
     public function mount()
     {
         if (! $this->allowed()) {
@@ -134,6 +143,63 @@ class Tasks extends Component
 
         $this->closeForm();
         $this->dispatch('task-assigned');
+    }
+
+    /** Buka modal edit tugas — dipakai a.l. saat intern menolak tugas dan pembimbing mau menyesuaikannya. */
+    public function openEditTask(int $taskId): void
+    {
+        if (! $this->allowed()) {
+            return;
+        }
+
+        $task = Task::whereKey($taskId)->first();
+
+        if (! $task) {
+            return;
+        }
+
+        $this->editingTaskId = $taskId;
+        $this->editTitle = $task->title;
+        $this->editDescription = $task->description ?? '';
+        $this->editDueDate = $task->due_date?->format('Y-m-d\TH:i') ?? '';
+        $this->resetValidation();
+    }
+
+    public function closeEditTask(): void
+    {
+        $this->reset(['editingTaskId', 'editTitle', 'editDescription', 'editDueDate']);
+        $this->resetValidation();
+    }
+
+    public function confirmEditTask(): void
+    {
+        if (! $this->allowed() || ! $this->editingTaskId) {
+            return;
+        }
+
+        $task = Task::whereKey($this->editingTaskId)->first();
+
+        if (! $task) {
+            return;
+        }
+
+        $this->validate([
+            'editTitle' => ['required', 'string', 'min:3', 'max:255'],
+            'editDescription' => ['nullable', 'string', 'max:2000'],
+            'editDueDate' => ['nullable', 'date'],
+        ], [], [
+            'editTitle' => 'judul tugas',
+            'editDescription' => 'keterangan',
+            'editDueDate' => 'tenggat',
+        ]);
+
+        $task->update([
+            'title' => $this->editTitle,
+            'description' => $this->editDescription !== '' ? $this->editDescription : null,
+            'due_date' => $this->editDueDate !== '' ? $this->editDueDate : null,
+        ]);
+
+        $this->closeEditTask();
     }
 
     public function markDone(int $taskId): void

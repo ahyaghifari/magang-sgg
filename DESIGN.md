@@ -1,6 +1,6 @@
 # Design System — Portal Karyawan (Syifa Global Group)
 
-Reference doc for the employee-facing portal UI (`resources/views/livewire/**`, `resources/views/components/**`, `resources/css/app.css`). Keep this updated when new shared patterns are introduced. Does **not** cover the Filament admin panel (`/admin`), which uses Filament's own theming.
+Reference doc for the employee-facing portal UI (`resources/views/livewire/**`, `resources/views/components/**`, `resources/css/app.css`). Keep this updated when new shared patterns are introduced. Does **not** cover the Filament admin panel (`/admin`) resource/form/table PHP code, which uses Filament's own component API — but the admin panel's *visual skin* (colors, sidebar, topbar, cards, tables, buttons) is now unified with this design system; see the last paragraph of the Color palette section below.
 
 ## Stack
 
@@ -34,7 +34,16 @@ The three brand colors come straight from the **Syifa Global Group logo** (navy 
 | Slate neutrals | `#1e293b` (headings), `#334155`/`#374151` (body/values), `#64748b` (secondary/meta — **minimum** for any readable text), `#94a3b8` (decorative icons / native placeholders **only**, see contrast rule below) |
 | Page background | `#f1f5f9` (`body.site`) |
 
-The Filament admin panel (`/admin`) is now **visually unified with the portal** (2026-09-08, was a violet "differentiator"): `->colors(['primary' => Color::hex('#042c6c'), 'success' => '#1c8a4d'])` + brand logo + favicon. The sign-in page in particular is matched to the portal login via a small injected stylesheet, `resources/views/filament/portal-match.blade.php`, registered on `PanelsRenderHook::STYLES_AFTER` — it gives `.fi-simple-main` the `.auth-card` treatment (20px radius, border, shadow, navy→green→magenta `::before` strip), sets the page bg to `#f1f5f9`, rounds inputs/buttons to 12px, and forces the sign-in button to solid navy `#042c6c` + white text (Filament v5's light-mode default for that action is a pale fill + dark text). Font is already shared — `->font('Plus Jakarta Sans')` loads it via bunny.net. No Filament theme build involved; colors + hook render at runtime.
+The Filament admin panel (`/admin`) is now **visually unified with the portal** (2026-09-08, was a violet "differentiator"; broadened 2026-09-14 from login-only to the whole panel): `->colors(['primary' => Color::hex('#042c6c'), 'success' => '#1c8a4d'])` + brand logo + favicon. The whole panel's shape is matched to the portal via one injected stylesheet, `resources/views/filament/portal-match.blade.php`, registered on `PanelsRenderHook::STYLES_AFTER` — it overrides Filament v5's own public CSS classes (`vendor/filament/*/resources/css`) at equal selector specificity, winning purely on cascade order (loaded after Filament's stylesheet link), so no Filament theme build is involved — colors + this one hook render at runtime, changes are visible on refresh with no `npm run build` step. Sections:
+1. **Sign in** — `.fi-simple-main` gets the `.auth-card` treatment (20px radius, border, shadow, navy→green→magenta `::before` strip), page bg `#f1f5f9`, inputs/buttons rounded to 12px, sign-in button forced to solid navy `#042c6c` + white text (Filament v5's light-mode default for that action is a pale fill + dark text).
+2. **Sidebar** (`.fi-sidebar`) — same navy→green→magenta gradient strip pinned to the top edge as `.portal-sidebar::before`, a `border-block-end` under the header/logo, and the active nav item (`.fi-sidebar-item.fi-active > .fi-sidebar-item-btn`) recolored to the solid navy pill `#0b1739` (`#1d4ed8` in dark mode) + white text/icon, matching `.portal-nav-link.active`. Default Filament active state (pale `bg-gray-100` + navy text) is overridden, not removed.
+3. **Topbar** (`.fi-topbar`) — slate border + a hairline shadow instead of Filament's default `ring`.
+4. **Cards/sections/widgets** (`.fi-section`, excludes `.fi-section-not-contained`/`.fi-aside` grid variants) — 20px radius + a real `border` (replacing Filament's `ring` box-shadow) + soft shadow, same recipe as `.fi-simple-main`. Covers every Filament form/infolist section and widget card panel-wide since they all share this one class.
+5. **Tables** (`.fi-ta-ctn`) — same 20px card treatment as sections; `.fi-ta-header-cell` recolored to uppercase muted slate (`#64748b` / `#94a3b8` dark) on a faint tint background, echoing `.data-table thead th`; row hover tinted navy (`rgba(4,44,108,.04)`) instead of plain gray.
+6. **Buttons/dropdowns** (`.fi-btn`, `.fi-icon-btn`, `.fi-dropdown-panel`) — radius bumped from Filament's default 8px to 10-12px to read closer to the portal's `.btn-primary`/`.form-input` (12px). Button *colors* are untouched here — those come entirely from the `->colors()` palette in `AdminPanelProvider`.
+7. **Modals** (`.fi-modal-window`, scoped to `:not(.fi-modal-slide-over):not(.fi-width-screen)` so slide-overs keep their edge-docked square corners) — 20px radius to match cards.
+
+Font is already shared — `->font('Plus Jakarta Sans')` loads it via bunny.net.
 
 ### Contrast rule (do not regress this)
 

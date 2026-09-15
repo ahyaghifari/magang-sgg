@@ -76,8 +76,8 @@
 
                         {{-- Tenggat --}}
                         <div style="margin-bottom:1.25rem;">
-                            <label for="t-due" class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
-                            <input id="t-due" type="date" wire:model="dueDate" class="form-input" style="max-width:14rem;">
+                            <label for="t-due" class="form-label">Tenggat (tanggal &amp; waktu) <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
+                            <input id="t-due" type="datetime-local" wire:model="dueDate" class="form-input" style="max-width:16rem;">
                             @error('dueDate')
                                 <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                             @enderror

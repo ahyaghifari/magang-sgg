@@ -22,11 +22,11 @@
 
 /* ---- Theme tokens ---------------------------------------------------------- */
 :root {
-    --surface: #ffffff;
-    --surface-alt: #f8fafc;
-    --surface-page: #f1f5f9;
-    --border: #e2e8f0;
-    --border-soft: #eef2f7;
+    --surface: #eef4fc;
+    --surface-alt: #e2ecfa;
+    --surface-page: #dbe7f8;
+    --border: #c7d9f0;
+    --border-soft: #d7e4f5;
     --text-heading: #1e293b;
     --text-body: #334155;
     --text-muted: #64748b; /* minimum for readable text */

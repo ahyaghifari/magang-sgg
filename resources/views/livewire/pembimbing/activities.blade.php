@@ -113,11 +113,11 @@
                                     {{ \Illuminate\Support\Str::limit($att->label ?: 'Dokumen PDF', 40) }}
                                 </a>
                             @else
-                                <a href="{{ url('storage/' . $att->path) }}" target="_blank" rel="noopener"
-                                   style="display:block; border-radius:10px; overflow:hidden; border:1px solid var(--border);">
+                                <button type="button" onclick="openLightbox(@js(url('storage/' . $att->path)), @js($att->label))"
+                                        style="display:block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
                                     <img src="{{ url('storage/' . $att->path) }}" alt="{{ $att->label }}"
                                          style="width:84px; height:84px; object-fit:cover; display:block;">
-                                </a>
+                                </button>
                             @endif
                         @endforeach
                     </div>

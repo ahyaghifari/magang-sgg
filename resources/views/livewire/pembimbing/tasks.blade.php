@@ -6,10 +6,20 @@
                 Beri tugas langsung lewat web, atau pantau tugas yang dicatat sendiri oleh peserta magang
             </p>
         </div>
-        <button type="button" wire:click="openForm" class="btn-primary" style="flex-shrink:0;">
-            <i class="fa-solid fa-plus"></i>
-            <span>Beri Tugas</span>
-        </button>
+        <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap;">
+            <button type="button"
+                    x-data="{ state: 'off' }"
+                    x-show="state !== 'on'"
+                    x-on:click="enablePushNotifications().then(ok => { state = ok ? 'on' : 'off' })"
+                    class="btn-ghost">
+                <i class="fa-solid fa-bell"></i>
+                <span>Aktifkan Notifikasi</span>
+            </button>
+            <button type="button" wire:click="openForm" class="btn-primary" style="flex-shrink:0;">
+                <i class="fa-solid fa-plus"></i>
+                <span>Beri Tugas</span>
+            </button>
+        </div>
     </div>
 
     <div x-data="{ show: false }" x-cloak
@@ -58,6 +68,7 @@
                 <option value="pending">Belum dikerjakan</option>
                 <option value="in_progress">Dikerjakan</option>
                 <option value="done">Selesai</option>
+                <option value="rejected">Ditolak</option>
             </select>
         </div>
         <div>
@@ -91,6 +102,8 @@
                             <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Selesai</span>
                         @elseif ($task->status === 'in_progress')
                             <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
+                        @elseif ($task->status === 'rejected')
+                            <span class="badge" style="background:#fee2e2; color:#b91c1c;"><i class="fa-solid fa-circle-xmark"></i> Ditolak intern</span>
                         @else
                             <span class="badge badge-neutral"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
                         @endif
@@ -104,7 +117,8 @@
                     </div>
                     @if ($task->due_date)
                         <span class="text-sm" style="color:var(--text-muted); flex-shrink:0;">
-                            <i class="fa-regular fa-calendar"></i> Tenggat {{ \Illuminate\Support\Carbon::parse($task->due_date)->translatedFormat('d F Y') }}
+                            <i class="fa-regular fa-calendar"></i> Tenggat {{ $task->due_date->translatedFormat('d F Y') }}
+                            <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $task->due_date->format('H:i') }}
                         </span>
                     @endif
                 </div>
@@ -112,6 +126,12 @@
                 <p style="margin-top:0.55rem; font-weight:600; color:var(--text-body);">{{ $task->title }}</p>
                 @if ($task->description)
                     <p class="text-sm" style="margin-top:0.3rem; color:var(--text-body); white-space:pre-line;">{{ $task->description }}</p>
+                @endif
+
+                @if ($task->status === 'rejected' && $task->rejection_reason)
+                    <p class="text-sm" style="margin-top:0.5rem; padding:0.6rem 0.75rem; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c;">
+                        <i class="fa-solid fa-circle-exclamation"></i> Alasan intern menolak: {{ $task->rejection_reason }}
+                    </p>
                 @endif
 
                 @if ($task->assignedBy)
@@ -123,11 +143,11 @@
 
                 @if ($task->status === 'done' && $task->completion_photo_path)
                     <div style="margin-top:0.75rem;">
-                        <a href="{{ url('storage/' . $task->completion_photo_path) }}" target="_blank" rel="noopener"
-                           style="display:inline-block; border-radius:10px; overflow:hidden; border:1px solid var(--border);">
+                        <button type="button" onclick="openLightbox(@js(url('storage/' . $task->completion_photo_path)), 'Bukti selesai')"
+                                style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
                             <img src="{{ url('storage/' . $task->completion_photo_path) }}" alt="Bukti selesai"
                                  style="width:84px; height:84px; object-fit:cover; display:block;">
-                        </a>
+                        </button>
                         <p class="text-sm" style="margin-top:0.3rem; color:var(--text-faint);">
                             <i class="fa-regular fa-image"></i> Foto bukti pengerjaan dari intern
                         </p>
@@ -135,7 +155,7 @@
                 @endif
 
                 <div class="flex items-center" style="gap:0.5rem; margin-top:0.9rem; padding-top:0.7rem; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
-                    @if ($task->status !== 'done')
+                    @if ($task->status !== 'done' && $task->status !== 'rejected')
                         <button type="button" wire:click="markDone({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
                             <i class="fa-solid fa-check"></i> Tandai Selesai
                         </button>
@@ -144,6 +164,9 @@
                             <i class="fa-solid fa-rotate-left"></i> Buka lagi
                         </button>
                     @endif
+                    <button type="button" wire:click="openEditTask({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
+                        <i class="fa-solid fa-pen"></i> Edit
+                    </button>
                     <button type="button" wire:click="delete({{ $task->id }})"
                             wire:confirm="Hapus tugas ini?"
                             class="btn-ghost" style="padding:0.4rem 0.75rem; color:#dc2626;">
@@ -239,8 +262,8 @@
                     </div>
 
                     <div style="margin-bottom:1.25rem;">
-                        <label for="a-due" class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
-                        <input id="a-due" type="date" wire:model="dueDate" class="form-input" style="max-width:14rem;">
+                        <label for="a-due" class="form-label">Tenggat (tanggal &amp; waktu) <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
+                        <input id="a-due" type="datetime-local" wire:model="dueDate" class="form-input" style="max-width:16rem;">
                         @error('dueDate')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror
@@ -256,6 +279,76 @@
                             </span>
                         </button>
                         <button type="button" wire:click="closeForm" class="btn-ghost">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===== Modal: edit tugas ===== --}}
+    <div
+        x-data
+        x-show="$wire.editingTaskId !== null"
+        x-cloak
+        x-transition.opacity
+        @keydown.escape.window="$wire.editingTaskId !== null && $wire.closeEditTask()"
+        x-effect="document.body.style.overflow = $wire.editingTaskId !== null ? 'hidden' : ''"
+        style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
+    >
+        <div
+            @click.outside="$wire.closeEditTask()"
+            x-show="$wire.editingTaskId !== null"
+            x-transition
+            class="surface-card"
+            style="width:100%; max-width:32rem; margin:auto; padding:0;"
+        >
+            <div class="flex items-center justify-between"
+                 style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft);">
+                <div>
+                    <h2 style="font-size:1.05rem; font-weight:700;">Edit Tugas</h2>
+                    <p class="text-sm" style="color:var(--text-muted); margin-top:0.1rem;">Sesuaikan tugas ini — mis. kalau intern belum bisa mengerjakan, ubah tenggat atau detailnya</p>
+                </div>
+                <button type="button" wire:click="closeEditTask" class="theme-toggle" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div style="padding:1.35rem;">
+                <form wire:submit="confirmEditTask">
+                    <div style="margin-bottom:1.1rem;">
+                        <label for="e-title" class="form-label">Judul Tugas</label>
+                        <input id="e-title" type="text" wire:model="editTitle" class="form-input">
+                        @error('editTitle')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div style="margin-bottom:1.1rem;">
+                        <label for="e-description" class="form-label">Keterangan <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
+                        <textarea id="e-description" wire:model="editDescription" rows="4" class="form-input"></textarea>
+                        @error('editDescription')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div style="margin-bottom:1.25rem;">
+                        <label for="e-due" class="form-label">Tenggat (tanggal &amp; waktu) <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
+                        <input id="e-due" type="datetime-local" wire:model="editDueDate" class="form-input" style="max-width:16rem;">
+                        @error('editDueDate')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex items-center" style="gap:0.65rem;">
+                        <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="confirmEditTask">
+                            <span wire:loading.remove wire:target="confirmEditTask">
+                                <i class="fa-solid fa-floppy-disk" style="margin-right:0.4rem;"></i>Simpan Perubahan
+                            </span>
+                            <span wire:loading wire:target="confirmEditTask">
+                                <i class="fa-solid fa-spinner fa-spin" style="margin-right:0.4rem;"></i>Menyimpan...
+                            </span>
+                        </button>
+                        <button type="button" wire:click="closeEditTask" class="btn-ghost">Batal</button>
                     </div>
                 </form>
             </div>

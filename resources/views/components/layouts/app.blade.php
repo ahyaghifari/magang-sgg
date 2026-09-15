@@ -39,7 +39,9 @@
 </head>
 <body class="site h-full">
     @auth
-        @php($portalUser = auth()->user())
+        @php
+            $portalUser = auth()->user();
+        @endphp
         <div class="portal-shell" x-data="{ nav: false }" @keydown.escape.window="nav = false">
 
             {{-- Mobile drawer backdrop --}}
@@ -55,6 +57,13 @@
                 <nav class="portal-nav">
                     <span class="portal-nav-label">Menu</span>
                     @if ($portalUser->isPortalMentor())
+                        @php
+                            // Jaring pengaman selain push notification (yang bisa gagal — izin ditolak,
+                            // iOS butuh install ke Home Screen dulu, dsb): badge ini selalu akurat karena
+                            // baca langsung dari database, tidak tergantung status subscribe notifikasi.
+                            $pendingLeavesCount = \App\Models\LeaveRequest::where('status', 'pending')->count();
+                            $rejectedTasksCount = \App\Models\Task::where('status', 'rejected')->count();
+                        @endphp
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
@@ -64,6 +73,9 @@
                            class="portal-nav-link {{ request()->routeIs('pembimbing.tasks') ? 'active' : '' }}">
                             <i class="fa-solid fa-clipboard-list"></i>
                             <span>Tugas Intern</span>
+                            @if ($rejectedTasksCount > 0)
+                                <span style="margin-left:auto; background:#dc2626; color:#fff; font-size:0.68rem; font-weight:700; line-height:1; padding:0.25rem 0.45rem; border-radius:999px; flex-shrink:0;">{{ $rejectedTasksCount }}</span>
+                            @endif
                         </a>
                         <a href="{{ route('pembimbing.attendance') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.attendance') ? 'active' : '' }}">
@@ -74,6 +86,9 @@
                            class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
                             <i class="fa-solid fa-calendar-xmark"></i>
                             <span>Izin Intern</span>
+                            @if ($pendingLeavesCount > 0)
+                                <span style="margin-left:auto; background:#dc2626; color:#fff; font-size:0.68rem; font-weight:700; line-height:1; padding:0.25rem 0.45rem; border-radius:999px; flex-shrink:0;">{{ $pendingLeavesCount }}</span>
+                            @endif
                         </a>
                     @else
                         <a href="{{ route('journals.index') }}" wire:navigate @click="nav = false"
@@ -159,6 +174,8 @@
                     &copy; {{ date('Y') }} M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.
                 </footer>
             </div>
+
+            <x-photo-lightbox />
         </div>
     @else
         {{ $slot }}
@@ -166,6 +183,14 @@
             &copy; {{ date('Y') }} M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.
         </footer>
     @endauth
+
+    <script>
+        // Buka foto di lightbox global (bukan tab baru) — dipakai di semua tempat yang menampilkan
+        // thumbnail foto (jurnal, bukti tugas). Lihat resources/views/components/photo-lightbox.blade.php.
+        window.openLightbox = function (src, alt) {
+            window.dispatchEvent(new CustomEvent('open-lightbox', { detail: { src: src, alt: alt || '' } }));
+        };
+    </script>
 
     <script>
         // Kompres foto di sisi klien sebelum diunggah (dipakai form isi jurnal).

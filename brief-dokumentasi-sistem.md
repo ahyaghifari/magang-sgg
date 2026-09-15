@@ -1,6 +1,6 @@
 # Brief: Dokumentasi Sistem — Portal Magang Syifa Global Group
 
-> File ini adalah **brief/bahan mentah**, bukan dokumentasi final. Tujuannya: ditempel ke ChatGPT (atau alat lain) sebagai konteks untuk *menyusun* dokumentasi sistem yang rapi (bisa dalam bentuk .docx, laporan, atau wiki). Semua fakta di sini diambil langsung dari kode per 2026-09-12.
+> File ini adalah **brief/bahan mentah**, bukan dokumentasi final. Tujuannya: ditempel ke ChatGPT (atau alat lain) sebagai konteks untuk *menyusun* dokumentasi sistem yang rapi (bisa dalam bentuk .docx, laporan, atau wiki). Semua fakta di sini diambil langsung dari kode per 2026-09-15.
 
 ---
 
@@ -18,7 +18,7 @@ Susun **Dokumentasi Sistem** dari aplikasi berikut untuk keperluan internal (lap
 8. Integrasi Eksternal
 9. Penutup / Rencana Pengembangan Selanjutnya (opsional)
 
-Buat naratif, bukan sekadar list — jelaskan **mengapa** fitur itu ada dan **bagaimana alurnya** dari sudut pandang pengguna. Boleh tambahkan diagram alur sederhana (teks/flowchart) untuk proses approval dan alur presensi.
+Buat naratif, bukan sekadar list — jelaskan **mengapa** fitur itu ada dan **bagaimana alurnya** dari sudut pandang pengguna. Boleh tambahkan diagram alur sederhana (teks/flowchart) untuk   proses approval dan alur presensi.
 
 ---
 
@@ -38,13 +38,13 @@ Buat naratif, bukan sekadar list — jelaskan **mengapa** fitur itu ada dan **ba
 |---|---|
 | Backend framework | Laravel (PHP) |
 | Frontend interaktif | Livewire (full-page components, tanpa SPA/JS framework terpisah) |
-| Admin panel | Filament v5 (untuk pengelolaan data master oleh admin) |
+| Admin panel | Filament v5 (untuk pengelolaan data master oleh admin), dengan skin visual kustom (lihat 5.9) dan widget dashboard statistik kustom |
 | Styling | Tailwind CSS v4 + CSS custom (banyak inline style secara sengaja karena isu build/JIT), Font Awesome 6, dark mode manual |
 | Build tool | Vite |
 | Autentikasi | Login lokal (email/password) + opsional SSO via **Keycloak** (OpenID Connect, Laravel Socialite) |
 | Database | Relasional (migrations Laravel standar); ada **koneksi database kedua read-only** ke sistem HRIS eksternal untuk data absensi mentah |
 | PWA | Ada elemen PWA (bottom nav mobile, app bar) — portal didesain mobile-first juga |
-
+        
 ---
 
 ## 4. Peran Pengguna (Role)
@@ -103,7 +103,12 @@ Beberapa admin/pembimbing juga bisa punya data `Intern` sendiri (misal Direktur 
 - Admin mengelola Company & Unit lewat Filament; penempatan unit intern dilakukan manual oleh admin (tidak ada auto-assign saat registrasi).
 
 ### 5.9 Admin Panel (Filament, `/admin`)
-Kelola data master: Users, Interns, Institutions, Companies, Units, Journals, Attendance Records, Access Scan Logs, Company Fixed Schedules. Sudah dibrandingkan visual senada dengan portal (warna navy/hijau dari logo Syifa Global Group), bukan lagi tema default Filament.
+Kelola data master: Users, Interns, Institutions, Companies, Units, Journals, Attendance Records, Access Scan Logs, Company Fixed Schedules.
+
+- **Desain visual** — seluruh panel (bukan cuma warna) sudah disamakan dengan identitas portal: sidebar dengan strip aksen navy→hijau→magenta dan menu aktif berbentuk pill solid navy, topbar, kartu/form/tabel dengan sudut membulat besar (20px) senada kartu portal, header tabel bergaya kapital abu-abu, hover baris tabel bertint navy tipis, serta tombol & modal dengan sudut lebih membulat. Diimplementasikan lewat satu file CSS yang disuntik ke panel (bukan tema Filament terpisah), jadi perubahan tampil langsung tanpa proses build.
+- **Dashboard** — di atas widget bawaan Filament, ditambahkan widget kustom:
+  - Kartu statistik: jumlah Peserta Magang, Jurnal Hari Ini, Presensi Hari Ini (rincian hadir/telat/absen), dan Menunggu Persetujuan (akun baru yang belum di-approve) — tiap kartu bisa diklik untuk lompat ke data terkait.
+  - Grafik garis: jumlah jurnal masuk 7 hari terakhir.
 
 ---
 
@@ -140,7 +145,7 @@ Pembimbing memantau, menilai (rating jurnal), approve/reject izin
 
 ## 8. Catatan Tambahan (opsional dimasukkan ke dokumentasi atau cukup jadi catatan internal)
 
-- Desain UI mengikuti design system internal (`DESIGN.md`) — palet warna navy/hijau/magenta dari logo perusahaan, dark mode penuh di portal (tidak berlaku di panel admin), navigasi mobile pakai bottom nav bukan hamburger drawer, setiap halaman wajib punya layout mobile & desktop terpisah.
+- Desain UI mengikuti design system internal (`DESIGN.md`) — palet warna navy/hijau/magenta dari logo perusahaan, dark mode penuh di portal (tidak berlaku di panel admin), navigasi mobile pakai bottom nav bukan hamburger drawer, setiap halaman wajib punya layout mobile & desktop terpisah. Sejak 2026-09-15 identitas visual ini juga diperluas ke seluruh panel admin Filament (sidebar/topbar/tabel/tombol/modal), tidak lagi cuma warna dan halaman login saja — lihat 5.9.
 - Sistem role sedang masa transisi dari Filament Shield roles ke enum `UserRole` sendiri — keduanya berjalan paralel sementara ini (kode lama dicek dua-duanya).
 - `APP_NAME` di `.env` belum diubah dari default "Laravel" — perlu disesuaikan jika ingin nama resmi muncul di title/email, ini murni konfigurasi bukan fitur.
 

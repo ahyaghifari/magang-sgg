@@ -2,6 +2,9 @@
 
 namespace App\Livewire\Leaves;
 
+use App\Enums\UserRole;
+use App\Models\User;
+use App\Notifications\LeaveRequestSubmitted;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\On;
@@ -94,7 +97,7 @@ class Create extends Component
 
         $path = $this->attachment ? $this->attachment->store('leave-attachments', 'public') : null;
 
-        $intern->leaveRequests()->create([
+        $leaveRequest = $intern->leaveRequests()->create([
             'type' => $this->type,
             'start_date' => $this->startDate,
             'end_date' => $this->endDate,
@@ -102,6 +105,12 @@ class Create extends Component
             'attachment_path' => $path,
             'status' => 'pending',
         ]);
+
+        // Pengajuan izin tidak terikat ke satu pembimbing tertentu — semua pembimbing
+        // bisa meninjau di /izin-intern, jadi semua diberi tahu.
+        User::where('role', UserRole::Pembimbing)
+            ->get()
+            ->each->notify(new LeaveRequestSubmitted($leaveRequest));
 
         $this->close();
         $this->dispatch('leave-saved');
