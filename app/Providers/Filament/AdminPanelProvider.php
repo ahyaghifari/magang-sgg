@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('Magang Syifa Global Group · Admin')
+            ->brandName('Internship Syifa Global Group · Admin')
             ->brandLogo(fn (): string => \App\Support\Brand::logoUrl())
             ->brandLogoHeight('2.75rem')
             ->favicon(fn (): string => \App\Support\Brand::logoUrl())

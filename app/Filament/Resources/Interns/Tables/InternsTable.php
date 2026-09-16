@@ -18,6 +18,11 @@ class InternsTable
                     ->label('Nama')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('nama_panggilan')
+                    ->label('Nama Panggilan')
+                    ->searchable()
+                    ->toggleable()
+                    ->placeholder('—'),
                 TextColumn::make('nip')
                     ->label('NIP')
                     ->searchable()

@@ -796,11 +796,13 @@ html.dark .file-box::file-selector-button:hover {
     object-fit: contain;
 }
 .portal-brand-tagline {
-    font-size: 0.7rem;
+    font-size: 0.62rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text-muted);
+    text-align: center;
+    line-height: 1.35;
 }
 /* Dark mode: tanpa "chip" putih, logo tampil polos. */
 

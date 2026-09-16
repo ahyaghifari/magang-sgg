@@ -26,7 +26,7 @@
             </p>
             @unless ($intern)
                 <p style="margin-top:0.25rem; font-size:0.875rem; opacity:0.85;">
-                    Selamat datang di portal Magang Syifa Global Group
+                    Selamat datang di portal Internship Syifa Global Group
                 </p>
             @endunless
 

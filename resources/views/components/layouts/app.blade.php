@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="vapid-public-key" content="{{ config('webpush.vapid.public_key') }}">
 
-    <title>{{ $title ?? 'Magang Syifa Global Group' }}</title>
+    <title>{{ $title ?? 'Internship Syifa Global Group' }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,7 +42,30 @@
         @php
             $portalUser = auth()->user();
         @endphp
-        <div class="portal-shell" x-data="{ nav: false }" @keydown.escape.window="nav = false">
+        <div class="portal-shell"
+             x-data="{
+                nav: false,
+                touchStartX: 0,
+                touchStartY: 0,
+                onTouchStart(e) {
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                },
+                onTouchEnd(e) {
+                    let dx = e.changedTouches[0].clientX - this.touchStartX;
+                    let dy = e.changedTouches[0].clientY - this.touchStartY;
+                    if (Math.abs(dx) < 60 || Math.abs(dy) > 60) return;
+                    if (dx > 0 && this.touchStartX < 40 && ! this.nav) {
+                        this.nav = true;
+                    } else if (dx < 0 && this.nav) {
+                        this.nav = false;
+                    }
+                },
+             }"
+             @keydown.escape.window="nav = false"
+             x-on:touchstart.passive="onTouchStart($event)"
+             x-on:touchend="onTouchEnd($event)"
+        >
 
             {{-- Mobile drawer backdrop --}}
             <div class="portal-scrim" x-show="nav" x-cloak x-transition.opacity @click="nav = false"></div>
@@ -51,7 +74,7 @@
             <aside class="portal-sidebar" :class="{ 'is-open': nav }">
                 <a href="{{ route('home') }}" wire:navigate class="portal-brand">
                     <x-app-logo class="portal-brand-logo" />
-                    <span class="portal-brand-tagline">Syifa Global Group Magang</span>
+                    <span class="portal-brand-tagline">Syifa Global Group Internship</span>
                 </a>
 
                 <nav class="portal-nav">
@@ -91,6 +114,11 @@
                             @endif
                         </a>
                     @else
+                        <a href="{{ route('home') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Beranda</span>
+                        </a>
                         <a href="{{ route('journals.index') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('journals.*') ? 'active' : '' }}">
                             <i class="fa-solid fa-book"></i>
@@ -118,12 +146,6 @@
                                 <span style="display:block; font-size:0.72rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->email }}</span>
                             </span>
                         </div>
-                        @unless ($portalUser->isPortalMentor())
-                            <a href="{{ route('home') }}" wire:navigate @click="nav = false"
-                               class="portal-icon-btn" style="flex-shrink:0;" aria-label="Beranda">
-                                <i class="fa-solid fa-house"></i>
-                            </a>
-                        @endunless
                     </div>
                     @if ($portalUser->canToggleIntern())
                         <form method="POST" action="{{ route('portal.toggle-intern-view') }}">

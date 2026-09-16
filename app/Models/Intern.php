@@ -18,6 +18,7 @@ class Intern extends Model
         'institusi_id',
         'unit_id',
         'nama',
+        'nama_panggilan',
         'nip',
         'jenis_kelamin',
     ];
