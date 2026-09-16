@@ -7,7 +7,7 @@
     <div class="auth-hero-content">
         <x-app-logo class="auth-hero-logo" />
 
-        <h2 class="auth-hero-title">Magang Syifa Global Group</h2>
+        <h2 class="auth-hero-title">Internship Syifa Global Group</h2>
         <p class="auth-hero-subtitle">
 
         <ul class="auth-feature-list">

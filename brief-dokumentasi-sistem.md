@@ -1,154 +1,157 @@
-# Brief: Dokumentasi Sistem — Portal Magang Syifa Global Group
+# Brief: Dokumentasi Sistem — Portal Internship Syifa Global Group
 
-> File ini adalah **brief/bahan mentah**, bukan dokumentasi final. Tujuannya: ditempel ke ChatGPT (atau alat lain) sebagai konteks untuk *menyusun* dokumentasi sistem yang rapi (bisa dalam bentuk .docx, laporan, atau wiki). Semua fakta di sini diambil langsung dari kode per 2026-09-12.
+> File ini adalah **bahan presentasi/dokumentasi**, ditulis dengan bahasa yang mudah dipahami orang non-teknis (atasan, pembimbing, atau audiens presentasi). Istilah teknis (nama file, class, route) sengaja diminimalkan di badan teks — kalau perlu contoh lebih rinci untuk keperluan teknis, bisa ditambahkan sebagai lampiran terpisah. Semua fakta di sini diambil langsung dari kode per 2026-09-16.
 
 ---
 
-## 1. Instruksi untuk ChatGPT
+## 1. Instruksi untuk ChatGPT (kalau file ini ditempel ke alat lain untuk dirapikan)
 
-Susun **Dokumentasi Sistem** dari aplikasi berikut untuk keperluan internal (laporan ke atasan / dokumentasi magang). Gunakan bahasa Indonesia formal. Struktur dokumen yang diinginkan:
+Susun **Dokumentasi Sistem** dari aplikasi berikut untuk keperluan presentasi/laporan internal. Gunakan bahasa Indonesia formal namun tetap mengalir dan mudah dipahami — hindari istilah teknis kecuali benar-benar perlu. Struktur dokumen yang diinginkan:
 
 1. Pendahuluan (latar belakang, tujuan sistem)
 2. Gambaran Umum Sistem
-3. Arsitektur & Teknologi
-4. Peran Pengguna (Role) & Hak Akses
-5. Modul & Fitur (per modul, jelaskan alur kerja/business process-nya)
-6. Struktur Data / Entitas Utama (boleh dalam bentuk tabel deskriptif, tidak perlu skema SQL mentah)
-7. Alur Autentikasi (login lokal, SSO, approval akun)
+3. Arsitektur & Teknologi (ringkas, tidak perlu detail implementasi)
+4. Peran Pengguna & Hak Akses
+5. Modul & Fitur (per modul, jelaskan alur kerja dari sudut pandang pengguna)
+6. Struktur Data / Entitas Utama (tabel deskriptif, bukan skema SQL)
+7. Alur Autentikasi (login, SSO, persetujuan akun)
 8. Integrasi Eksternal
 9. Penutup / Rencana Pengembangan Selanjutnya (opsional)
 
-Buat naratif, bukan sekadar list — jelaskan **mengapa** fitur itu ada dan **bagaimana alurnya** dari sudut pandang pengguna. Boleh tambahkan diagram alur sederhana (teks/flowchart) untuk proses approval dan alur presensi.
+Buat naratif, bukan sekadar daftar — jelaskan **mengapa** fitur itu ada dan **bagaimana alurnya** dari sudut pandang pengguna. Boleh tambahkan diagram alur sederhana untuk proses persetujuan akun dan alur presensi.
 
 ---
 
 ## 2. Gambaran Umum
 
-**Nama sistem:** Portal Magang — Syifa Global Group (nama kerja internal; `.env` masih default "Laravel", belum di-branding di level `APP_NAME`, tapi UI sudah full branding Syifa Global Group).
+**Nama sistem:** Portal Internship Syifa Global Group. Nama ini yang tampil di judul halaman, halaman login, dan sidebar aplikasi. (Secara teknis nama kerja/kode proyek di belakang layar masih memakai kata "magang" — hal ini tidak terlihat oleh pengguna dan tidak berpengaruh ke tampilan.)
 
-**Tujuan:** Portal digital untuk mengelola siklus peserta magang (intern) di perusahaan — mulai dari pendaftaran, penempatan unit kerja, jurnal harian, presensi, pengajuan izin, penugasan, hingga penilaian oleh pembimbing.
+**Tujuan sistem:** Portal digital untuk mengelola seluruh siklus peserta magang (intern) di perusahaan — mulai dari pendaftaran, penempatan ke unit kerja, pencatatan jurnal harian, presensi, pengajuan izin, pemberian tugas, sampai penilaian oleh pembimbing. Tujuannya menggantikan proses yang tadinya manual/tersebar (WhatsApp, kertas, spreadsheet) dengan satu sistem terpusat.
 
-**Jenis aplikasi:** Web app internal (bukan publik), diakses oleh pegawai/pembimbing dan peserta magang.
+**Jenis aplikasi:** Aplikasi web internal perusahaan (bukan untuk publik), dipakai oleh dua kelompok pengguna utama: pembimbing/pengawas magang dan peserta magang itu sendiri, plus admin yang mengelola data di belakang layar.
 
 ---
 
 ## 3. Teknologi
 
-| Layer | Teknologi |
-|---|---|
-| Backend framework | Laravel (PHP) |
-| Frontend interaktif | Livewire (full-page components, tanpa SPA/JS framework terpisah) |
-| Admin panel | Filament v5 (untuk pengelolaan data master oleh admin) |
-| Styling | Tailwind CSS v4 + CSS custom (banyak inline style secara sengaja karena isu build/JIT), Font Awesome 6, dark mode manual |
-| Build tool | Vite |
-| Autentikasi | Login lokal (email/password) + opsional SSO via **Keycloak** (OpenID Connect, Laravel Socialite) |
-| Database | Relasional (migrations Laravel standar); ada **koneksi database kedua read-only** ke sistem HRIS eksternal untuk data absensi mentah |
-| PWA | Ada elemen PWA (bottom nav mobile, app bar) — portal didesain mobile-first juga |
+Ringkasan teknologi yang dipakai, untuk memberi gambaran skala dan kematangan sistem:
+
+| Bagian | Teknologi | Keterangan singkat |
+|---|---|---|
+| Backend | Laravel (PHP) | Framework backend yang umum dipakai untuk aplikasi web perusahaan, dikenal stabil dan banyak dukungan komunitas. |
+| Tampilan interaktif | Livewire | Halaman terasa interaktif (tanpa reload penuh) tanpa perlu membangun aplikasi front-end terpisah. |
+| Panel admin | Filament | Panel khusus untuk admin mengelola data master (pengguna, institusi, perusahaan, dll.), dengan tampilan yang sudah disesuaikan warna & gaya perusahaan. |
+| Basis data | MySQL/relasional | Data tersimpan terstruktur dan saling terhubung (mis. satu intern terhubung ke satu institusi, satu unit kerja, dst). Ada pula sambungan **baca-saja** ke sistem absensi (HRIS) perusahaan untuk mengambil data mentah alat sidik jari. |
+| Login | Login email/password, plus opsional **Single Sign-On (SSO)** lewat Keycloak | Karyawan yang sudah punya akun terpusat perusahaan bisa langsung login tanpa akun terpisah. |
+| Desain | Mobile-first, mendukung mode gelap di sisi portal | Portal dirancang supaya nyaman dipakai dari HP, karena peserta magang & pembimbing sering mengaksesnya di lapangan. |
 
 ---
 
-## 4. Peran Pengguna (Role)
+## 4. Peran Pengguna & Hak Akses
 
-Kolom `users.role` (enum): **Admin**, **User**, **Intern**, **Pembimbing**. Selain itu ada Shield roles lama (`super_admin`, `admin`, `peserta`) yang sedang ditransisi ke enum ini secara paralel.
+Setiap akun di sistem punya satu dari tiga peran berikut:
 
-| Role | Deskripsi & akses |
-|---|---|
-| **Admin / Super Admin** | Akses penuh ke panel `/admin` (Filament): kelola User, Intern, Institusi, Company, Unit, jadwal, presensi, jurnal, dsb. Tidak pernah diblokir status approval. Login diarahkan langsung ke `/admin`, bukan portal. |
-| **Pembimbing** | Mentor/pengawas magang. Akses ke portal (bukan admin panel): melihat feed aktivitas jurnal seluruh intern (`/kegiatan`), memberi rating bintang 1–5 per jurnal, melihat & menyetujui presensi intern (`/presensi-intern`), mengelola tugas untuk intern (`/tugas-intern`), menyetujui/menolak pengajuan izin (`/izin-intern`). |
-| **Intern (peserta magang)** | Pengguna utama portal: mengisi jurnal harian, presensi, mengajukan izin, melihat & menyelesaikan tugas. |
-| **User (umum)** | Role default/legacy, jarang dipakai secara aktif di alur bisnis saat ini. |
+| Peran | Siapa | Bisa apa saja |
+|---|---|---|
+| **Admin** | Pengelola sistem (biasanya staf HR/IT) | Akses penuh ke panel admin: mengelola akun, data peserta magang, institusi, perusahaan/unit, jadwal kerja, sampai menyetujui pendaftar baru. Admin tidak pernah terblokir status persetujuan apa pun — selalu bisa masuk. |
+| **Pembimbing** | Mentor/pengawas magang di unit kerja | Memantau seluruh kegiatan harian peserta magang binaannya, memberi penilaian bintang pada jurnal, memberi & memantau tugas, menyetujui atau menolak pengajuan izin, serta memantau presensi. |
+| **Intern** (peserta magang) | Peserta magang aktif | Pengguna utama sehari-hari: mengisi jurnal kegiatan harian, mencatat presensi, mengajukan izin/sakit, serta melihat dan menyelesaikan tugas dari pembimbing. |
 
-Beberapa admin/pembimbing juga bisa punya data `Intern` sendiri (misal Direktur yang juga mengisi jurnal) — ada toggle "Lihat sebagai Intern" di sidebar (`canToggleIntern()`).
+Catatan: beberapa admin atau pembimbing (mis. seorang Direktur yang juga aktif mengisi jurnal) bisa punya data peserta magang sendiri — ada saklar "Lihat sebagai Intern" untuk berpindah sudut pandang tanpa perlu dua akun terpisah.
 
 ---
 
 ## 5. Modul & Fitur
 
-### 5.1 Registrasi & Approval Akun
-- Registrasi mandiri (`/register`): nama, email, institusi asal, jenis kelamin, password.
-- Akun baru **berstatus pending** (`approved_at = null`) — tidak bisa login sampai disetujui admin lewat panel Filament (aksi "Setujui"/"Tolak" per baris, atau bulk approve).
-- Setelah register otomatis dibuatkan data `Intern` terkait, tapi **belum punya unit kerja** — admin yang menentukan penempatan unit belakangan.
+### 5.1 Pendaftaran & Persetujuan Akun
+Calon peserta mendaftar sendiri lewat halaman pendaftaran (nama, email, asal institusi/sekolah, jenis kelamin, kata sandi). Akun baru **belum aktif** — tidak bisa login sampai disetujui oleh admin di panel admin (admin bisa menyetujui atau menolak satu per satu, atau sekaligus banyak akun). Setelah disetujui, admin baru menentukan unit kerja penempatannya secara manual.
 
-### 5.2 Autentikasi
-- Login lokal email + password.
-- Opsional Single Sign-On via **Keycloak** (OIDC) — dicocokkan berdasarkan email, tidak auto-provisioning (user harus sudah terdaftar). Bisa dimatikan dengan mengosongkan env `KEYCLOAK_*`.
-- Single logout: jika login via SSO, logout dari portal juga mengakhiri sesi Keycloak.
+### 5.2 Login & Autentikasi
+Login pakai email dan kata sandi seperti biasa. Sebagai alternatif, tersedia **Single Sign-On (SSO)** lewat Keycloak — pengguna yang sudah punya akun terpusat perusahaan bisa langsung masuk tanpa mendaftar ulang, dicocokkan berdasarkan alamat email. Kalau pengguna login lewat SSO lalu logout dari portal, sesi di sistem SSO ikut berakhir juga (logout menyeluruh, bukan cuma dari portal ini).
 
-### 5.3 Jurnal Harian (Journals)
-- Intern mengisi jurnal kegiatan harian (isi kegiatan + lampiran foto/PDF).
-- Upload foto dikompresi otomatis di sisi client (resize + re-encode) sebelum diupload, ada juga tombol "Kamera" untuk langsung ambil foto dari HP.
-- Pembimbing melihat feed semua jurnal semua intern (dipaginasi per hari, bukan per baris — 1 hari tidak pernah terpecah ke halaman berbeda), bisa difilter per peserta / kata kunci.
-- Pembimbing memberi **rating bintang 1–5** per jurnal (satu rating per pembimbing per jurnal); intern melihat rata-rata rating dari semua pembimbing sebagai bentuk penilaian performa.
+### 5.3 Jurnal Harian
+Peserta magang mengisi catatan kegiatan setiap hari, boleh dilengkapi lampiran foto atau dokumen PDF. Foto yang diunggah otomatis dikecilkan ukurannya di perangkat pengguna sebelum dikirim (supaya hemat kuota & penyimpanan), dan ada tombol untuk langsung memotret dari kamera HP. Pembimbing melihat semua jurnal dari semua peserta magang dalam satu tampilan (dikelompokkan per hari, difilter per peserta atau kata kunci), lalu bisa memberi **penilaian bintang 1–5** pada tiap jurnal sebagai bentuk evaluasi kinerja — nilai rata-rata dari semua pembimbing yang menilai ditampilkan kembali ke peserta. Foto lampiran bisa diperbesar (zoom) langsung di halaman yang sama tanpa membuka tab baru.
 
-### 5.4 Presensi (Attendance)
-- Ada dua sumber: presensi manual dari portal, dan **sinkronisasi dari alat scan HRIS eksternal** (`access_logs`) via koneksi database read-only kedua.
-- Pipeline: baca `access_logs` dari DB HRIS → cocokkan `employee_id` ke NIP intern → pasangkan jadi check-in (scan pertama) & check-out (scan terakhir) per hari → hitung telat/pulang cepat berdasarkan **jadwal fixed per perusahaan** (`CompanyFixedSchedule`) → simpan sebagai `AttendanceRecord`.
-- Tidak mendukung shift fleksibel/lembur/shift lintas tengah malam — sengaja disederhanakan (lihat `kalkulator-jadwal-fixed-sederhana.md`).
-- Pembimbing bisa melihat & memantau presensi intern binaannya (`/presensi-intern`).
+### 5.4 Presensi
+Data kehadiran berasal dari dua sumber: presensi manual dari portal, dan sinkronisasi otomatis dari alat sidik jari perusahaan. Sistem membaca data mentah dari alat tersebut, mencocokkan ke identitas peserta magang, lalu menghitung jam masuk/pulang, keterlambatan, dan pulang cepat berdasarkan jadwal kerja yang berlaku di masing-masing perusahaan. Pembimbing bisa memantau presensi seluruh peserta binaannya dari satu halaman. (Catatan: sistem ini sengaja disederhanakan untuk jadwal kerja tetap — belum mendukung shift fleksibel atau lembur lintas hari.)
 
-### 5.5 Izin (Leave Requests)
-- Intern mengajukan izin (tanpa tipe "cuti" — dihapus dari enum tipe izin).
-- Pembimbing/admin menyetujui atau menolak pengajuan (`/izin-intern`).
+### 5.5 Pengajuan Izin
+Peserta magang mengajukan izin atau sakit lewat portal, lalu pembimbing (atau admin) meninjau untuk menyetujui atau menolak.
 
-### 5.6 Tugas (Tasks)
-- Pembimbing memberi tugas ke intern (`/tugas-intern`).
-- Intern melihat & menyelesaikan tugas (`/tugas`), termasuk upload **foto bukti penyelesaian tugas**.
+- **Notifikasi otomatis**: begitu ada pengajuan baru, pembimbing mendapat notifikasi langsung di browser/HP-nya (mirip notifikasi aplikasi chat) — dan sebaliknya, peserta magang diberi tahu begitu izinnya diputuskan. Notifikasi ini perlu diaktifkan sekali oleh masing-masing pengguna (tombol "Aktifkan Notifikasi").
+- Sebagai cadangan kalau notifikasi tidak aktif, menu "Izin Intern" di sisi pembimbing selalu menampilkan angka jumlah pengajuan yang masih menunggu, jadi tidak akan terlewat.
+- Pengajuan yang sudah diputuskan (disetujui/ditolak) bisa dihapus oleh pembimbing untuk merapikan data lama; pengajuan yang masih menunggu tidak bisa dihapus sampai diputuskan dulu.
+- *Pengembangan lanjutan yang masih dipertimbangkan:* mengirim notifikasi lewat email atau WhatsApp — belum dikerjakan karena butuh pengaturan tambahan (server pengirim email yang sesungguhnya, atau berlangganan layanan pihak ketiga untuk WhatsApp).
 
-### 5.7 Komentar (Comments)
-- Fitur komentar generik (polymorphic — `commentable`) yang bisa dipasang ke entitas lain (jurnal, tugas, dll.) sebagai diskusi/feedback. Trait `HasCommentThread` dipakai di komponen Livewire yang butuh fitur ini.
+### 5.6 Pemberian & Pengelolaan Tugas
+Pembimbing bisa memberi tugas langsung ke peserta magang lewat portal (lengkap dengan tenggat waktu — tanggal dan jam), atau peserta magang mencatat sendiri tugas yang disampaikan secara lisan. Saat tugas selesai, peserta mengunggah foto sebagai bukti pengerjaan (foto ini bisa langsung dijadikan catatan jurnal harian juga, sekali klik).
+
+- **Kalau peserta belum bisa mengerjakan** (ada urusan lain, dsb.), tersedia tombol **Tolak** dengan alasan singkat — pembimbing langsung mendapat notifikasi beserta alasannya, dan bisa menyesuaikan tugas tersebut (ubah tenggat/keterangan) atau membukanya kembali.
+- Peserta magang hanya bisa mengubah status tugasnya sendiri (mulai, tandai selesai, atau tolak) — tidak bisa mengedit maupun menghapus tugas, supaya kontrol isi tugas tetap di tangan pembimbing.
+- Pembimbing punya kendali penuh: bisa menandai selesai, membuka kembali, mengedit, atau menghapus tugas kapan saja.
+- Sama seperti izin, menu "Tugas Intern" di sisi pembimbing menampilkan angka peringatan kalau ada tugas yang ditolak dan belum ditindaklanjuti.
+
+### 5.7 Diskusi/Komentar
+Setiap jurnal atau tugas punya kolom diskusi sendiri — pembimbing dan peserta bisa saling berkomentar langsung di situ, jadi tidak perlu pindah ke aplikasi chat terpisah untuk membahas satu kegiatan/tugas tertentu.
 
 ### 5.8 Struktur Organisasi
-- `Company` (perusahaan) → punya banyak `Unit` (mis. IT, Humas) → `Unit` punya banyak `User`/`Intern`.
-- Terpisah dari `Institution` (asal sekolah/kampus intern, bukan unit kerja penempatan).
-- Admin mengelola Company & Unit lewat Filament; penempatan unit intern dilakukan manual oleh admin (tidak ada auto-assign saat registrasi).
+Data perusahaan disusun berjenjang: satu **Perusahaan** punya beberapa **Unit kerja** (mis. IT, Humas), dan setiap peserta magang atau pegawai ditempatkan di salah satu unit tersebut. Ini terpisah dari data **Institusi asal** (sekolah/kampus peserta magang) — dua hal yang berbeda: satu soal dari mana peserta berasal, satu lagi soal di mana dia ditempatkan bekerja. Admin yang mengatur struktur ini dan menentukan penempatan setiap peserta secara manual.
 
-### 5.9 Admin Panel (Filament, `/admin`)
-Kelola data master: Users, Interns, Institutions, Companies, Units, Journals, Attendance Records, Access Scan Logs, Company Fixed Schedules. Sudah dibrandingkan visual senada dengan portal (warna navy/hijau dari logo Syifa Global Group), bukan lagi tema default Filament.
+### 5.9 Panel Admin
+Tempat admin mengelola seluruh data master sistem: akun pengguna, data peserta magang, institusi asal, data perusahaan & unit kerja, jurnal, presensi, dan jadwal kerja.
+
+- **Tampilan** panel admin sudah disesuaikan supaya senada dengan portal peserta (warna, bentuk kartu, tabel) — bukan lagi tampilan bawaan generik.
+- **Ringkasan di halaman utama**: kartu statistik jumlah peserta magang aktif, jurnal yang masuk hari ini, ringkasan presensi hari ini, dan jumlah akun yang menunggu persetujuan — masing-masing bisa diklik untuk langsung menuju datanya. Ditambah grafik tren jumlah jurnal 7 hari terakhir.
+- Data peserta magang kini punya kolom **Nama Panggilan** (opsional), untuk membantu pembimbing mengenali peserta dengan nama yang lebih akrab dibanding nama resmi — saat ini baru tersimpan di data admin, rencananya akan ditampilkan juga di halaman-halaman pembimbing.
+
+### 5.10 Navigasi & Pengalaman Pengguna di HP
+Karena banyak dipakai lewat HP, menu utama (sidebar) dirancang sebagai laci yang bisa dibuka lewat tombol ataupun dengan **geser jari dari tepi kiri layar** — kebiasaan yang sudah familiar dari aplikasi-aplikasi populer. Menu "Beranda" (halaman ringkasan untuk peserta magang) ditempatkan sebagai menu pertama yang paling mudah dijangkau.
 
 ---
 
-## 6. Alur Approval (ringkas untuk diagram)
+## 6. Alur Persetujuan Akun (ringkas, untuk diagram)
 
 ```
-Registrasi mandiri → status "pending" (belum bisa login)
+Calon peserta mendaftar mandiri → status "menunggu" (belum bisa login)
         │
         ▼
- Admin review di /admin (Filament)
+   Admin meninjau di panel admin
         │
    ┌────┴────┐
    ▼         ▼
-Setujui    Tolak (row dihapus)
+Disetujui   Ditolak (data dihapus)
    │
    ▼
-Intern bisa login → admin assign Unit kerja
+Peserta bisa login → admin menentukan unit kerja penempatan
         │
         ▼
-Intern aktif mengisi Jurnal / Presensi / Izin / Tugas
+Peserta aktif: mengisi jurnal, presensi, mengajukan izin, mengerjakan tugas
         │
         ▼
-Pembimbing memantau, menilai (rating jurnal), approve/reject izin
+Pembimbing memantau, menilai jurnal, memutuskan izin & tugas
 ```
 
 ---
 
-## 7. Integrasi Eksternal
+## 7. Integrasi dengan Sistem Lain
 
-1. **Keycloak SSO (OpenID Connect)** — opsional, login terpusat lintas aplikasi perusahaan berbasis email sebagai penghubung akun.
-2. **Database HRIS (read-only, koneksi kedua)** — sumber data mentah alat absensi (`access_logs`, mis. dari alat Hikvision), dibaca berkala (cron/manual) untuk dihitung jadi rekap presensi lokal.
-
----
-
-## 8. Catatan Tambahan (opsional dimasukkan ke dokumentasi atau cukup jadi catatan internal)
-
-- Desain UI mengikuti design system internal (`DESIGN.md`) — palet warna navy/hijau/magenta dari logo perusahaan, dark mode penuh di portal (tidak berlaku di panel admin), navigasi mobile pakai bottom nav bukan hamburger drawer, setiap halaman wajib punya layout mobile & desktop terpisah.
-- Sistem role sedang masa transisi dari Filament Shield roles ke enum `UserRole` sendiri — keduanya berjalan paralel sementara ini (kode lama dicek dua-duanya).
-- `APP_NAME` di `.env` belum diubah dari default "Laravel" — perlu disesuaikan jika ingin nama resmi muncul di title/email, ini murni konfigurasi bukan fitur.
+1. **Single Sign-On (Keycloak)** — opsional, memungkinkan login terpusat lintas aplikasi perusahaan berbasis email yang sama, tanpa perlu akun terpisah per aplikasi.
+2. **Sistem Absensi Perusahaan (HRIS)** — sistem ini membaca data mentah alat sidik jari perusahaan secara berkala (hanya membaca, tidak mengubah data di sistem sumber), lalu mengolahnya jadi rekap kehadiran yang tampil di portal.
 
 ---
 
-## 9. Yang perlu dilengkapi manual sebelum dikirim ke atasan
+## 8. Catatan Tambahan (untuk internal, opsional dimasukkan ke dokumentasi)
 
-- [ ] Nama resmi sistem (jika beda dari "Portal Magang — Syifa Global Group")
-- [ ] Tanggal/versi dokumentasi & siapa yang menyusun
-- [ ] Screenshot alur (opsional, untuk mempercantik dokumen)
-- [ ] Target pembaca dokumen (internal tim / laporan magang / SOP resmi) — akan memengaruhi tingkat formalitas bahasa
+- Sistem peran pengguna sempat punya peran keempat bernama **"User"** (peran generik/cadangan) — per 2026-09-16 peran ini **dihapus** karena tidak pernah benar-benar dipakai dalam alur bisnis; sekarang setiap akun harus salah satu dari Admin, Pembimbing, atau Intern.
+- Nama brand yang tampil ke pengguna diubah dari "Magang" menjadi **"Internship"** (judul halaman, login, sidebar) per 2026-09-16 — istilah "magang" di kalimat-kalimat deskriptif lain (mis. "peserta magang") sengaja tetap dipakai karena lebih wajar dalam Bahasa Indonesia.
+- Sebagian sistem peran lama (dari paket pihak ketiga yang sebelumnya dipakai) masih berjalan berdampingan sementara proses migrasi ke sistem peran baru selesai sepenuhnya — tidak berdampak ke pengguna, murni urusan teknis di belakang layar.
+- Nama aplikasi secara resmi (`APP_NAME`) di pengaturan server belum disesuaikan dari nilai bawaan — ini murni pengaturan teknis, tidak memengaruhi tampilan yang dilihat pengguna.
+
+---
+
+## 9. Yang Perlu Dilengkapi Manual Sebelum Dikirim ke Atasan
+
+- [ ] Nama resmi sistem untuk dokumen (kalau berbeda dari "Portal Internship Syifa Global Group")
+- [ ] Tanggal/versi dokumentasi & nama penyusun
+- [ ] Screenshot alur (opsional, untuk mempercantik dokumen presentasi)
+- [ ] Target pembaca dokumen (tim internal / laporan magang / SOP resmi) — akan memengaruhi tingkat formalitas bahasa yang dipakai

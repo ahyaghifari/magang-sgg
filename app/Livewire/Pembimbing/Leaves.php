@@ -4,6 +4,8 @@ namespace App\Livewire\Pembimbing;
 
 use App\Models\Intern;
 use App\Models\LeaveRequest;
+use App\Notifications\LeaveRequestReviewed;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -52,12 +54,20 @@ class Leaves extends Component
             return;
         }
 
-        LeaveRequest::whereKey($leaveId)->update([
+        $leave = LeaveRequest::whereKey($leaveId)->first();
+
+        if (! $leave) {
+            return;
+        }
+
+        $leave->update([
             'status' => 'approved',
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
             'review_note' => null,
         ]);
+
+        $leave->intern?->user?->notify(new LeaveRequestReviewed($leave));
 
         $this->rejecting = null;
     }
@@ -80,15 +90,43 @@ class Leaves extends Component
             return;
         }
 
-        LeaveRequest::whereKey($leaveId)->update([
+        $leave = LeaveRequest::whereKey($leaveId)->first();
+
+        if (! $leave) {
+            return;
+        }
+
+        $leave->update([
             'status' => 'rejected',
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
             'review_note' => $this->reviewNote !== '' ? $this->reviewNote : null,
         ]);
 
+        $leave->intern?->user?->notify(new LeaveRequestReviewed($leave));
+
         $this->rejecting = null;
         $this->reviewNote = '';
+    }
+
+    /** Hapus pengajuan izin yang sudah dikonfirmasi (disetujui/ditolak) dan tidak diperlukan lagi. */
+    public function delete(int $leaveId): void
+    {
+        if (! $this->allowed()) {
+            return;
+        }
+
+        $leave = LeaveRequest::whereKey($leaveId)->where('status', '!=', 'pending')->first();
+
+        if (! $leave) {
+            return;
+        }
+
+        if ($leave->attachment_path) {
+            Storage::disk('public')->delete($leave->attachment_path);
+        }
+
+        $leave->delete();
     }
 
     public function render()

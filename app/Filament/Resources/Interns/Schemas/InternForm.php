@@ -35,6 +35,9 @@ class InternForm
                     ->label('Nama')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('nama_panggilan')
+                    ->label('Nama Panggilan')
+                    ->maxLength(255),
                 TextInput::make('nip')
                     ->label('NIP')
                     ->maxLength(255)

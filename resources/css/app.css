@@ -22,11 +22,11 @@
 
 /* ---- Theme tokens ---------------------------------------------------------- */
 :root {
-    --surface: #ffffff;
-    --surface-alt: #f8fafc;
-    --surface-page: #f1f5f9;
-    --border: #e2e8f0;
-    --border-soft: #eef2f7;
+    --surface: #eef4fc;
+    --surface-alt: #e2ecfa;
+    --surface-page: #dbe7f8;
+    --border: #c7d9f0;
+    --border-soft: #d7e4f5;
     --text-heading: #1e293b;
     --text-body: #334155;
     --text-muted: #64748b; /* minimum for readable text */
@@ -796,11 +796,13 @@ html.dark .file-box::file-selector-button:hover {
     object-fit: contain;
 }
 .portal-brand-tagline {
-    font-size: 0.7rem;
+    font-size: 0.62rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text-muted);
+    text-align: center;
+    line-height: 1.35;
 }
 /* Dark mode: tanpa "chip" putih, logo tampil polos. */
 

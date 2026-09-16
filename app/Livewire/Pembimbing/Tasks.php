@@ -44,6 +44,19 @@ class Tasks extends Component
 
     public string $dueDate = '';
 
+    public string $dueTime = '';
+
+    // ===== Form edit tugas =====
+    public ?int $editingTaskId = null;
+
+    public string $editTitle = '';
+
+    public string $editDescription = '';
+
+    public string $editDueDate = '';
+
+    public string $editDueTime = '';
+
     public function mount()
     {
         if (! $this->allowed()) {
@@ -82,7 +95,7 @@ class Tasks extends Component
 
     public function openForm(): void
     {
-        $this->reset(['formInternId', 'title', 'description', 'dueDate']);
+        $this->reset(['formInternId', 'title', 'description', 'dueDate', 'dueTime']);
         $this->resetValidation();
         $this->showForm = true;
     }
@@ -99,6 +112,7 @@ class Tasks extends Component
             'title' => ['required', 'string', 'min:3', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'dueDate' => ['nullable', 'date'],
+            'dueTime' => ['nullable', 'date_format:H:i'],
         ];
     }
 
@@ -108,8 +122,19 @@ class Tasks extends Component
             'formInternId' => 'peserta',
             'title' => 'judul tugas',
             'description' => 'keterangan',
-            'dueDate' => 'tenggat',
+            'dueDate' => 'tanggal tenggat',
+            'dueTime' => 'jam tenggat',
         ];
+    }
+
+    /** Gabungkan input tanggal + jam terpisah jadi satu nilai datetime (atau null kalau tanggal kosong). */
+    protected function combineDueDateTime(string $date, string $time): ?string
+    {
+        if ($date === '') {
+            return null;
+        }
+
+        return $date . ' ' . ($time !== '' ? $time : '00:00');
     }
 
     public function assignTask(): void
@@ -127,13 +152,73 @@ class Tasks extends Component
             'description' => $this->description !== '' ? $this->description : null,
             'source' => 'web',
             'status' => 'pending',
-            'due_date' => $this->dueDate !== '' ? $this->dueDate : null,
+            'due_date' => $this->combineDueDateTime($this->dueDate, $this->dueTime),
         ]);
 
         $task->intern->user?->notify(new TaskAssigned($task));
 
         $this->closeForm();
         $this->dispatch('task-assigned');
+    }
+
+    /** Buka modal edit tugas — dipakai a.l. saat intern menolak tugas dan pembimbing mau menyesuaikannya. */
+    public function openEditTask(int $taskId): void
+    {
+        if (! $this->allowed()) {
+            return;
+        }
+
+        $task = Task::whereKey($taskId)->first();
+
+        if (! $task) {
+            return;
+        }
+
+        $this->editingTaskId = $taskId;
+        $this->editTitle = $task->title;
+        $this->editDescription = $task->description ?? '';
+        $this->editDueDate = $task->due_date?->format('Y-m-d') ?? '';
+        $this->editDueTime = $task->due_date?->format('H:i') ?? '';
+        $this->resetValidation();
+    }
+
+    public function closeEditTask(): void
+    {
+        $this->reset(['editingTaskId', 'editTitle', 'editDescription', 'editDueDate', 'editDueTime']);
+        $this->resetValidation();
+    }
+
+    public function confirmEditTask(): void
+    {
+        if (! $this->allowed() || ! $this->editingTaskId) {
+            return;
+        }
+
+        $task = Task::whereKey($this->editingTaskId)->first();
+
+        if (! $task) {
+            return;
+        }
+
+        $this->validate([
+            'editTitle' => ['required', 'string', 'min:3', 'max:255'],
+            'editDescription' => ['nullable', 'string', 'max:2000'],
+            'editDueDate' => ['nullable', 'date'],
+            'editDueTime' => ['nullable', 'date_format:H:i'],
+        ], [], [
+            'editTitle' => 'judul tugas',
+            'editDescription' => 'keterangan',
+            'editDueDate' => 'tanggal tenggat',
+            'editDueTime' => 'jam tenggat',
+        ]);
+
+        $task->update([
+            'title' => $this->editTitle,
+            'description' => $this->editDescription !== '' ? $this->editDescription : null,
+            'due_date' => $this->combineDueDateTime($this->editDueDate, $this->editDueTime),
+        ]);
+
+        $this->closeEditTask();
     }
 
     public function markDone(int $taskId): void

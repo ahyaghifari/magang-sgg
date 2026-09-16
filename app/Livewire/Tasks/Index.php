@@ -3,8 +3,8 @@
 namespace App\Livewire\Tasks;
 
 use App\Livewire\Concerns\HasCommentThread;
+use App\Notifications\TaskRejected;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
@@ -36,6 +36,11 @@ class Index extends Component
 
     /** Kalau dicentang, tugas yang selesai ini juga dicatat sebagai kegiatan di jurnal harian hari ini. */
     public bool $addToJournal = true;
+
+    /** id tugas yang sedang ditolak (menampilkan modal alasan penolakan). */
+    public ?int $rejectingTaskId = null;
+
+    public string $rejectionReason = '';
 
     public function mount()
     {
@@ -75,28 +80,6 @@ class Index extends Component
         }
 
         return auth()->user()->intern?->tasks()->whereKey($id)->first();
-    }
-
-    /** Intern menghapus tugasnya yang salah kirim — hanya yang belum selesai. */
-    public function deleteTask(int $taskId): void
-    {
-        $intern = auth()->user()->intern;
-
-        $task = $intern?->tasks()
-            ->whereKey($taskId)
-            ->where('status', '!=', 'done')
-            ->first();
-
-        if (! $task) {
-            return;
-        }
-
-        if ($task->completion_photo_path) {
-            Storage::disk('public')->delete($task->completion_photo_path);
-        }
-
-        $task->delete();
-        $this->resetPage();
     }
 
     #[On('task-saved')]
@@ -146,6 +129,57 @@ class Index extends Component
         $this->completionPhoto = null;
         $this->addToJournal = true;
         $this->resetValidation();
+    }
+
+    /** Buka modal alasan penolakan — intern belum bisa mengerjakan / ada urusan lain. */
+    public function openReject(int $taskId): void
+    {
+        $intern = auth()->user()->intern;
+
+        if (! $intern || ! $intern->tasks()->whereKey($taskId)->where('status', '!=', 'done')->exists()) {
+            return;
+        }
+
+        $this->rejectingTaskId = $taskId;
+        $this->rejectionReason = '';
+        $this->resetValidation();
+    }
+
+    public function closeReject(): void
+    {
+        $this->rejectingTaskId = null;
+        $this->rejectionReason = '';
+        $this->resetValidation();
+    }
+
+    public function confirmReject(): void
+    {
+        $intern = auth()->user()->intern;
+
+        if (! $intern || ! $this->rejectingTaskId) {
+            return;
+        }
+
+        $task = $intern->tasks()->whereKey($this->rejectingTaskId)->where('status', '!=', 'done')->first();
+
+        if (! $task) {
+            return;
+        }
+
+        $this->validate([
+            'rejectionReason' => ['required', 'string', 'min:3', 'max:500'],
+        ], [], [
+            'rejectionReason' => 'alasan penolakan',
+        ]);
+
+        $task->update([
+            'status' => 'rejected',
+            'rejection_reason' => $this->rejectionReason,
+        ]);
+
+        $task->assignedBy?->notify(new TaskRejected($task));
+
+        $this->closeReject();
     }
 
     public function confirmComplete(): void

@@ -9,7 +9,7 @@
         @if ($intern)
             <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap;">
                 <button type="button"
-                        x-data="{ state: (typeof Notification !== 'undefined' && Notification.permission === 'granted') ? 'on' : 'off' }"
+                        x-data="{ state: 'off' }"
                         x-show="state !== 'on'"
                         x-on:click="enablePushNotifications().then(ok => { state = ok ? 'on' : 'off' })"
                         class="btn-ghost">
@@ -81,6 +81,8 @@
                                 <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Selesai</span>
                             @elseif ($task->status === 'in_progress')
                                 <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
+                            @elseif ($task->status === 'rejected')
+                                <span class="badge" style="background:#fee2e2; color:#b91c1c;"><i class="fa-solid fa-circle-xmark"></i> Ditolak</span>
                             @else
                                 <span class="badge" style="background:#ffedd5; color:#c2410c;"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
                             @endif
@@ -94,13 +96,20 @@
                         </div>
                         @if ($task->due_date)
                             <span class="text-sm" style="color:var(--text-muted); flex-shrink:0;">
-                                <i class="fa-regular fa-calendar"></i> Tenggat {{ \Illuminate\Support\Carbon::parse($task->due_date)->translatedFormat('d F Y') }}
+                                <i class="fa-regular fa-calendar"></i> Tenggat {{ $task->due_date->translatedFormat('d F Y') }}
+                                <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $task->due_date->format('H:i') }}
                             </span>
                         @endif
                     </div>
 
                     @if ($task->description)
                         <p class="text-sm" style="margin-top:0.55rem; color:var(--text-body); white-space:pre-line;">{{ $task->description }}</p>
+                    @endif
+
+                    @if ($task->status === 'rejected' && $task->rejection_reason)
+                        <p class="text-sm" style="margin-top:0.5rem; padding:0.6rem 0.75rem; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c;">
+                            <i class="fa-solid fa-circle-exclamation"></i> Alasan kamu menolak: {{ $task->rejection_reason }}
+                        </p>
                     @endif
 
                     @if ($task->assignedBy)
@@ -111,11 +120,11 @@
 
                     @if ($task->status === 'done' && $task->completion_photo_path)
                         <div style="margin-top:0.75rem;">
-                            <a href="{{ url('storage/' . $task->completion_photo_path) }}" target="_blank" rel="noopener"
-                               style="display:inline-block; border-radius:10px; overflow:hidden; border:1px solid var(--border);">
+                            <button type="button" onclick="openLightbox(@js(url('storage/' . $task->completion_photo_path)), 'Bukti selesai')"
+                                    style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
                                 <img src="{{ url('storage/' . $task->completion_photo_path) }}" alt="Bukti selesai"
                                      style="width:84px; height:84px; object-fit:cover; display:block;">
-                            </a>
+                            </button>
                             <p class="text-sm" style="margin-top:0.3rem; color:var(--text-faint);">
                                 <i class="fa-regular fa-image"></i> Foto bukti pengerjaan
                             </p>
@@ -137,11 +146,9 @@
                                 <i class="fa-solid fa-rotate-left"></i> Buka lagi
                             </button>
                         @endif
-                        @if ($task->status !== 'done')
-                            <button type="button" wire:click="deleteTask({{ $task->id }})"
-                                    wire:confirm="Hapus tugas ini? Tindakan tidak bisa dibatalkan."
-                                    class="btn-ghost" style="padding:0.4rem 0.75rem; color:#dc2626;">
-                                <i class="fa-solid fa-trash"></i> Hapus
+                        @if ($task->status !== 'done' && $task->status !== 'rejected')
+                            <button type="button" wire:click="openReject({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem; color:#b91c1c;">
+                                <i class="fa-solid fa-circle-xmark"></i> Tolak
                             </button>
                         @endif
                     </div>
@@ -265,4 +272,62 @@
             </div>
         </div>
     </div>
+
+    {{-- ===== Modal: tolak tugas ===== --}}
+    <div
+        x-data
+        x-show="$wire.rejectingTaskId !== null"
+        x-cloak
+        x-transition.opacity
+        @keydown.escape.window="$wire.rejectingTaskId !== null && $wire.closeReject()"
+        x-effect="document.body.style.overflow = $wire.rejectingTaskId !== null ? 'hidden' : ''"
+        style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
+    >
+        <div
+            @click.outside="$wire.closeReject()"
+            x-show="$wire.rejectingTaskId !== null"
+            x-transition
+            class="surface-card"
+            style="width:100%; max-width:28rem; margin:auto; padding:0;"
+        >
+            <div class="flex items-center justify-between"
+                 style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft);">
+                <div>
+                    <h2 style="font-size:1.05rem; font-weight:700;">Tolak Tugas</h2>
+                    <p class="text-sm" style="color:var(--text-muted); margin-top:0.1rem;">
+                        Beri tahu pembimbing kenapa tugas ini belum bisa kamu kerjakan
+                    </p>
+                </div>
+                <button type="button" wire:click="closeReject" class="theme-toggle" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div style="padding:1.35rem;">
+                <form wire:submit="confirmReject">
+                    <div style="margin-bottom:1.25rem;">
+                        <label for="reject-reason" class="form-label">Alasan Penolakan</label>
+                        <textarea id="reject-reason" wire:model="rejectionReason" rows="4" class="form-input"
+                                  placeholder="Contoh: Belum bisa mengerjakan karena ada urusan keluarga hari ini..."></textarea>
+                        @error('rejectionReason')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex items-center" style="gap:0.65rem;">
+                        <button type="submit" class="btn-primary" style="background:#dc2626;" wire:loading.attr="disabled" wire:target="confirmReject">
+                            <span wire:loading.remove wire:target="confirmReject">
+                                <i class="fa-solid fa-circle-xmark" style="margin-right:0.4rem;"></i>Kirim Penolakan
+                            </span>
+                            <span wire:loading wire:target="confirmReject">
+                                <i class="fa-solid fa-spinner fa-spin" style="margin-right:0.4rem;"></i>Mengirim...
+                            </span>
+                        </button>
+                        <button type="button" wire:click="closeReject" class="btn-ghost">Batal</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>

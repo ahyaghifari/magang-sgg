@@ -28,7 +28,7 @@ class UserForm
                 Select::make('role')
                     ->label('Peran')
                     ->options(UserRole::class)
-                    ->default(UserRole::User)
+                    ->default(UserRole::Intern)
                     ->native(false)
                     ->required(),
                 Select::make('unit_id')
