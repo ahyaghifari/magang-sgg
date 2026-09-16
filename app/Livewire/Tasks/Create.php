@@ -26,6 +26,8 @@ class Create extends Component
 
     public string $dueDate = '';
 
+    public string $dueTime = '';
+
     public function mount(): void
     {
         $this->hasIntern = (bool) auth()->user()->intern;
@@ -47,7 +49,7 @@ class Create extends Component
 
     protected function resetForm(): void
     {
-        $this->reset(['title', 'description', 'assignedBy', 'dueDate']);
+        $this->reset(['title', 'description', 'assignedBy', 'dueDate', 'dueTime']);
         $this->resetValidation();
     }
 
@@ -58,6 +60,7 @@ class Create extends Component
             'description' => ['nullable', 'string', 'max:2000'],
             'assignedBy' => ['nullable', 'exists:users,id'],
             'dueDate' => ['nullable', 'date'],
+            'dueTime' => ['nullable', 'date_format:H:i'],
         ];
     }
 
@@ -67,7 +70,8 @@ class Create extends Component
             'title' => 'judul tugas',
             'description' => 'keterangan',
             'assignedBy' => 'pembimbing pemberi tugas',
-            'dueDate' => 'tenggat',
+            'dueDate' => 'tanggal tenggat',
+            'dueTime' => 'jam tenggat',
         ];
     }
 
@@ -89,7 +93,7 @@ class Create extends Component
             'description' => $this->description !== '' ? $this->description : null,
             'source' => 'verbal',
             'status' => 'pending',
-            'due_date' => $this->dueDate !== '' ? $this->dueDate : null,
+            'due_date' => $this->dueDate !== '' ? $this->dueDate . ' ' . ($this->dueTime !== '' ? $this->dueTime : '00:00') : null,
         ]);
 
         $this->close();

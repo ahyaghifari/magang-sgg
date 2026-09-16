@@ -76,11 +76,22 @@
 
                         {{-- Tenggat --}}
                         <div style="margin-bottom:1.25rem;">
-                            <label for="t-due" class="form-label">Tenggat (tanggal &amp; waktu) <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
-                            <input id="t-due" type="datetime-local" wire:model="dueDate" class="form-input" style="max-width:16rem;">
-                            @error('dueDate')
-                                <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
-                            @enderror
+                            <label class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
+                            <div class="flex items-start" style="gap:0.6rem;">
+                                <div style="flex:1;">
+                                    <input id="t-due-date" type="date" wire:model="dueDate" class="form-input" aria-label="Tanggal tenggat">
+                                    @error('dueDate')
+                                        <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div style="flex:1;">
+                                    <input id="t-due-time" type="time" wire:model="dueTime" class="form-input" aria-label="Jam tenggat">
+                                    @error('dueTime')
+                                        <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                            <p class="text-sm" style="color:var(--text-faint); margin-top:0.35rem;">Isi tanggal dan jam terpisah — kalau jam dikosongkan, dianggap 00:00.</p>
                         </div>
 
                         <div class="flex items-center" style="gap:0.65rem;">
