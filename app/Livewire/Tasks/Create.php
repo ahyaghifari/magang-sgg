@@ -103,7 +103,7 @@ class Create extends Component
     public function render()
     {
         return view('livewire.tasks.create', [
-            'pembimbings' => User::where('role', UserRole::Pembimbing)->orderBy('name')->get(['id', 'name']),
+            'pembimbings' => User::whereIn('role', [UserRole::Pembimbing, UserRole::Mentor])->orderBy('name')->get(['id', 'name']),
         ]);
     }
 }

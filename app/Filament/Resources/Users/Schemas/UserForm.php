@@ -30,7 +30,8 @@ class UserForm
                     ->options(UserRole::class)
                     ->default(UserRole::Intern)
                     ->native(false)
-                    ->required(),
+                    ->required()
+                    ->live(),
                 Select::make('unit_id')
                     ->label('Unit')
                     ->relationship('unit', 'name')
@@ -38,6 +39,18 @@ class UserForm
                     ->searchable()
                     ->preload()
                     ->placeholder('Tidak terikat unit (mis. admin)'),
+                Select::make('company_id')
+                    ->label('Perusahaan')
+                    ->relationship('company', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Pilih perusahaan')
+                    ->helperText('Perusahaan tempat pembimbing/mentor/pimpinan ini bertugas.')
+                    ->visible(fn ($get): bool => in_array($get('role'), [
+                        UserRole::Pembimbing->value,
+                        UserRole::Mentor->value,
+                        UserRole::Pimpinan->value,
+                    ], true)),
                 DateTimePicker::make('email_verified_at')
                     ->label('Email diverifikasi pada'),
                 DateTimePicker::make('approved_at')

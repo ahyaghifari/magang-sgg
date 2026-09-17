@@ -11,6 +11,7 @@ use App\Livewire\Pembimbing\Activities as PembimbingActivities;
 use App\Livewire\Pembimbing\Attendance as PembimbingAttendance;
 use App\Livewire\Pembimbing\Leaves as PembimbingLeaves;
 use App\Livewire\Pembimbing\Tasks as PembimbingTasks;
+use App\Livewire\Pimpinan\Dashboard as PimpinanDashboard;
 use App\Livewire\Tasks\Index as TaskIndex;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/presensi-intern', PembimbingAttendance::class)->name('pembimbing.attendance');
 
     Route::get('/kegiatan', PembimbingActivities::class)->name('pembimbing.activities');
+
+    Route::get('/dashboard-pimpinan', PimpinanDashboard::class)->name('pimpinan.dashboard');
 
     Route::get('/tugas', TaskIndex::class)->name('tasks.index');
     Route::get('/tugas-intern', PembimbingTasks::class)->name('pembimbing.tasks');

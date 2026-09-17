@@ -52,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::FOOTER,
-                fn (): string => '<div style="text-align:center;padding:1rem;font-size:0.75rem;color:var(--gray-400);">&copy; '
+                fn (): string => '<div class="text-gray-700 dark:text-gray-300" style="text-align:center;padding:1rem;font-size:0.85rem;font-weight:600;">&copy; '
                     . date('Y') . ' M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.</div>',
             )
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
