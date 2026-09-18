@@ -31,6 +31,7 @@ class User extends Authenticatable implements FilamentUser
         'approved_at',
         'approved_by',
         'unit_id',
+        'company_id',
         'role',
     ];
 
@@ -73,6 +74,15 @@ class User extends Authenticatable implements FilamentUser
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Perusahaan tempat user ini bertugas — dipakai khusus untuk profil
+     * pembimbing/mentor/pimpinan (info saja, tidak membatasi akses data).
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /**
@@ -140,6 +150,22 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * Apakah user ini mentor.
+     */
+    public function isMentor(): bool
+    {
+        return $this->role === UserRole::Mentor;
+    }
+
+    /**
+     * Apakah user ini pimpinan.
+     */
+    public function isPimpinan(): bool
+    {
+        return $this->role === UserRole::Pimpinan;
+    }
+
+    /**
      * Apakah `role` user ini Admin. Cek MURNI `role` — TIDAK melibatkan super admin
      * (email). Untuk kebutuhan panel /admin pakai isSuperAdmin() / isAdmin().
      */
@@ -154,7 +180,9 @@ class User extends Authenticatable implements FilamentUser
      * Super admin TIDAK PERNAH dianggap pembimbing di portal — kuasa super admin
      * hanya berlaku di panel /admin. Di portal, super admin diperlakukan persis
      * seperti intern biasa, apa pun nilai `role`-nya. Selain super admin, sisi
-     * pembimbing ditentukan murni dari `role` (pembimbing atau admin).
+     * pembimbing ditentukan murni dari `role` (pembimbing, mentor, atau admin).
+     * Pimpinan BUKAN portal mentor — perannya cuma dashboard ringkasan read-only,
+     * lihat isPimpinan() / route pimpinan.dashboard.
      */
     public function isPortalMentor(): bool
     {
@@ -162,7 +190,7 @@ class User extends Authenticatable implements FilamentUser
             return false;
         }
 
-        return $this->isPembimbing() || $this->hasAdminRole();
+        return $this->isPembimbing() || $this->isMentor() || $this->hasAdminRole();
     }
 
     /**
@@ -185,7 +213,7 @@ class User extends Authenticatable implements FilamentUser
      */
     public function canToggleIntern(): bool
     {
-        return ($this->hasAdminRole() || $this->isPembimbing() || $this->isSuperAdmin())
+        return ($this->hasAdminRole() || $this->isPembimbing() || $this->isMentor() || $this->isSuperAdmin())
             && $this->intern()->exists();
     }
 

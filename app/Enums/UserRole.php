@@ -10,6 +10,8 @@ enum UserRole: string implements HasColor, HasLabel
     case Admin = 'admin';
     case Intern = 'intern';
     case Pembimbing = 'pembimbing';
+    case Mentor = 'mentor';
+    case Pimpinan = 'pimpinan';
 
     public function getLabel(): string
     {
@@ -17,6 +19,8 @@ enum UserRole: string implements HasColor, HasLabel
             self::Admin => 'Admin',
             self::Intern => 'Intern',
             self::Pembimbing => 'Pembimbing',
+            self::Mentor => 'Mentor',
+            self::Pimpinan => 'Pimpinan',
         };
     }
 
@@ -26,6 +30,8 @@ enum UserRole: string implements HasColor, HasLabel
             self::Admin => 'danger',
             self::Intern => 'info',
             self::Pembimbing => 'success',
+            self::Mentor => 'warning',
+            self::Pimpinan => 'primary',
         };
     }
 }

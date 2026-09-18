@@ -35,6 +35,11 @@ class UsersTable
                     ->badge()
                     ->placeholder('—')
                     ->toggleable(),
+                TextColumn::make('company.name')
+                    ->label('Perusahaan')
+                    ->badge()
+                    ->placeholder('—')
+                    ->toggleable(),
                 TextColumn::make('approval_status')
                     ->label('Status')
                     ->badge()
@@ -61,6 +66,9 @@ class UsersTable
                 SelectFilter::make('role')
                     ->label('Peran')
                     ->options(UserRole::class),
+                SelectFilter::make('company_id')
+                    ->label('Perusahaan')
+                    ->relationship('company', 'name'),
                 TernaryFilter::make('approved_at')
                     ->label('Status persetujuan')
                     ->placeholder('Semua')

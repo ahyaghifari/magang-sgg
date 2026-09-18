@@ -79,7 +79,13 @@
 
                 <nav class="portal-nav">
                     <span class="portal-nav-label">Menu</span>
-                    @if ($portalUser->isPortalMentor())
+                    @if ($portalUser->isPimpinan())
+                        <a href="{{ route('pimpinan.dashboard') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pimpinan.dashboard') ? 'active' : '' }}">
+                            <i class="fa-solid fa-gauge-high"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    @elseif ($portalUser->isPortalMentor())
                         @php
                             // Jaring pengaman selain push notification (yang bisa gagal — izin ditolak,
                             // iOS butuh install ke Home Screen dulu, dsb): badge ini selalu akurat karena
@@ -192,7 +198,7 @@
                     {{ $slot }}
                 </main>
 
-                <footer style="text-align:center; padding:1.25rem 1rem 1.75rem; font-size:0.75rem; color:var(--text-faint);">
+                <footer style="text-align:center; padding:1.25rem 1rem 1.75rem; font-size:0.85rem; font-weight:600; color:var(--text-body);">
                     &copy; {{ date('Y') }} M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.
                 </footer>
             </div>
@@ -201,7 +207,7 @@
         </div>
     @else
         {{ $slot }}
-        <footer style="text-align:center; padding:1.25rem 1rem 1.75rem; font-size:0.75rem; color:var(--text-faint);">
+        <footer style="text-align:center; padding:1.25rem 1rem 1.75rem; font-size:0.85rem; font-weight:600; color:var(--text-body);">
             &copy; {{ date('Y') }} M.Nasywa Labib &middot; Seluruh hak cipta dilindungi.
         </footer>
     @endauth

@@ -107,8 +107,9 @@ class Create extends Component
         ]);
 
         // Pengajuan izin tidak terikat ke satu pembimbing tertentu — semua pembimbing
-        // bisa meninjau di /izin-intern, jadi semua diberi tahu.
-        User::where('role', UserRole::Pembimbing)
+        // (termasuk mentor) bisa meninjau di /izin-intern, jadi semua diberi tahu.
+        // Pimpinan tidak diberi tahu — perannya cuma lihat dashboard, bukan meninjau izin.
+        User::whereIn('role', [UserRole::Pembimbing, UserRole::Mentor])
             ->get()
             ->each->notify(new LeaveRequestSubmitted($leaveRequest));
 
