@@ -17,10 +17,22 @@ class Intern extends Model
         'user_id',
         'institusi_id',
         'unit_id',
+        'pembimbing_id',
+        'mentor_id',
         'nama',
         'nama_panggilan',
         'nip',
         'jenis_kelamin',
+        'tanggal_mulai',
+        'tanggal_selesai',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
     ];
 
     /**
@@ -45,6 +57,22 @@ class Intern extends Model
     public function unit(): BelongsTo
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    /**
+     * Pembimbing yang ditugaskan mendampingi intern ini secara khusus.
+     */
+    public function pembimbing(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pembimbing_id');
+    }
+
+    /**
+     * Mentor yang ditugaskan mendampingi intern ini secara khusus.
+     */
+    public function mentor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'mentor_id');
     }
 
     /**

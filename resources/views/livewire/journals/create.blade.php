@@ -143,6 +143,9 @@
                                     @elseif ($item['type'] === 'document')
                                         <input type="file" wire:model="items.{{ $i }}.file" class="file-box"
                                                accept="application/pdf">
+                                        <p class="text-sm" style="color:var(--text-faint); margin-top:0.3rem;">
+                                            Maks. 10MB.
+                                        </p>
                                         <div wire:loading wire:target="items.{{ $i }}.file"
                                              class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
                                             <i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...
@@ -151,19 +154,29 @@
                                         {{-- Foto: bila opsi "kecilkan otomatis" aktif, kompres dulu di browser lalu unggah manual.
                                              capture="environment" → di HP langsung buka kamera belakang. --}}
                                         <input type="file" class="file-box" accept="image/*"
-                                               @if ($item['capture'] ?? false) capture="environment" @endif
+                                               @if ($item['capture'] ?? false) capture="environment" @else multiple @endif
                                                wire:key="photo-input-{{ $i }}"
                                                x-data
                                                x-on:change="
                                                    const inp = $event.target;
-                                                   let f = inp.files[0];
-                                                   if (!f) return;
+                                                   const files = Array.from(inp.files || []);
+                                                   if (!files.length) return;
                                                    inp.disabled = true;
-                                                   if ($wire.compressImages) { f = await window.compressImageFile(f); }
-                                                   $wire.upload('items.{{ $i }}.file', f,
-                                                       () => { inp.disabled = false; },
-                                                       () => { inp.disabled = false; },
-                                                       () => {});
+                                                   for (let j = 0; j < files.length; j++) {
+                                                       let f = files[j];
+                                                       if ($wire.compressImages) {
+                                                           try { f = await window.compressImageFile(f); } catch (e) {}
+                                                       }
+                                                       let path = 'items.{{ $i }}.file';
+                                                       if (j > 0) {
+                                                           await $wire.addItem('photo');
+                                                           const idx = (($wire.items && $wire.items.length) || 1) - 1;
+                                                           path = 'items.' + idx + '.file';
+                                                       }
+                                                       await new Promise((resolve) => $wire.upload(path, f, resolve, resolve, () => {}));
+                                                   }
+                                                   inp.disabled = false;
+                                                   inp.value = '';
                                                ">
                                         <div wire:loading wire:target="items.{{ $i }}.file"
                                              class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">

@@ -2,8 +2,6 @@
 
 namespace App\Livewire\Leaves;
 
-use App\Enums\UserRole;
-use App\Models\User;
 use App\Notifications\LeaveRequestSubmitted;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -106,12 +104,12 @@ class Create extends Component
             'status' => 'pending',
         ]);
 
-        // Pengajuan izin tidak terikat ke satu pembimbing tertentu — semua pembimbing
-        // (termasuk mentor) bisa meninjau di /izin-intern, jadi semua diberi tahu.
-        // Pimpinan tidak diberi tahu — perannya cuma lihat dashboard, bukan meninjau izin.
-        User::whereIn('role', [UserRole::Pembimbing, UserRole::Mentor])
-            ->get()
-            ->each->notify(new LeaveRequestSubmitted($leaveRequest));
+        // Keputusan izin murni wewenang Pembimbing (dan admin) — Mentor tidak ikut
+        // meninjau/menyetujui izin, jadi tidak perlu diberi tahu. Pimpinan juga tidak
+        // diberi tahu — perannya cuma lihat dashboard, bukan meninjau izin.
+        // Hanya pembimbing yang MEMANG ditugaskan ke intern ini yang diberi tahu — pembimbing
+        // lain tidak melihat intern ini sama sekali di portal (lihat User::visibleInterns()).
+        $intern->pembimbing?->notify(new LeaveRequestSubmitted($leaveRequest));
 
         $this->close();
         $this->dispatch('leave-saved');

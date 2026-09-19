@@ -173,3 +173,4 @@ This is a hard rule, not a nice-to-have: **every portal page must be designed fo
 
 - `phpunit.xml` must always stay `DB_CONNECTION=sqlite` / `DB_DATABASE=:memory:`. Never point it at a real database — see `knowledge/changes/2026-07-05-*.md` for the incident this caused.
 - Don't run or propose `php artisan test` unless explicitly asked, especially during rapid visual/CSS iteration — it's noise the user didn't request in that moment.
+    

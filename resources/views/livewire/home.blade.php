@@ -38,6 +38,12 @@
                     <a href="{{ route('journals.index') }}" wire:navigate class="qa-btn">
                         <i class="fa-solid fa-list-ul"></i> Semua Jurnal
                     </a>
+                    <a href="{{ route('interns.certificate.view', $intern) }}" target="_blank" class="qa-btn">
+                        <i class="fa-solid fa-eye"></i> Lihat Sertifikat
+                    </a>
+                    <a href="{{ route('interns.certificate', $intern) }}" class="qa-btn">
+                        <i class="fa-solid fa-award"></i> Download Sertifikat
+                    </a>
                 </div>
             @endif
         </div>

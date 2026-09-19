@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Interns\Schemas;
 
+use App\Enums\UserRole;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -31,6 +33,28 @@ class InternForm
                     ->searchable()
                     ->preload()
                     ->placeholder('Belum ditempatkan'),
+                Select::make('pembimbing_id')
+                    ->label('Pembimbing')
+                    ->relationship(
+                        'pembimbing',
+                        'name',
+                        fn ($query) => $query->where('role', UserRole::Pembimbing),
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Belum ditugaskan')
+                    ->helperText('Pembimbing yang mendampingi intern ini secara khusus — satu pembimbing bisa memegang lebih dari satu intern.'),
+                Select::make('mentor_id')
+                    ->label('Mentor')
+                    ->relationship(
+                        'mentor',
+                        'name',
+                        fn ($query) => $query->where('role', UserRole::Mentor),
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Belum ditugaskan')
+                    ->helperText('Mentor yang mendampingi intern ini secara khusus — satu mentor bisa memegang lebih dari satu intern.'),
                 TextInput::make('nama')
                     ->label('Nama')
                     ->required()
@@ -51,6 +75,13 @@ class InternForm
                     ])
                     ->native(false)
                     ->required(),
+                DatePicker::make('tanggal_mulai')
+                    ->label('Magang Mulai')
+                    ->native(false),
+                DatePicker::make('tanggal_selesai')
+                    ->label('Magang Selesai')
+                    ->native(false)
+                    ->afterOrEqual('tanggal_mulai'),
             ]);
     }
 }

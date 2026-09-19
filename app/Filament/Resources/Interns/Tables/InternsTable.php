@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Interns\Tables;
 
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -50,6 +51,28 @@ class InternsTable
                     ->badge()
                     ->placeholder('Belum ditempatkan')
                     ->sortable(),
+                TextColumn::make('pembimbing.name')
+                    ->label('Pembimbing')
+                    ->placeholder('Belum ditugaskan')
+                    ->toggleable()
+                    ->sortable(),
+                TextColumn::make('mentor.name')
+                    ->label('Mentor')
+                    ->placeholder('Belum ditugaskan')
+                    ->toggleable()
+                    ->sortable(),
+                TextColumn::make('tanggal_mulai')
+                    ->label('Magang Mulai')
+                    ->date()
+                    ->placeholder('—')
+                    ->toggleable()
+                    ->sortable(),
+                TextColumn::make('tanggal_selesai')
+                    ->label('Magang Selesai')
+                    ->date()
+                    ->placeholder('—')
+                    ->toggleable()
+                    ->sortable(),
                 TextColumn::make('user.name')
                     ->label('Pengguna')
                     ->searchable()
@@ -73,6 +96,18 @@ class InternsTable
                 //
             ])
             ->recordActions([
+                Action::make('viewCertificate')
+                    ->label('Lihat Sertifikat')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->url(fn ($record): string => route('interns.certificate.view', $record))
+                    ->openUrlInNewTab(),
+                Action::make('certificate')
+                    ->label('Download')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('gray')
+                    ->url(fn ($record): string => route('interns.certificate', $record))
+                    ->openUrlInNewTab(),
                 EditAction::make(),
             ])
             ->toolbarActions([
