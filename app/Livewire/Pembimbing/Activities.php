@@ -66,7 +66,7 @@ class Activities extends Component
             return null;
         }
 
-        return Journal::whereKey($id)->first();
+        return Journal::whereKey($id)->whereIn('intern_id', $this->visibleInternIds())->first();
     }
 
     protected function allowed(): bool
@@ -81,6 +81,12 @@ class Activities extends Component
         return $this->allowed();
     }
 
+    /** Id intern yang boleh dilihat/dikelola user yang sedang login (lihat User::visibleInterns()). */
+    protected function visibleInternIds(): array
+    {
+        return auth()->user()->visibleInterns()->pluck('id')->all();
+    }
+
     public function rate(int $journalId, int $stars): void
     {
         if (! $this->canReview()) {
@@ -89,7 +95,7 @@ class Activities extends Component
 
         $stars = max(1, min(5, $stars));
 
-        if (! Journal::whereKey($journalId)->exists()) {
+        if (! Journal::whereKey($journalId)->whereIn('intern_id', $this->visibleInternIds())->exists()) {
             return;
         }
 
@@ -105,6 +111,10 @@ class Activities extends Component
             return;
         }
 
+        if (! Journal::whereKey($journalId)->whereIn('intern_id', $this->visibleInternIds())->exists()) {
+            return;
+        }
+
         JournalReview::where('journal_id', $journalId)
             ->where('user_id', auth()->id())
             ->delete();
@@ -114,6 +124,7 @@ class Activities extends Component
     protected function baseQuery(): Builder
     {
         return Journal::query()
+            ->whereIn('intern_id', $this->visibleInternIds())
             ->when($this->internId !== '', fn ($q) => $q->where('intern_id', $this->internId))
             ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
             ->when($this->dateTo !== '', fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
@@ -163,14 +174,16 @@ class Activities extends Component
             ->get()
             ->keyBy('journal_id');
 
+        $internIds = $this->visibleInternIds();
+
         return view('livewire.pembimbing.activities', [
             'journals' => $journals,
             'myReviews' => $myReviews,
             'canReview' => $this->canReview(),
-            'interns' => Intern::orderBy('nama')->get(['id', 'nama']),
-            'totalJournals' => Journal::count(),
-            'totalInterns' => Intern::count(),
-            'journalsThisMonth' => Journal::whereBetween('date', [
+            'interns' => Intern::whereIn('id', $internIds)->orderBy('nama')->get(['id', 'nama']),
+            'totalJournals' => Journal::whereIn('intern_id', $internIds)->count(),
+            'totalInterns' => count($internIds),
+            'journalsThisMonth' => Journal::whereIn('intern_id', $internIds)->whereBetween('date', [
                 Carbon::now()->startOfMonth(),
                 Carbon::now()->endOfMonth(),
             ])->count(),

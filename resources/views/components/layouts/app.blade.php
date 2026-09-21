@@ -90,9 +90,16 @@
                             // Jaring pengaman selain push notification (yang bisa gagal — izin ditolak,
                             // iOS butuh install ke Home Screen dulu, dsb): badge ini selalu akurat karena
                             // baca langsung dari database, tidak tergantung status subscribe notifikasi.
-                            $pendingLeavesCount = \App\Models\LeaveRequest::where('status', 'pending')->count();
-                            $rejectedTasksCount = \App\Models\Task::where('status', 'rejected')->count();
+                            // Dibatasi ke intern yang memang ditugaskan ke user ini (lihat User::visibleInterns()).
+                            $visibleInternIds = $portalUser->visibleInterns()->pluck('id');
+                            $pendingLeavesCount = \App\Models\LeaveRequest::whereIn('intern_id', $visibleInternIds)->where('status', 'pending')->count();
+                            $rejectedTasksCount = \App\Models\Task::whereIn('intern_id', $visibleInternIds)->where('status', 'rejected')->count();
                         @endphp
+                        <a href="{{ route('pembimbing.certificates') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.certificates') ? 'active' : '' }}">
+                            <i class="fa-solid fa-award"></i>
+                            <span>Sertifikat Intern</span>
+                        </a>
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
@@ -111,14 +118,16 @@
                             <i class="fa-solid fa-fingerprint"></i>
                             <span>Presensi Intern</span>
                         </a>
-                        <a href="{{ route('pembimbing.leaves') }}" wire:navigate @click="nav = false"
-                           class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
-                            <i class="fa-solid fa-calendar-xmark"></i>
-                            <span>Izin Intern</span>
-                            @if ($pendingLeavesCount > 0)
-                                <span style="margin-left:auto; background:#dc2626; color:#fff; font-size:0.68rem; font-weight:700; line-height:1; padding:0.25rem 0.45rem; border-radius:999px; flex-shrink:0;">{{ $pendingLeavesCount }}</span>
-                            @endif
-                        </a>
+                        @if ($portalUser->canReviewLeaveRequests())
+                            <a href="{{ route('pembimbing.leaves') }}" wire:navigate @click="nav = false"
+                               class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
+                                <i class="fa-solid fa-calendar-xmark"></i>
+                                <span>Izin Intern</span>
+                                @if ($pendingLeavesCount > 0)
+                                    <span style="margin-left:auto; background:#dc2626; color:#fff; font-size:0.68rem; font-weight:700; line-height:1; padding:0.25rem 0.45rem; border-radius:999px; flex-shrink:0;">{{ $pendingLeavesCount }}</span>
+                                @endif
+                            </a>
+                        @endif
                     @else
                         <a href="{{ route('home') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('home') ? 'active' : '' }}">

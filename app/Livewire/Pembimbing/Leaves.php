@@ -45,7 +45,13 @@ class Leaves extends Component
     {
         $user = auth()->user();
 
-        return $user && $user->isPortalMentor();
+        return $user && $user->canReviewLeaveRequests();
+    }
+
+    /** Id intern yang boleh dilihat/dikelola user yang sedang login (lihat User::visibleInterns()). */
+    protected function visibleInternIds(): array
+    {
+        return auth()->user()->visibleInterns()->pluck('id')->all();
     }
 
     public function approve(int $leaveId): void
@@ -54,7 +60,7 @@ class Leaves extends Component
             return;
         }
 
-        $leave = LeaveRequest::whereKey($leaveId)->first();
+        $leave = LeaveRequest::whereKey($leaveId)->whereIn('intern_id', $this->visibleInternIds())->first();
 
         if (! $leave) {
             return;
@@ -90,7 +96,7 @@ class Leaves extends Component
             return;
         }
 
-        $leave = LeaveRequest::whereKey($leaveId)->first();
+        $leave = LeaveRequest::whereKey($leaveId)->whereIn('intern_id', $this->visibleInternIds())->first();
 
         if (! $leave) {
             return;
@@ -116,7 +122,10 @@ class Leaves extends Component
             return;
         }
 
-        $leave = LeaveRequest::whereKey($leaveId)->where('status', '!=', 'pending')->first();
+        $leave = LeaveRequest::whereKey($leaveId)
+            ->whereIn('intern_id', $this->visibleInternIds())
+            ->where('status', '!=', 'pending')
+            ->first();
 
         if (! $leave) {
             return;
@@ -131,7 +140,10 @@ class Leaves extends Component
 
     public function render()
     {
+        $internIds = $this->visibleInternIds();
+
         $leaves = LeaveRequest::query()
+            ->whereIn('intern_id', $internIds)
             ->with(['intern.unit', 'reviewer'])
             ->when($this->internId !== '', fn ($q) => $q->where('intern_id', $this->internId))
             ->when($this->status !== '', fn ($q) => $q->where('status', $this->status))
@@ -141,8 +153,8 @@ class Leaves extends Component
 
         return view('livewire.pembimbing.leaves', [
             'leaves' => $leaves,
-            'interns' => Intern::orderBy('nama')->get(['id', 'nama']),
-            'pendingCount' => LeaveRequest::where('status', 'pending')->count(),
+            'interns' => Intern::whereIn('id', $internIds)->orderBy('nama')->get(['id', 'nama']),
+            'pendingCount' => LeaveRequest::whereIn('intern_id', $internIds)->where('status', 'pending')->count(),
         ]);
     }
 }

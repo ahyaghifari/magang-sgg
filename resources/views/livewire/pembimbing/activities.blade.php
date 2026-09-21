@@ -107,7 +107,7 @@
                                     {{ \Illuminate\Support\Str::limit($att->label ?: $att->url, 40) }}
                                 </a>
                             @elseif ($att->type === 'document')
-                                <a href="{{ url('storage/' . $att->path) }}" target="_blank" rel="noopener"
+                                <a href="{{ url('storage/' . $att->path) }}" rel="noopener"
                                    class="badge badge-neutral" style="text-decoration:none;">
                                     <i class="fa-regular fa-file-pdf" style="color:#dc2626;"></i>
                                     {{ \Illuminate\Support\Str::limit($att->label ?: 'Dokumen PDF', 40) }}

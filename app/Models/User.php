@@ -9,6 +9,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -83,6 +84,48 @@ class User extends Authenticatable implements FilamentUser
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * Intern-intern yang dibimbing user ini (kalau perannya Pembimbing).
+     * Satu pembimbing bisa memegang banyak intern sekaligus.
+     */
+    public function internsAsPembimbing(): HasMany
+    {
+        return $this->hasMany(Intern::class, 'pembimbing_id');
+    }
+
+    /**
+     * Intern-intern yang dimentori user ini (kalau perannya Mentor).
+     * Satu mentor bisa memegang banyak intern sekaligus.
+     */
+    public function internsAsMentor(): HasMany
+    {
+        return $this->hasMany(Intern::class, 'mentor_id');
+    }
+
+    /**
+     * Intern-intern yang boleh dilihat/dikelola user ini di sisi portal pembimbing/mentor.
+     * Admin (role) melihat semua intern. Pembimbing/Mentor HANYA melihat intern yang
+     * ditugaskan langsung ke mereka oleh admin (pembimbing_id/mentor_id) — bukan semua
+     * intern di sistem. Peran lain (termasuk Pimpinan, yang punya dashboard sendiri)
+     * tidak melihat siapa pun lewat method ini.
+     */
+    public function visibleInterns(): Builder
+    {
+        if ($this->hasAdminRole()) {
+            return Intern::query();
+        }
+
+        if ($this->isPembimbing()) {
+            return Intern::query()->where('pembimbing_id', $this->id);
+        }
+
+        if ($this->isMentor()) {
+            return Intern::query()->where('mentor_id', $this->id);
+        }
+
+        return Intern::query()->whereRaw('1 = 0');
     }
 
     /**
@@ -191,6 +234,20 @@ class User extends Authenticatable implements FilamentUser
         }
 
         return $this->isPembimbing() || $this->isMentor() || $this->hasAdminRole();
+    }
+
+    /**
+     * Yang boleh meninjau (menyetujui/menolak) pengajuan izin intern.
+     * Sengaja TIDAK mengikutkan Mentor — keputusan izin tetap wewenang Pembimbing
+     * (dan admin), Mentor cuma sejajar Pembimbing untuk hal lain (jurnal, tugas, presensi).
+     */
+    public function canReviewLeaveRequests(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isViewingAsIntern()) {
+            return false;
+        }
+
+        return $this->isPembimbing() || $this->hasAdminRole();
     }
 
     /**

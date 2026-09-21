@@ -73,18 +73,29 @@ class Create extends Component
         $this->items = array_values($this->items);
     }
 
+    /** Foto dibatasi 5MB (lagipula dikompres di sisi klien); PDF dibolehkan sampai 10MB. */
+    private const MAX_PHOTO_KB = 5120;
+
+    private const MAX_DOCUMENT_KB = 10240;
+
     protected function rules(): array
     {
-        return [
+        $rules = [
             'date' => ['required', 'date'],
-            'activity' => ['required', 'string', 'min:5'],
+            'activity' => ['required', 'string'],
             'items' => ['array'],
             'items.*.type' => ['required', Rule::in(['photo', 'document', 'link'])],
-            'items.*.file' => ['nullable', 'file', 'max:5120'],
             'items.*.url' => ['nullable', 'url', 'max:2048'],
             'items.*.label' => ['nullable', 'string', 'max:255'],
             'items.*.capture' => ['boolean'],
         ];
+
+        foreach ($this->items as $i => $item) {
+            $maxKb = ($item['type'] ?? null) === 'document' ? self::MAX_DOCUMENT_KB : self::MAX_PHOTO_KB;
+            $rules["items.$i.file"] = ['nullable', 'file', "max:$maxKb"];
+        }
+
+        return $rules;
     }
 
     protected function validationAttributes(): array

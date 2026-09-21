@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\InternCertificateController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Livewire\Attendance\Index as AttendanceIndex;
 use App\Livewire\Auth\Login;
@@ -9,6 +10,7 @@ use App\Livewire\Journals\Index as JournalIndex;
 use App\Livewire\Leaves\Index as LeaveIndex;
 use App\Livewire\Pembimbing\Activities as PembimbingActivities;
 use App\Livewire\Pembimbing\Attendance as PembimbingAttendance;
+use App\Livewire\Pembimbing\Certificates as PembimbingCertificates;
 use App\Livewire\Pembimbing\Leaves as PembimbingLeaves;
 use App\Livewire\Pembimbing\Tasks as PembimbingTasks;
 use App\Livewire\Pimpinan\Dashboard as PimpinanDashboard;
@@ -34,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/presensi-intern', PembimbingAttendance::class)->name('pembimbing.attendance');
 
     Route::get('/kegiatan', PembimbingActivities::class)->name('pembimbing.activities');
+    Route::get('/sertifikat-intern', PembimbingCertificates::class)->name('pembimbing.certificates');
 
     Route::get('/dashboard-pimpinan', PimpinanDashboard::class)->name('pimpinan.dashboard');
 
@@ -44,6 +47,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/izin-intern', PembimbingLeaves::class)->name('pembimbing.leaves');
 
     Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+
+    // Lihat/unduh sertifikat PKL/magang — admin boleh untuk siapa saja, intern cuma
+    // untuk miliknya sendiri (dicek langsung di controller, bukan lewat policy).
+    Route::get('/interns/{intern}/sertifikat', [InternCertificateController::class, 'download'])
+        ->name('interns.certificate');
+    Route::get('/interns/{intern}/sertifikat/lihat', [InternCertificateController::class, 'view'])
+        ->name('interns.certificate.view');
 
     // Toggle "lihat sebagai intern" untuk admin/pembimbing yang juga punya data Intern
     // sendiri — dipakai lewat tombol di sidebar portal (components/layouts/app.blade.php).

@@ -47,10 +47,28 @@ class UserForm
                     ->placeholder('Pilih perusahaan')
                     ->helperText('Perusahaan tempat pembimbing/mentor/pimpinan ini bertugas.')
                     ->visible(fn ($get): bool => in_array($get('role'), [
-                        UserRole::Pembimbing->value,
-                        UserRole::Mentor->value,
-                        UserRole::Pimpinan->value,
+                        UserRole::Pembimbing,
+                        UserRole::Mentor,
+                        UserRole::Pimpinan,
                     ], true)),
+                Select::make('interns_as_pembimbing')
+                    ->label('Intern yang Dibimbing')
+                    ->relationship('internsAsPembimbing', 'nama')
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Belum ada intern yang ditugaskan')
+                    ->helperText('Pilih intern-intern yang dibimbing langsung oleh pengguna ini — satu pembimbing bisa memegang lebih dari satu intern.')
+                    ->visible(fn ($get): bool => $get('role') === UserRole::Pembimbing),
+                Select::make('interns_as_mentor')
+                    ->label('Intern yang Dimentori')
+                    ->relationship('internsAsMentor', 'nama')
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Belum ada intern yang ditugaskan')
+                    ->helperText('Pilih intern-intern yang dimentori langsung oleh pengguna ini — satu mentor bisa memegang lebih dari satu intern.')
+                    ->visible(fn ($get): bool => $get('role') === UserRole::Mentor),
                 DateTimePicker::make('email_verified_at')
                     ->label('Email diverifikasi pada'),
                 DateTimePicker::make('approved_at')

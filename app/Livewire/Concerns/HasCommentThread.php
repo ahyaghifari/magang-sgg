@@ -58,7 +58,18 @@ trait HasCommentThread
             return;
         }
 
-        if ($comment->user_id !== auth()->id() && ! auth()->user()->isPortalMentor()) {
+        if ($comment->user_id === auth()->id()) {
+            $comment->delete();
+
+            return;
+        }
+
+        // Bukan komentar sendiri — cuma boleh dihapus staff (pembimbing/mentor/admin) yang
+        // memang berhak atas intern pemilik jurnal/tugas tersebut, bukan sembarang staff.
+        $user = auth()->user();
+        $internId = $comment->commentable?->intern_id;
+
+        if (! $internId || ! $user->isPortalMentor() || ! $user->visibleInterns()->whereKey($internId)->exists()) {
             return;
         }
 

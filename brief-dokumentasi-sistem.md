@@ -1,6 +1,6 @@
 # Brief: Dokumentasi Sistem — Portal Internship Syifa Global Group
 
-> File ini adalah **bahan presentasi/dokumentasi**, ditulis dengan bahasa yang mudah dipahami orang non-teknis (atasan, pembimbing, atau audiens presentasi). Istilah teknis (nama file, class, route) sengaja diminimalkan di badan teks — kalau perlu contoh lebih rinci untuk keperluan teknis, bisa ditambahkan sebagai lampiran terpisah. Semua fakta di sini diambil langsung dari kode per 2026-09-16.
+> File ini adalah **bahan presentasi/dokumentasi**, ditulis dengan bahasa yang mudah dipahami orang non-teknis (atasan, pembimbing, atau audiens presentasi). Istilah teknis (nama file, class, route) sengaja diminimalkan di badan teks — kalau perlu contoh lebih rinci untuk keperluan teknis, bisa ditambahkan sebagai lampiran terpisah. Semua fakta di sini diambil langsung dari kode per 2026-09-17.
 
 ---
 
@@ -49,15 +49,17 @@ Ringkasan teknologi yang dipakai, untuk memberi gambaran skala dan kematangan si
 
 ## 4. Peran Pengguna & Hak Akses
 
-Setiap akun di sistem punya satu dari tiga peran berikut:
+Setiap akun di sistem punya satu dari lima peran berikut:
 
 | Peran | Siapa | Bisa apa saja |
 |---|---|---|
 | **Admin** | Pengelola sistem (biasanya staf HR/IT) | Akses penuh ke panel admin: mengelola akun, data peserta magang, institusi, perusahaan/unit, jadwal kerja, sampai menyetujui pendaftar baru. Admin tidak pernah terblokir status persetujuan apa pun — selalu bisa masuk. |
 | **Pembimbing** | Mentor/pengawas magang di unit kerja | Memantau seluruh kegiatan harian peserta magang binaannya, memberi penilaian bintang pada jurnal, memberi & memantau tugas, menyetujui atau menolak pengajuan izin, serta memantau presensi. |
+| **Mentor** | Pendamping/pengawas magang, sebutan jabatan yang berbeda dari Pembimbing | Hak aksesnya saat ini **sama persis** dengan Pembimbing (menilai jurnal, mengelola tugas, memutuskan izin, memantau presensi) — dibedakan hanya dari sisi penyebutan/jabatan, bukan dari sisi kewenangan di sistem. |
+| **Pimpinan** | Direktur/pimpinan perusahaan yang ingin memantau tanpa ikut mengelola | Punya dashboard ringkasan tersendiri berisi jurnal, presensi, dan pengajuan izin seluruh peserta magang — sifatnya **hanya memantau**, tidak bisa menyetujui/menolak izin, menilai jurnal, maupun mengelola tugas. |
 | **Intern** (peserta magang) | Peserta magang aktif | Pengguna utama sehari-hari: mengisi jurnal kegiatan harian, mencatat presensi, mengajukan izin/sakit, serta melihat dan menyelesaikan tugas dari pembimbing. |
 
-Catatan: beberapa admin atau pembimbing (mis. seorang Direktur yang juga aktif mengisi jurnal) bisa punya data peserta magang sendiri — ada saklar "Lihat sebagai Intern" untuk berpindah sudut pandang tanpa perlu dua akun terpisah.
+Catatan: beberapa admin, pembimbing, atau mentor (mis. seorang Direktur yang juga aktif mengisi jurnal) bisa punya data peserta magang sendiri — ada saklar "Lihat sebagai Intern" untuk berpindah sudut pandang tanpa perlu dua akun terpisah.
 
 ---
 
@@ -97,6 +99,8 @@ Setiap jurnal atau tugas punya kolom diskusi sendiri — pembimbing dan peserta 
 ### 5.8 Struktur Organisasi
 Data perusahaan disusun berjenjang: satu **Perusahaan** punya beberapa **Unit kerja** (mis. IT, Humas), dan setiap peserta magang atau pegawai ditempatkan di salah satu unit tersebut. Ini terpisah dari data **Institusi asal** (sekolah/kampus peserta magang) — dua hal yang berbeda: satu soal dari mana peserta berasal, satu lagi soal di mana dia ditempatkan bekerja. Admin yang mengatur struktur ini dan menentukan penempatan setiap peserta secara manual.
 
+Khusus akun Pembimbing/Mentor/Pimpinan, admin juga bisa mengaitkan akun tersebut langsung ke satu **Perusahaan** (terpisah dari Unit) — berguna kalau pembimbing/mentor/pimpinan tersebut mengawasi lintas beberapa unit dalam satu perusahaan yang sama, supaya tetap jelas perusahaan mana yang menjadi induknya. Kolom ini sifatnya **hanya info profil**, bukan pembatas akses data — tidak mengubah data peserta magang mana saja yang bisa dilihat/dikelola oleh akun tersebut.
+
 ### 5.9 Panel Admin
 Tempat admin mengelola seluruh data master sistem: akun pengguna, data peserta magang, institusi asal, data perusahaan & unit kerja, jurnal, presensi, dan jadwal kerja.
 
@@ -104,7 +108,10 @@ Tempat admin mengelola seluruh data master sistem: akun pengguna, data peserta m
 - **Ringkasan di halaman utama**: kartu statistik jumlah peserta magang aktif, jurnal yang masuk hari ini, ringkasan presensi hari ini, dan jumlah akun yang menunggu persetujuan — masing-masing bisa diklik untuk langsung menuju datanya. Ditambah grafik tren jumlah jurnal 7 hari terakhir.
 - Data peserta magang kini punya kolom **Nama Panggilan** (opsional), untuk membantu pembimbing mengenali peserta dengan nama yang lebih akrab dibanding nama resmi — saat ini baru tersimpan di data admin, rencananya akan ditampilkan juga di halaman-halaman pembimbing.
 
-### 5.10 Navigasi & Pengalaman Pengguna di HP
+### 5.10 Dashboard Pimpinan
+Khusus akun berperan **Pimpinan**, sistem menyediakan satu halaman ringkasan tersendiri (bukan halaman "Beranda" biasa) yang menampilkan jurnal, presensi (default: hari ini), dan pengajuan izin dari **seluruh** peserta magang sekaligus — masing-masing bisa difilter dan dijelajahi terpisah. Halaman ini murni untuk memantau: tidak ada tombol menyetujui/menolak izin, menilai jurnal, atau mengelola tugas di sini — keputusan/pengelolaan tetap jadi wewenang Pembimbing/Mentor. Pimpinan juga sengaja tidak diikutsertakan dalam notifikasi pengajuan izin baru, karena bukan pihak yang memutuskan.
+
+### 5.11 Navigasi & Pengalaman Pengguna di HP
 Karena banyak dipakai lewat HP, menu utama (sidebar) dirancang sebagai laci yang bisa dibuka lewat tombol ataupun dengan **geser jari dari tepi kiri layar** — kebiasaan yang sudah familiar dari aplikasi-aplikasi populer. Menu "Beranda" (halaman ringkasan untuk peserta magang) ditempatkan sebagai menu pertama yang paling mudah dijangkau.
 
 ---
@@ -142,7 +149,8 @@ Pembimbing memantau, menilai jurnal, memutuskan izin & tugas
 
 ## 8. Catatan Tambahan (untuk internal, opsional dimasukkan ke dokumentasi)
 
-- Sistem peran pengguna sempat punya peran keempat bernama **"User"** (peran generik/cadangan) — per 2026-09-16 peran ini **dihapus** karena tidak pernah benar-benar dipakai dalam alur bisnis; sekarang setiap akun harus salah satu dari Admin, Pembimbing, atau Intern.
+- Sistem peran pengguna sempat punya peran keempat bernama **"User"** (peran generik/cadangan) — per 2026-09-16 peran ini **dihapus** karena tidak pernah benar-benar dipakai dalam alur bisnis.
+- Per 2026-09-17, ditambahkan dua peran baru: **Mentor** (hak akses identik dengan Pembimbing, hanya beda sebutan) dan **Pimpinan** (akses pemantauan ringkas lewat dashboard tersendiri, tanpa wewenang mengelola). Total peran saat ini: Admin, Pembimbing, Mentor, Pimpinan, Intern.
 - Nama brand yang tampil ke pengguna diubah dari "Magang" menjadi **"Internship"** (judul halaman, login, sidebar) per 2026-09-16 — istilah "magang" di kalimat-kalimat deskriptif lain (mis. "peserta magang") sengaja tetap dipakai karena lebih wajar dalam Bahasa Indonesia.
 - Sebagian sistem peran lama (dari paket pihak ketiga yang sebelumnya dipakai) masih berjalan berdampingan sementara proses migrasi ke sistem peran baru selesai sepenuhnya — tidak berdampak ke pengguna, murni urusan teknis di belakang layar.
 - Nama aplikasi secara resmi (`APP_NAME`) di pengaturan server belum disesuaikan dari nilai bawaan — ini murni pengaturan teknis, tidak memengaruhi tampilan yang dilihat pengguna.

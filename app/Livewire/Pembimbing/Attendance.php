@@ -54,13 +54,22 @@ class Attendance extends Component
         return $user && $user->isPortalMentor();
     }
 
+    /** Intern yang boleh dilihat/dikelola user yang sedang login (lihat User::visibleInterns()). */
+    protected function visibleInterns()
+    {
+        return auth()->user()->visibleInterns();
+    }
+
     public function render()
     {
+        $visibleNips = $this->visibleInterns()->whereNotNull('nip')->pluck('nip');
+
         $selectedNip = $this->internId !== ''
             ? Intern::whereKey($this->internId)->value('nip')
             : null;
 
         $base = AttendanceRecord::query()
+            ->whereIn('nip', $visibleNips)
             ->when($this->internId !== '', function ($q) use ($selectedNip) {
                 // NIP kosong → tak mungkin ada rekap; paksa hasil kosong.
                 $selectedNip ? $q->where('nip', $selectedNip) : $q->whereRaw('1 = 0');
@@ -83,7 +92,7 @@ class Attendance extends Component
         return view('livewire.pembimbing.attendance', [
             'records' => $records,
             'summary' => $summary,
-            'interns' => Intern::orderBy('nama')->get(['id', 'nama', 'nip']),
+            'interns' => $this->visibleInterns()->orderBy('nama')->get(['id', 'nama', 'nip']),
             'now' => Carbon::now('Asia/Makassar'),
         ]);
     }
