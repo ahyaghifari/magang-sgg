@@ -2,50 +2,245 @@
     <div style="margin-bottom:1.4rem;">
         <h1 class="portal-title">Sertifikat Intern</h1>
         <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-            Lihat/download sertifikat PKL intern yang dibimbing/dimentori olehmu &middot; nama, nama panggilan,
-            dan tanggal magang boleh diedit di sini (ikut memperbarui isi sertifikatnya)
+            Lihat/download sertifikat PKL peserta magang (halaman 2 berisi form penilaian/appraisal
+            lengkap) &middot; tombol "Edit Data" hanya tersedia untuk peserta yang kamu bimbing/mentori
+            &middot; klik nama, tanggal, atau salah satu nilai untuk mengubahnya langsung (nilai skala
+            1-4, Nilai Akhir &amp; Rating dihitung otomatis dari rata-ratanya)
         </p>
     </div>
 
     {{-- ===== Daftar ===== --}}
-    <div class="flex" style="flex-direction:column; gap:0.6rem;">
+    <div class="flex" style="flex-direction:column; gap:0.75rem;">
         @forelse ($interns as $intern)
-            <article class="surface-card flex items-center justify-between"
-                     style="padding:0.85rem 1.1rem; gap:0.75rem; flex-wrap:wrap;">
-                <div style="min-width:0;">
-                    <p style="font-size:0.9rem; font-weight:700; color:var(--text-heading);">
-                        {{ $intern->nama }}
-                        @if ($intern->nama_panggilan)
-                            <span class="text-sm" style="font-weight:400; color:var(--text-muted);">({{ $intern->nama_panggilan }})</span>
+            <article class="surface-card" style="padding:0.95rem 1.1rem;" x-data="{ showNilai: false }">
+                <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+                    <div style="min-width:0;">
+                        <p style="font-size:0.9rem; font-weight:700; color:var(--text-heading);">
+                            {{ $intern->nama }}
+                            @if ($intern->nama_panggilan)
+                                <span class="text-sm" style="font-weight:400; color:var(--text-muted);">({{ $intern->nama_panggilan }})</span>
+                            @endif
+                            @if ($intern->unit)
+                                <span class="badge badge-neutral" style="margin-left:0.35rem;">
+                                    <i class="fa-solid fa-people-group"></i> {{ $intern->unit->name }}
+                                </span>
+                            @endif
+                        </p>
+                        <p class="text-sm" style="color:var(--text-muted); margin-top:0.15rem;">
+                            Nilai Akhir:
+                            @if ($intern->nilai_akhir !== null)
+                                <span style="font-weight:700; color:var(--brand);">{{ number_format($intern->nilai_akhir, 2) }}</span>
+                                ({{ $intern->predikat() }})
+                            @else
+                                belum dinilai
+                            @endif
+                        </p>
+                    </div>
+                    <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap;">
+                        <a href="{{ route('interns.certificate.view', $intern) }}" target="_blank" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                            <i class="fa-solid fa-eye"></i> Lihat
+                        </a>
+                        <a href="{{ route('interns.certificate', $intern) }}" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        @if (in_array($intern->id, $manageableInternIds, true))
+                            <button type="button" @click="showNilai = !showNilai" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                                <i class="fa-solid fa-pen"></i> <span x-text="showNilai ? 'Tutup Edit' : 'Edit Data'"></span>
+                            </button>
                         @endif
-                        @if ($intern->unit)
-                            <span class="badge badge-neutral" style="margin-left:0.35rem;">
-                                <i class="fa-solid fa-people-group"></i> {{ $intern->unit->name }}
-                            </span>
-                        @endif
-                    </p>
-                    <p class="text-sm" style="color:var(--text-muted); margin-top:0.15rem;">
-                        Magang:
-                        @if ($intern->tanggal_mulai || $intern->tanggal_selesai)
-                            {{ $intern->tanggal_mulai?->translatedFormat('d M Y') ?? '-' }}
-                            s.d.
-                            {{ $intern->tanggal_selesai?->translatedFormat('d M Y') ?? '-' }}
-                        @else
-                            belum diisi
-                        @endif
-                    </p>
+                    </div>
                 </div>
-                <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap;">
-                    <a href="{{ route('interns.certificate.view', $intern) }}" target="_blank" class="btn-ghost" style="padding:0.5rem 0.85rem;">
-                        <i class="fa-solid fa-eye"></i> Lihat
-                    </a>
-                    <a href="{{ route('interns.certificate', $intern) }}" class="btn-ghost" style="padding:0.5rem 0.85rem;">
-                        <i class="fa-solid fa-download"></i> Download
-                    </a>
-                    <button type="button" wire:click="edit({{ $intern->id }})" class="btn-ghost" style="padding:0.5rem 0.85rem;">
-                        <i class="fa-solid fa-pen"></i> Edit
-                    </button>
+
+                {{-- ===== 10 kriteria — terbagi 2 kategori, masing-masing bisa diedit sendiri-sendiri =====
+                     Cuma untuk intern yang memang dibimbing/dimentori (manageableInterns()) — intern lain
+                     (yang cuma bisa DILIHAT oleh Mentor) tidak punya tombol "Edit Penilaian" sama sekali,
+                     jadi blok ini tidak akan pernah tampil untuk mereka. --}}
+                @if (in_array($intern->id, $manageableInternIds, true))
+                <div x-show="showNilai" x-cloak>
+                    {{-- ===== Identitas — nama, nama panggilan, tanggal mulai/selesai — inline-edit
+                         satu-satu sama seperti kriteria penilaian di bawah. ===== --}}
+                    <p class="text-sm" style="font-weight:700; color:var(--text-muted); margin:0 0 0.4rem; letter-spacing:0.03em;">IDENTITAS</p>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0.6rem; margin-bottom:0.75rem;">
+                        @foreach ([
+                            ['field' => 'nama', 'label' => 'Nama', 'type' => 'text'],
+                            ['field' => 'nama_panggilan', 'label' => 'Nama Panggilan', 'type' => 'text'],
+                            ['field' => 'tanggal_mulai', 'label' => 'Tanggal Mulai', 'type' => 'date'],
+                            ['field' => 'tanggal_selesai', 'label' => 'Tanggal Selesai', 'type' => 'date'],
+                        ] as $idf)
+                            @php
+                                $field = $idf['field'];
+                                $raw = $intern->{$field};
+                                $rawVal = $raw instanceof \Illuminate\Support\Carbon ? $raw->toDateString() : ($raw ?? '');
+                            @endphp
+                            <div
+                                x-data="{
+                                    editing: false,
+                                    val: @js($rawVal),
+                                    error: null,
+                                    saving: false,
+                                    save() {
+                                        this.saving = true;
+                                        this.error = null;
+                                        $wire.updateField({{ $intern->id }}, '{{ $field }}', this.val === '' ? null : this.val)
+                                            .then((err) => {
+                                                this.saving = false;
+                                                if (err) { this.error = err; return; }
+                                                this.editing = false;
+                                            });
+                                    },
+                                }"
+                                style="border:1px solid var(--border); border-radius:10px; padding:0.6rem 0.75rem; background:var(--surface-alt);"
+                            >
+                                <p class="text-sm" style="color:var(--text-muted); margin-bottom:0.25rem;">{{ $idf['label'] }}</p>
+
+                                <template x-if="!editing">
+                                    <button type="button" @click="editing = true; $nextTick(() => $refs.input?.focus())"
+                                            style="background:none; border:none; padding:0; cursor:pointer; text-align:left; width:100%; font-weight:700; color:var(--text-heading); font-size:0.9rem;">
+                                        <span x-text="val === '' ? '—' : val"></span>
+                                        <i class="fa-solid fa-pen" style="font-size:0.6rem; opacity:0.45; margin-left:0.35rem;"></i>
+                                    </button>
+                                </template>
+
+                                <template x-if="editing">
+                                    <div class="flex items-center" style="gap:0.3rem;">
+                                        <input type="{{ $idf['type'] }}" x-model="val" x-ref="input"
+                                               @keydown.enter="save()" @keydown.escape="editing = false"
+                                               class="form-input" style="padding:0.3rem 0.5rem;">
+                                        <button type="button" @click="save()" :disabled="saving"
+                                                class="btn-ghost" style="padding:0.3rem 0.55rem; flex-shrink:0;" aria-label="Simpan">
+                                            <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                                        </button>
+                                        <button type="button" @click="editing = false" class="btn-ghost" style="padding:0.3rem 0.55rem; flex-shrink:0;" aria-label="Batal">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                </template>
+
+                                <p x-show="error" x-text="error" class="text-sm" style="color:#dc2626; margin-top:0.3rem;"></p>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @foreach (['ATTITUDE', 'KNOWLEDGE & SKILL'] as $category)
+                        <p class="text-sm" style="font-weight:700; color:var(--text-muted); margin:0.75rem 0 0.4rem; letter-spacing:0.03em;">{{ $category }}</p>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0.6rem;">
+                            @foreach ($criteria as $field => $c)
+                                @continue($c['category'] !== $category)
+                                <div
+                                    x-data="{
+                                        editing: false,
+                                        val: '{{ $intern->{$field} ?? '' }}',
+                                        committed: '{{ $intern->{$field} ?? '' }}',
+                                        error: null,
+                                        saving: false,
+                                        save() {
+                                            if (this.val === this.committed) { this.editing = false; return; }
+                                            this.saving = true;
+                                            this.error = null;
+                                            $wire.updateField({{ $intern->id }}, '{{ $field }}', this.val === '' ? null : this.val)
+                                                .then((err) => {
+                                                    this.saving = false;
+                                                    if (err) { this.error = err; return; }
+                                                    this.committed = this.val;
+                                                    this.editing = false;
+                                                });
+                                        },
+                                        cancel() {
+                                            this.val = this.committed;
+                                            this.editing = false;
+                                        },
+                                    }"
+                                    style="border:1px solid var(--border); border-radius:10px; padding:0.6rem 0.75rem; background:var(--surface-alt);"
+                                >
+                                    <p class="text-sm" style="color:var(--text-muted); margin-bottom:0.25rem;" title="{{ $c['description'] }}">{{ $c['title'] }}</p>
+
+                                    <template x-if="!editing">
+                                        <button type="button" @click="editing = true; $nextTick(() => $refs.input?.focus())"
+                                                style="background:none; border:none; padding:0; cursor:pointer; font-weight:700; color:var(--text-heading); font-size:1rem;">
+                                            <span x-text="val === '' ? '—' : val"></span>
+                                            <i class="fa-solid fa-pen" style="font-size:0.6rem; opacity:0.45; margin-left:0.35rem;"></i>
+                                        </button>
+                                    </template>
+
+                                    {{-- Satu input yang menyesuaikan sendiri: klik untuk lihat pilihan cepat 1-4
+                                         (datalist bawaan browser), atau ketik langsung angka lain (mis. 3.75) —
+                                         tidak perlu tombol centang, auto-simpan begitu Enter atau pindah fokus.
+                                         cancel() (Escape/tombol X) mengembalikan val ke nilai tersimpan terakhir
+                                         SEBELUM editing dimatikan, supaya blur yang menyusul tidak ikut menyimpan
+                                         perubahan yang sengaja dibatalkan (save() no-op kalau val === committed). --}}
+                                    <template x-if="editing">
+                                        <div class="flex items-center" style="gap:0.3rem;">
+                                            <input type="number" min="1" max="4" step="0.01" x-model="val" x-ref="input"
+                                                   list="crit-opts-{{ $intern->id }}-{{ $field }}"
+                                                   @keydown.enter="save()" @blur="save()" @keydown.escape="cancel()"
+                                                   class="form-input" style="width:5rem; padding:0.3rem 0.5rem;">
+                                            <datalist id="crit-opts-{{ $intern->id }}-{{ $field }}">
+                                                <option value="1"></option>
+                                                <option value="2"></option>
+                                                <option value="3"></option>
+                                                <option value="4"></option>
+                                            </datalist>
+                                            <i x-show="saving" class="fa-solid fa-spinner fa-spin" style="color:var(--text-muted);"></i>
+                                            <button type="button" @click="cancel()" x-show="!saving" class="btn-ghost" style="padding:0.3rem 0.55rem;" aria-label="Tutup">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </template>
+
+                                    <p x-show="error" x-text="error" class="text-sm" style="color:#dc2626; margin-top:0.3rem;"></p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endforeach
                 </div>
+
+                {{-- ===== Catatan penilaian — juga inline-edit ===== --}}
+                <div
+                    x-show="showNilai"
+                    x-cloak
+                    x-data="{
+                        editing: false,
+                        val: @js($intern->catatan_penilaian ?? ''),
+                        error: null,
+                        saving: false,
+                        save() {
+                            this.saving = true;
+                            this.error = null;
+                            $wire.updateField({{ $intern->id }}, 'catatan_penilaian', this.val === '' ? null : this.val)
+                                .then((err) => {
+                                    this.saving = false;
+                                    if (err) { this.error = err; return; }
+                                    this.editing = false;
+                                });
+                        },
+                    }"
+                    style="margin-top:0.75rem; border:1px solid var(--border); border-radius:10px; padding:0.6rem 0.75rem; background:var(--surface-alt);"
+                >
+                    <p class="text-sm" style="color:var(--text-muted); margin-bottom:0.25rem;">Catatan Penilaian</p>
+
+                    <template x-if="!editing">
+                        <button type="button" @click="editing = true; $nextTick(() => $refs.textarea?.focus())"
+                                style="background:none; border:none; padding:0; cursor:pointer; text-align:left; width:100%; color:var(--text-body); font-size:0.85rem;">
+                            <span x-text="val === '' ? 'Belum ada catatan — klik untuk isi' : val" :style="val === '' ? 'color:var(--text-faint);' : ''"></span>
+                            <i class="fa-solid fa-pen" style="font-size:0.6rem; opacity:0.45; margin-left:0.35rem;"></i>
+                        </button>
+                    </template>
+
+                    <template x-if="editing">
+                        <div>
+                            <textarea x-model="val" x-ref="textarea" rows="2" class="form-input" style="margin-bottom:0.4rem;"></textarea>
+                            <div class="flex items-center" style="gap:0.4rem;">
+                                <button type="button" @click="save()" :disabled="saving" class="btn-ghost" style="padding:0.35rem 0.7rem;">
+                                    <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i> Simpan
+                                </button>
+                                <button type="button" @click="editing = false" class="btn-ghost" style="padding:0.35rem 0.7rem;">Batal</button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <p x-show="error" x-text="error" class="text-sm" style="color:#dc2626; margin-top:0.3rem;"></p>
+                </div>
+                @endif
             </article>
         @empty
             <div class="surface-card" style="padding:2.5rem 1.15rem; text-align:center;">
@@ -70,71 +265,4 @@
             </button>
         </div>
     @endif
-
-    {{-- ===== Modal edit ===== --}}
-    <div
-        x-data
-        x-show="$wire.showEdit"
-        x-cloak
-        x-transition.opacity
-        @keydown.escape.window="$wire.closeEdit()"
-        style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
-    >
-        <div @click.outside="$wire.closeEdit()" class="surface-card" style="width:100%; max-width:28rem; margin:auto; padding:0;">
-            <div class="flex items-center justify-between"
-                 style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft);">
-                <h2 style="font-size:1.05rem; font-weight:700;">Edit Data Sertifikat</h2>
-                <button type="button" wire:click="closeEdit" class="theme-toggle" aria-label="Tutup">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <form wire:submit="save" style="padding:1.35rem;">
-                <div style="margin-bottom:1rem;">
-                    <label for="e-nama" class="form-label">Nama</label>
-                    <input id="e-nama" type="text" wire:model="nama" class="form-input">
-                    @error('nama')
-                        <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div style="margin-bottom:1rem;">
-                    <label for="e-panggilan" class="form-label">Nama Panggilan</label>
-                    <input id="e-panggilan" type="text" wire:model="namaPanggilan" class="form-input" placeholder="Opsional">
-                    @error('namaPanggilan')
-                        <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="flex" style="gap:0.75rem; margin-bottom:1.25rem;">
-                    <div style="flex:1;">
-                        <label for="e-mulai" class="form-label">Magang Mulai</label>
-                        <input id="e-mulai" type="date" wire:model="tanggalMulai" class="form-input">
-                        @error('tanggalMulai')
-                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div style="flex:1;">
-                        <label for="e-selesai" class="form-label">Magang Selesai</label>
-                        <input id="e-selesai" type="date" wire:model="tanggalSelesai" class="form-input">
-                        @error('tanggalSelesai')
-                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="flex items-center" style="gap:0.65rem;">
-                    <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="save">
-                        <span wire:loading.remove wire:target="save">
-                            <i class="fa-solid fa-floppy-disk" style="margin-right:0.4rem;"></i>Simpan
-                        </span>
-                        <span wire:loading wire:target="save">
-                            <i class="fa-solid fa-spinner fa-spin" style="margin-right:0.4rem;"></i>Menyimpan...
-                        </span>
-                    </button>
-                    <button type="button" wire:click="closeEdit" class="btn-ghost">Batal</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>

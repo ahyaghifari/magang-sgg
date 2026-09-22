@@ -99,6 +99,24 @@ html.dark .btn-primary:hover {
     background: #2563eb;
 }
 
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #dc2626;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.625rem 1.1rem;
+    border-radius: 12px;
+    transition: background 0.15s ease;
+}
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
 .btn-ghost {
     display: inline-flex;
     align-items: center;
@@ -343,6 +361,17 @@ html.dark .stat-card-deco {
 .stat-card-icon.magenta {
     background: rgba(199, 75, 160, 0.12);
     color: var(--brand-accent);
+}
+
+/* Fixed-overlay modals (lightbox, form modal, confirm dialogs) center their content via
+   flex. This MUST be a class, not inline `display:flex` — Alpine's x-show, when re-showing
+   an element, does `el.style.removeProperty('display')` rather than restoring the previous
+   value, which silently strips an inline `display:flex` (and any inline align/justify)
+   right along with it, leaving the div's default `display:block` with no centering. */
+.overlay-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* small colored icon badge used in compact info rows (Home intern info cards) */

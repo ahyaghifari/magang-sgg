@@ -83,7 +83,7 @@ class Tasks extends Component
             return null;
         }
 
-        return Task::whereKey($id)->whereIn('intern_id', $this->visibleInternIds())->first();
+        return Task::whereKey($id)->whereIn('intern_id', $this->manageableInternIds())->first();
     }
 
     protected function allowed(): bool
@@ -93,10 +93,24 @@ class Tasks extends Component
         return $user && $user->isPortalMentor();
     }
 
-    /** Id intern yang boleh dilihat/dikelola user yang sedang login (lihat User::visibleInterns()). */
+    /**
+     * Id intern yang boleh DILIHAT user yang sedang login — dipakai untuk daftar/filter
+     * tugas (lihat User::visibleInterns(): Mentor sengaja melihat semua intern di sini).
+     */
     protected function visibleInternIds(): array
     {
         return auth()->user()->visibleInterns()->pluck('id')->all();
+    }
+
+    /**
+     * Id intern yang boleh DIKELOLA user yang sedang login — dipakai untuk pemberian
+     * tugas baru dan setiap aksi yang mengubah tugas (edit/hapus/tandai selesai/komentar).
+     * SELALU sempit ke intern yang memang dibimbing/dimentori (lihat User::manageableInterns()),
+     * beda dari visibleInternIds() yang melebar untuk Mentor.
+     */
+    protected function manageableInternIds(): array
+    {
+        return auth()->user()->manageableInterns()->pluck('id')->all();
     }
 
     public function openForm(): void
@@ -114,7 +128,7 @@ class Tasks extends Component
     protected function rules(): array
     {
         return [
-            'formInternId' => ['required', Rule::in($this->visibleInternIds())],
+            'formInternId' => ['required', Rule::in($this->manageableInternIds())],
             'title' => ['required', 'string', 'min:3', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'dueDate' => ['nullable', 'date'],
@@ -174,7 +188,7 @@ class Tasks extends Component
             return;
         }
 
-        $task = Task::whereKey($taskId)->whereIn('intern_id', $this->visibleInternIds())->first();
+        $task = Task::whereKey($taskId)->whereIn('intern_id', $this->manageableInternIds())->first();
 
         if (! $task) {
             return;
@@ -200,7 +214,7 @@ class Tasks extends Component
             return;
         }
 
-        $task = Task::whereKey($this->editingTaskId)->whereIn('intern_id', $this->visibleInternIds())->first();
+        $task = Task::whereKey($this->editingTaskId)->whereIn('intern_id', $this->manageableInternIds())->first();
 
         if (! $task) {
             return;
@@ -233,7 +247,7 @@ class Tasks extends Component
             return;
         }
 
-        Task::whereKey($taskId)->whereIn('intern_id', $this->visibleInternIds())
+        Task::whereKey($taskId)->whereIn('intern_id', $this->manageableInternIds())
             ->update(['status' => 'done', 'completed_at' => now()]);
     }
 
@@ -243,7 +257,7 @@ class Tasks extends Component
             return;
         }
 
-        Task::whereKey($taskId)->whereIn('intern_id', $this->visibleInternIds())
+        Task::whereKey($taskId)->whereIn('intern_id', $this->manageableInternIds())
             ->update(['status' => 'pending', 'completed_at' => null]);
     }
 
@@ -253,7 +267,7 @@ class Tasks extends Component
             return;
         }
 
-        Task::whereKey($taskId)->whereIn('intern_id', $this->visibleInternIds())->delete();
+        Task::whereKey($taskId)->whereIn('intern_id', $this->manageableInternIds())->delete();
     }
 
     public function render()
@@ -262,7 +276,7 @@ class Tasks extends Component
 
         $tasks = Task::query()
             ->whereIn('intern_id', $internIds)
-            ->with(['intern.unit', 'assignedBy', 'comments.author'])
+            ->with(['intern.unit', 'assignedBy', 'comments.author', 'completionPhotos'])
             ->when($this->internId !== '', fn ($q) => $q->where('intern_id', $this->internId))
             ->when($this->status !== '', fn ($q) => $q->where('status', $this->status))
             ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
@@ -274,6 +288,10 @@ class Tasks extends Component
         return view('livewire.pembimbing.tasks', [
             'tasks' => $tasks,
             'interns' => Intern::whereIn('id', $internIds)->orderBy('nama')->get(['id', 'nama']),
+            // Khusus untuk pilihan peserta di form "Beri Tugas" — sengaja tetap sempit
+            // (manageableInternIds()) meski daftar/filter tugas di atas sudah melebar untuk
+            // Mentor, karena pemberian tugas baru cuma boleh ke intern yang dibimbing/dimentori.
+            'manageableInterns' => Intern::whereIn('id', $this->manageableInternIds())->orderBy('nama')->get(['id', 'nama']),
             'totalTasks' => Task::whereIn('intern_id', $internIds)->count(),
             'pendingTasks' => Task::whereIn('intern_id', $internIds)->where('status', '!=', 'done')->count(),
             'doneTasks' => Task::whereIn('intern_id', $internIds)->where('status', 'done')->count(),

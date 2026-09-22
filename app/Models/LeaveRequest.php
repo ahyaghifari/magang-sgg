@@ -16,6 +16,8 @@ class LeaveRequest extends Model
         'type',
         'start_date',
         'end_date',
+        'start_time',
+        'end_time',
         'reason',
         'attachment_path',
         'status',
@@ -49,5 +51,17 @@ class LeaveRequest extends Model
     public function isPending(): bool
     {
         return $this->status === 'pending';
+    }
+
+    /** "13:00–15:00", atau null kalau izin/sakit sehari penuh (tanpa jam spesifik). */
+    public function timeRangeLabel(): ?string
+    {
+        if (! $this->start_time || ! $this->end_time) {
+            return null;
+        }
+
+        $fmt = fn ($t) => \Illuminate\Support\Carbon::parse($t)->format('H:i');
+
+        return $fmt($this->start_time) . '–' . $fmt($this->end_time);
     }
 }

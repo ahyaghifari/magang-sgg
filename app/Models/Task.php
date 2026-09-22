@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasComments;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Tugas milik seorang Intern. Bisa dicatat sendiri oleh intern (tugas yang
@@ -24,7 +25,6 @@ class Task extends Model
         'status',
         'due_date',
         'completed_at',
-        'completion_photo_path',
         'rejection_reason',
     ];
 
@@ -47,6 +47,14 @@ class Task extends Model
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+    /**
+     * Foto bukti penyelesaian — bisa lebih dari satu (lihat TaskCompletionPhoto).
+     */
+    public function completionPhotos(): HasMany
+    {
+        return $this->hasMany(TaskCompletionPhoto::class);
     }
 
     public function isDone(): bool

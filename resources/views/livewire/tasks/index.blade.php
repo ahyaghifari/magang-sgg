@@ -118,13 +118,17 @@
                         </p>
                     @endif
 
-                    @if ($task->status === 'done' && $task->completion_photo_path)
+                    @if ($task->status === 'done' && $task->completionPhotos->isNotEmpty())
                         <div style="margin-top:0.75rem;">
-                            <button type="button" onclick="openLightbox(@js(url('storage/' . $task->completion_photo_path)), 'Bukti selesai')"
-                                    style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
-                                <img src="{{ url('storage/' . $task->completion_photo_path) }}" alt="Bukti selesai"
-                                     style="width:84px; height:84px; object-fit:cover; display:block;">
-                            </button>
+                            <div class="flex" style="gap:0.5rem; flex-wrap:wrap;">
+                                @foreach ($task->completionPhotos as $photo)
+                                    <button type="button" onclick="openLightbox(@js(url('storage/' . $photo->path)), 'Bukti selesai')"
+                                            style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
+                                        <img src="{{ url('storage/' . $photo->path) }}" alt="Bukti selesai"
+                                             style="width:84px; height:84px; object-fit:cover; display:block;">
+                                    </button>
+                                @endforeach
+                            </div>
                             <p class="text-sm" style="margin-top:0.3rem; color:var(--text-faint);">
                                 <i class="fa-regular fa-image"></i> Foto bukti pengerjaan
                             </p>
@@ -221,26 +225,63 @@
                 <form wire:submit="confirmComplete">
                     <div style="margin-bottom:1.25rem;">
                         <span class="form-label">
-                            Foto Bukti <span style="color:#dc2626; font-weight:600;">*</span>
+                            Foto Bukti <span style="color:#dc2626; font-weight:600;">*</span> <span style="color:var(--text-faint); font-weight:400;">(boleh lebih dari satu)</span>
                         </span>
-                        <div x-data class="flex" style="gap:0.5rem; flex-wrap:wrap;">
-                            <label class="btn-ghost" style="padding:0.5rem 0.85rem; cursor:pointer;">
-                                <i class="fa-regular fa-image"></i> Pilih Foto
-                                <input type="file" wire:model="completionPhoto" accept="image/*" style="display:none;">
-                            </label>
-                            <label class="btn-ghost" style="padding:0.5rem 0.85rem; cursor:pointer;">
-                                <i class="fa-solid fa-camera"></i> Kamera
-                                <input type="file" wire:model="completionPhoto" accept="image/*" capture="environment" style="display:none;">
-                            </label>
+
+                        {{-- Dropzone beneran (bukan input tersembunyi di belakang label) supaya bisa
+                             diseret-taruh (drag-and-drop) file dari luar, bisa banyak sekaligus. --}}
+                        <div
+                            x-data="{ dragging: false }"
+                            x-on:dragover.prevent="dragging = true"
+                            x-on:dragleave.prevent="dragging = false"
+                            x-on:drop.prevent="
+                                dragging = false;
+                                if ($event.dataTransfer.files.length) {
+                                    $wire.uploadMultiple('completionPhotos', $event.dataTransfer.files, () => {}, () => {}, () => {});
+                                }
+                            "
+                            class="file-box"
+                            :style="dragging ? 'border-color:var(--brand); background:var(--surface-alt); border-style:solid;' : ''"
+                            style="text-align:center; padding:1.25rem 0.75rem; cursor:default;"
+                        >
+                            <i class="fa-regular fa-image" style="font-size:1.3rem; color:var(--text-faint);"></i>
+                            <p class="text-sm" style="margin-top:0.4rem; color:var(--text-muted);">Seret &amp; taruh foto di sini, atau</p>
+                            <div class="flex items-center justify-center" style="gap:0.5rem; flex-wrap:wrap; margin-top:0.55rem;">
+                                <label class="btn-ghost" style="padding:0.5rem 0.85rem; cursor:pointer;">
+                                    <i class="fa-regular fa-image"></i> Pilih Foto
+                                    <input type="file" wire:model="completionPhotos" accept="image/*" multiple style="display:none;">
+                                </label>
+                                <label class="btn-ghost" style="padding:0.5rem 0.85rem; cursor:pointer;">
+                                    <i class="fa-solid fa-camera"></i> Kamera
+                                    <input type="file" wire:model="completionPhotos" accept="image/*" capture="environment" multiple style="display:none;">
+                                </label>
+                            </div>
                         </div>
-                        <div wire:loading wire:target="completionPhoto" class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
+
+                        <div wire:loading wire:target="completionPhotos" class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
                             <i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...
                         </div>
-                        @if ($completionPhoto)
-                            <img src="{{ $completionPhoto->temporaryUrl() }}" alt="Pratinjau foto"
-                                 style="width:100px; height:100px; object-fit:cover; border-radius:10px; margin-top:0.6rem; border:1px solid var(--border);">
+
+                        @if (! empty($completionPhotos))
+                            <div class="flex" style="gap:0.5rem; flex-wrap:wrap; margin-top:0.6rem;">
+                                @foreach ($completionPhotos as $i => $photo)
+                                    <div style="position:relative;">
+                                        <img src="{{ $photo->temporaryUrl() }}" alt="Pratinjau foto"
+                                             style="width:84px; height:84px; object-fit:cover; border-radius:10px; border:1px solid var(--border); display:block;">
+                                        <button type="button" wire:click="removeCompletionPhoto({{ $i }})"
+                                                style="position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:9999px; background:#dc2626; color:#fff; border:none; font-size:0.65rem; line-height:1; cursor:pointer;"
+                                                aria-label="Hapus foto">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </button>
+                                    </div>
+                                @endforeach
+                            </div>
                         @endif
-                        @error('completionPhoto')
+
+                        @error('completionPhotos')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                        @error('completionPhotos.*')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror
                     </div>

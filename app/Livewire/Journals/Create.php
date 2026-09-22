@@ -82,7 +82,7 @@ class Create extends Component
     {
         $rules = [
             'date' => ['required', 'date'],
-            'activity' => ['required', 'string'],
+            'activity' => ['nullable', 'string'],
             'items' => ['array'],
             'items.*.type' => ['required', Rule::in(['photo', 'document', 'link'])],
             'items.*.url' => ['nullable', 'url', 'max:2048'],

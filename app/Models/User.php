@@ -105,13 +105,40 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Intern-intern yang boleh dilihat/dikelola user ini di sisi portal pembimbing/mentor.
-     * Admin (role) melihat semua intern. Pembimbing/Mentor HANYA melihat intern yang
-     * ditugaskan langsung ke mereka oleh admin (pembimbing_id/mentor_id) — bukan semua
-     * intern di sistem. Peran lain (termasuk Pimpinan, yang punya dashboard sendiri)
-     * tidak melihat siapa pun lewat method ini.
+     * Intern-intern yang boleh DILIHAT user ini di sisi portal pembimbing/mentor (daftar,
+     * filter, lihat/download sertifikat, dsb). Admin melihat semua intern. Pembimbing HANYA
+     * melihat intern yang ditugaskan langsung kepadanya (pembimbing_id) — sama seperti
+     * manageableInterns(). Mentor SENGAJA dilebarkan untuk bisa melihat SEMUA intern
+     * (transparansi lintas-tim); aksi kelola (beri tugas, isi penilaian, hapus komentar
+     * orang lain, dsb) tetap dibatasi lewat manageableInterns(), bukan method ini. Peran
+     * lain (termasuk Pimpinan, yang punya dashboard sendiri) tidak melihat siapa pun lewat
+     * method ini.
      */
     public function visibleInterns(): Builder
+    {
+        if ($this->hasAdminRole()) {
+            return Intern::query();
+        }
+
+        if ($this->isPembimbing()) {
+            return Intern::query()->where('pembimbing_id', $this->id);
+        }
+
+        if ($this->isMentor()) {
+            return Intern::query();
+        }
+
+        return Intern::query()->whereRaw('1 = 0');
+    }
+
+    /**
+     * Intern-intern yang boleh DIKELOLA user ini (beri/ubah/hapus tugas, isi penilaian,
+     * moderasi komentar orang lain, dsb) — SELALU sempit ke intern yang ditugaskan
+     * langsung kepadanya (pembimbing_id/mentor_id), tidak pernah melebar seperti
+     * visibleInterns() untuk Mentor. Gunakan ini untuk setiap aksi yang MENGUBAH data,
+     * bukan sekadar menampilkannya.
+     */
+    public function manageableInterns(): Builder
     {
         if ($this->hasAdminRole()) {
             return Intern::query();

@@ -66,7 +66,7 @@ class Activities extends Component
             return null;
         }
 
-        return Journal::whereKey($id)->whereIn('intern_id', $this->visibleInternIds())->first();
+        return Journal::whereKey($id)->whereIn('intern_id', $this->manageableInternIds())->first();
     }
 
     protected function allowed(): bool
@@ -81,10 +81,23 @@ class Activities extends Component
         return $this->allowed();
     }
 
-    /** Id intern yang boleh dilihat/dikelola user yang sedang login (lihat User::visibleInterns()). */
+    /**
+     * Id intern yang boleh DILIHAT user yang sedang login — dipakai untuk feed/filter
+     * jurnal (lihat User::visibleInterns(): Mentor sengaja melihat semua intern di sini).
+     */
     protected function visibleInternIds(): array
     {
         return auth()->user()->visibleInterns()->pluck('id')->all();
+    }
+
+    /**
+     * Id intern yang boleh DIKELOLA user yang sedang login — dipakai untuk beri bintang
+     * & komentar. SELALU sempit ke intern yang memang dibimbing/dimentori (lihat
+     * User::manageableInterns()), beda dari visibleInternIds() yang melebar untuk Mentor.
+     */
+    protected function manageableInternIds(): array
+    {
+        return auth()->user()->manageableInterns()->pluck('id')->all();
     }
 
     public function rate(int $journalId, int $stars): void
@@ -95,7 +108,7 @@ class Activities extends Component
 
         $stars = max(1, min(5, $stars));
 
-        if (! Journal::whereKey($journalId)->whereIn('intern_id', $this->visibleInternIds())->exists()) {
+        if (! Journal::whereKey($journalId)->whereIn('intern_id', $this->manageableInternIds())->exists()) {
             return;
         }
 
@@ -111,7 +124,7 @@ class Activities extends Component
             return;
         }
 
-        if (! Journal::whereKey($journalId)->whereIn('intern_id', $this->visibleInternIds())->exists()) {
+        if (! Journal::whereKey($journalId)->whereIn('intern_id', $this->manageableInternIds())->exists()) {
             return;
         }
 
@@ -180,6 +193,10 @@ class Activities extends Component
             'journals' => $journals,
             'myReviews' => $myReviews,
             'canReview' => $this->canReview(),
+            // Per-jurnal: bintang & komentar cuma boleh diisi untuk intern yang memang
+            // dibimbing/dimentori — dipakai di view untuk menyembunyikan kontrolnya pada
+            // jurnal milik intern lain (yang cuma boleh dilihat, bukan dinilai).
+            'manageableInternIds' => $this->manageableInternIds(),
             'interns' => Intern::whereIn('id', $internIds)->orderBy('nama')->get(['id', 'nama']),
             'totalJournals' => Journal::whereIn('intern_id', $internIds)->count(),
             'totalInterns' => count($internIds),

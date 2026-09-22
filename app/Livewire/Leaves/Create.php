@@ -27,6 +27,11 @@ class Create extends Component
 
     public string $endDate = '';
 
+    /** Opsional — kalau kosong berarti izin/sakit sehari penuh. */
+    public string $startTime = '';
+
+    public string $endTime = '';
+
     public string $reason = '';
 
     public $attachment = null;
@@ -52,7 +57,7 @@ class Create extends Component
 
     protected function resetForm(): void
     {
-        $this->reset(['reason', 'attachment']);
+        $this->reset(['reason', 'attachment', 'startTime', 'endTime']);
         $this->resetValidation();
         $this->type = 'izin';
         $this->startDate = Carbon::today()->toDateString();
@@ -65,6 +70,8 @@ class Create extends Component
             'type' => ['required', Rule::in(['izin', 'sakit'])],
             'startDate' => ['required', 'date'],
             'endDate' => ['required', 'date', 'after_or_equal:startDate'],
+            'startTime' => ['nullable', 'date_format:H:i', 'required_with:endTime'],
+            'endTime' => ['nullable', 'date_format:H:i', 'required_with:startTime', 'after:startTime'],
             'reason' => ['required', 'string', 'min:5', 'max:1000'],
             'attachment' => ['nullable', 'file', 'max:5120'],
         ];
@@ -76,6 +83,8 @@ class Create extends Component
             'type' => 'jenis izin',
             'startDate' => 'tanggal mulai',
             'endDate' => 'tanggal selesai',
+            'startTime' => 'jam mulai',
+            'endTime' => 'jam selesai',
             'reason' => 'alasan',
             'attachment' => 'lampiran',
         ];
@@ -99,6 +108,8 @@ class Create extends Component
             'type' => $this->type,
             'start_date' => $this->startDate,
             'end_date' => $this->endDate,
+            'start_time' => $this->startTime !== '' ? $this->startTime : null,
+            'end_time' => $this->endTime !== '' ? $this->endTime : null,
             'reason' => $this->reason,
             'attachment_path' => $path,
             'status' => 'pending',

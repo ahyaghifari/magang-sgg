@@ -3,9 +3,12 @@
 namespace App\Filament\Resources\Interns\Schemas;
 
 use App\Enums\UserRole;
+use App\Models\Intern;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class InternForm
@@ -82,6 +85,36 @@ class InternForm
                     ->label('Magang Selesai')
                     ->native(false)
                     ->afterOrEqual('tanggal_mulai'),
+                Section::make('Penilaian — ATTITUDE')
+                    ->columns(2)
+                    ->schema(
+                        collect(Intern::CRITERIA)
+                            ->filter(fn ($c) => $c['category'] === 'ATTITUDE')
+                            ->map(fn ($c, $field) => TextInput::make($field)
+                                ->label($c['title'])
+                                ->helperText($c['description'])
+                                ->numeric()->minValue(1)->maxValue(4)->step(0.01)->placeholder('1-4'))
+                            ->values()
+                            ->all(),
+                    ),
+                Section::make('Penilaian — KNOWLEDGE & SKILL')
+                    ->columns(2)
+                    ->schema(
+                        collect(Intern::CRITERIA)
+                            ->filter(fn ($c) => $c['category'] === 'KNOWLEDGE & SKILL')
+                            ->map(fn ($c, $field) => TextInput::make($field)
+                                ->label($c['title'])
+                                ->helperText($c['description'])
+                                ->numeric()->minValue(1)->maxValue(4)->step(0.01)->placeholder('1-4'))
+                            ->values()
+                            ->all(),
+                    ),
+                Textarea::make('catatan_penilaian')
+                    ->label('Catatan Penilaian')
+                    ->rows(3)
+                    ->maxLength(1000)
+                    ->columnSpanFull()
+                    ->helperText('Nilai Akhir & Rating dihitung otomatis dari rata-rata 10 kriteria di atas (≥3.50 Excellent, ≥3.00 Good, ≥2.50 Fair, ≥1.50 Below Average, di bawahnya Poor). Ditampilkan di form penilaian PKL.'),
             ]);
     }
 }
