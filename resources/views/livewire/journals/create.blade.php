@@ -6,7 +6,8 @@
         x-transition.opacity
         @keydown.escape.window="$wire.show && $wire.close()"
         x-effect="document.body.style.overflow = $wire.show ? 'hidden' : ''"
-        style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
+        class="overlay-center"
+        style="position:fixed; inset:0; z-index:50; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
     >
         <div
             @click.outside="$wire.close()"
@@ -55,7 +56,7 @@
 
                         {{-- Kegiatan --}}
                         <div style="margin-bottom:1.1rem;">
-                            <label for="j-activity" class="form-label">Kegiatan</label>
+                            <label for="j-activity" class="form-label">Kegiatan <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
                             <textarea id="j-activity" wire:model="activity" rows="6" class="form-input"
                                       placeholder="Tuliskan kegiatan yang kamu lakukan hari ini..."></textarea>
                             @error('activity')
@@ -66,6 +67,10 @@
                         {{-- Lampiran --}}
                         <div style="margin-bottom:1.25rem;">
                             <span class="form-label">Lampiran <span style="color:#dc2626; font-weight:600;">*</span> <span style="color:var(--text-faint); font-weight:400;">(wajib, minimal satu)</span></span>
+                            <p class="text-sm" style="color:var(--text-faint); margin:0.15rem 0 0.6rem;">
+                                Tambah "Foto" atau "PDF" dulu, lalu di kotak file-nya bisa pilih atau seret &amp; taruh
+                                (drag-and-drop) lebih dari satu file sekaligus dari komputermu.
+                            </p>
 
                             @error('items')
                                 <p class="text-sm" style="color:#dc2626; margin-top:-0.1rem; margin-bottom:0.6rem;">
@@ -141,15 +146,42 @@
                                         <input type="url" wire:model="items.{{ $i }}.url" class="form-input"
                                                placeholder="https://...">
                                     @elseif ($item['type'] === 'document')
-                                        <input type="file" wire:model="items.{{ $i }}.file" class="file-box"
-                                               accept="application/pdf">
+                                        {{-- Bisa pilih/drop lebih dari satu PDF sekaligus — tiap file tambahan otomatis
+                                             jadi lampiran baru, sama seperti pola multi-foto di bawah. --}}
+                                        <input type="file" class="file-box" accept="application/pdf" multiple
+                                               wire:key="document-input-{{ $i }}"
+                                               x-data
+                                               x-on:change="
+                                                   const inp = $event.target;
+                                                   const files = Array.from(inp.files || []);
+                                                   if (!files.length) return;
+                                                   inp.disabled = true;
+                                                   for (let j = 0; j < files.length; j++) {
+                                                       let path = 'items.{{ $i }}.file';
+                                                       if (j > 0) {
+                                                           await $wire.addItem('document');
+                                                           const idx = (($wire.items && $wire.items.length) || 1) - 1;
+                                                           path = 'items.' + idx + '.file';
+                                                       }
+                                                       await new Promise((resolve) => $wire.upload(path, files[j], resolve, resolve, () => {}));
+                                                   }
+                                                   inp.disabled = false;
+                                                   inp.value = '';
+                                               ">
                                         <p class="text-sm" style="color:var(--text-faint); margin-top:0.3rem;">
-                                            Maks. 10MB.
+                                            Maks. 10MB per file, boleh lebih dari satu.
                                         </p>
                                         <div wire:loading wire:target="items.{{ $i }}.file"
                                              class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
                                             <i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...
                                         </div>
+                                        @if ($item['file'])
+                                            <p class="text-sm" wire:loading.remove wire:target="items.{{ $i }}.file"
+                                               style="color:var(--brand-success); margin-top:0.3rem; overflow-wrap:anywhere;">
+                                                <i class="fa-solid fa-circle-check" style="margin-right:0.3rem;"></i>{{ $item['file']->getClientOriginalName() }}
+                                                <span style="color:var(--text-faint);">— pilih lagi untuk mengganti.</span>
+                                            </p>
+                                        @endif
                                     @else
                                         {{-- Foto: bila opsi "kecilkan otomatis" aktif, kompres dulu di browser lalu unggah manual.
                                              capture="environment" → di HP langsung buka kamera belakang. --}}
@@ -184,8 +216,9 @@
                                         </div>
                                         @if ($item['file'])
                                             <p class="text-sm" wire:loading.remove wire:target="items.{{ $i }}.file"
-                                               style="color:var(--brand-success); margin-top:0.3rem;">
-                                                <i class="fa-solid fa-circle-check" style="margin-right:0.3rem;"></i>Foto terpasang — pilih/ambil lagi untuk mengganti.
+                                               style="color:var(--brand-success); margin-top:0.3rem; overflow-wrap:anywhere;">
+                                                <i class="fa-solid fa-circle-check" style="margin-right:0.3rem;"></i>{{ $item['file']->getClientOriginalName() }}
+                                                <span style="color:var(--text-faint);">— pilih/ambil lagi untuk mengganti.</span>
                                             </p>
                                         @elseif ($compressImages)
                                             <p class="text-sm" style="color:var(--text-faint); margin-top:0.3rem;">

@@ -32,7 +32,8 @@ class Index extends Component
     /** id tugas yang sedang ditandai selesai (menampilkan modal unggah foto bukti). */
     public ?int $completingTaskId = null;
 
-    public $completionPhoto = null;
+    /** Bisa lebih dari satu foto bukti — pilih/drop banyak file sekaligus (lihat TaskCompletionPhoto). */
+    public array $completionPhotos = [];
 
     /** Kalau dicentang, tugas yang selesai ini juga dicatat sebagai kegiatan di jurnal harian hari ini. */
     public bool $addToJournal = true;
@@ -118,7 +119,7 @@ class Index extends Component
         }
 
         $this->completingTaskId = $taskId;
-        $this->completionPhoto = null;
+        $this->completionPhotos = [];
         $this->addToJournal = true;
         $this->resetValidation();
     }
@@ -126,9 +127,16 @@ class Index extends Component
     public function closeComplete(): void
     {
         $this->completingTaskId = null;
-        $this->completionPhoto = null;
+        $this->completionPhotos = [];
         $this->addToJournal = true;
         $this->resetValidation();
+    }
+
+    /** Hapus satu foto bukti dari draft sebelum "Tandai Selesai" dikonfirmasi. */
+    public function removeCompletionPhoto(int $index): void
+    {
+        unset($this->completionPhotos[$index]);
+        $this->completionPhotos = array_values($this->completionPhotos);
     }
 
     /** Buka modal alasan penolakan — intern belum bisa mengerjakan / ada urusan lain. */
@@ -197,17 +205,22 @@ class Index extends Component
         }
 
         $this->validate([
-            'completionPhoto' => ['required', 'image', 'max:5120'],
+            'completionPhotos' => ['required', 'array', 'min:1'],
+            'completionPhotos.*' => ['image', 'max:5120'],
         ], [], [
-            'completionPhoto' => 'foto bukti',
+            'completionPhotos' => 'foto bukti',
+            'completionPhotos.*' => 'foto bukti',
         ]);
 
-        $path = $this->completionPhoto->store('task-completions', 'public');
+        $paths = array_map(fn ($photo) => $photo->store('task-completions', 'public'), $this->completionPhotos);
+
+        foreach ($paths as $path) {
+            $task->completionPhotos()->create(['path' => $path]);
+        }
 
         $task->update([
             'status' => 'done',
             'completed_at' => now(),
-            'completion_photo_path' => $path,
         ]);
 
         if ($this->addToJournal) {
@@ -222,12 +235,14 @@ class Index extends Component
                 'activity' => $activity,
             ]);
 
-            $journal->attachments()->create([
-                'type' => 'photo',
-                'path' => $path,
-                'url' => null,
-                'label' => 'Bukti penyelesaian tugas: ' . $task->title,
-            ]);
+            foreach ($paths as $path) {
+                $journal->attachments()->create([
+                    'type' => 'photo',
+                    'path' => $path,
+                    'url' => null,
+                    'label' => 'Bukti penyelesaian tugas: ' . $task->title,
+                ]);
+            }
 
             $this->dispatch('journal-saved');
         }
@@ -241,7 +256,7 @@ class Index extends Component
 
         $tasks = $intern
             ? $intern->tasks()
-                ->with(['assignedBy', 'comments.author'])
+                ->with(['assignedBy', 'comments.author', 'completionPhotos'])
                 ->when($this->status !== '', fn ($q) => $q->where('status', $this->status))
                 ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
                 ->when($this->dateTo !== '', fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))

@@ -246,6 +246,9 @@
                         @if (! Carbon::parse($leave->start_date)->isSameDay($leave->end_date))
                             &ndash; {{ Carbon::parse($leave->end_date)->translatedFormat('d F Y') }}
                         @endif
+                        @if ($leave->timeRangeLabel())
+                            <span style="color:var(--text-muted); font-weight:400;">&middot; {{ $leave->timeRangeLabel() }}</span>
+                        @endif
                     </p>
                     <p class="text-sm" style="margin-top:0.3rem; color:var(--text-body); white-space:pre-line;">{{ $leave->reason }}</p>
                     @if ($leave->status !== 'pending')

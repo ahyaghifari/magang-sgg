@@ -42,7 +42,6 @@
             return { x: p.clientX, y: p.clientY };
         },
         startDrag(e) {
-            if (this.scale <= 1) return;
             this.dragging = true;
             var p = this.pointerAt(e);
             this.startX = p.x - this.tx;
@@ -66,7 +65,8 @@
     x-on:wheel.prevent="zoom($event)"
     @keydown.escape.window="open && close()"
     x-effect="document.body.style.overflow = open ? 'hidden' : ''"
-    style="position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; background:rgba(2,6,23,0.85); touch-action:none;"
+    class="overlay-center"
+    style="position:fixed; inset:0; z-index:70; background:rgba(2,6,23,0.85); touch-action:none;"
 >
     <button type="button" x-on:click.stop="close()" class="theme-toggle"
             style="position:absolute; top:1rem; right:1rem; z-index:2; background:rgba(255,255,255,0.14); color:#fff; border-color:rgba(255,255,255,0.25);"
@@ -79,7 +79,6 @@
     </p>
 
     <img
-        x-show="open"
         :src="src"
         :alt="alt"
         x-on:click.stop
@@ -90,7 +89,7 @@
         x-on:touchstart="startDrag($event)"
         x-on:touchmove.window.passive="onDrag($event)"
         x-on:touchend.window="stopDrag()"
-        :style="`max-width:92vw; max-height:88vh; cursor:${scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in'}; transform:translate(${tx}px, ${ty}px) scale(${scale}); transition:${dragging ? 'none' : 'transform 0.15s ease'}; user-select:none; border-radius:8px;`"
+        :style="`display:block; width:auto; height:auto; max-width:92vw; max-height:88vh; min-width:0; min-height:0; margin:auto; object-fit:contain; cursor:${dragging ? 'grabbing' : 'grab'}; transform:translate(${tx}px, ${ty}px) scale(${scale}); transition:${dragging ? 'none' : 'transform 0.15s ease'}; user-select:none; border-radius:8px;`"
         draggable="false"
     >
 </div>

@@ -141,13 +141,17 @@
                     </p>
                 @endif
 
-                @if ($task->status === 'done' && $task->completion_photo_path)
+                @if ($task->status === 'done' && $task->completionPhotos->isNotEmpty())
                     <div style="margin-top:0.75rem;">
-                        <button type="button" onclick="openLightbox(@js(url('storage/' . $task->completion_photo_path)), 'Bukti selesai')"
-                                style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
-                            <img src="{{ url('storage/' . $task->completion_photo_path) }}" alt="Bukti selesai"
-                                 style="width:84px; height:84px; object-fit:cover; display:block;">
-                        </button>
+                        <div class="flex" style="gap:0.5rem; flex-wrap:wrap;">
+                            @foreach ($task->completionPhotos as $photo)
+                                <button type="button" onclick="openLightbox(@js(url('storage/' . $photo->path)), 'Bukti selesai')"
+                                        style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
+                                    <img src="{{ url('storage/' . $photo->path) }}" alt="Bukti selesai"
+                                         style="width:84px; height:84px; object-fit:cover; display:block;">
+                                </button>
+                            @endforeach
+                        </div>
                         <p class="text-sm" style="margin-top:0.3rem; color:var(--text-faint);">
                             <i class="fa-regular fa-image"></i> Foto bukti pengerjaan dari intern
                         </p>
@@ -234,10 +238,15 @@
                         <label for="a-intern" class="form-label">Peserta</label>
                         <select id="a-intern" wire:model="formInternId" class="form-input">
                             <option value="">Pilih peserta...</option>
-                            @foreach ($interns as $i)
+                            @foreach ($manageableInterns as $i)
                                 <option value="{{ $i->id }}">{{ $i->nama }}</option>
                             @endforeach
                         </select>
+                        @if ($manageableInterns->isEmpty())
+                            <p class="text-sm" style="color:var(--text-faint); margin-top:0.35rem;">
+                                Belum ada peserta yang dibimbing/dimentori olehmu.
+                            </p>
+                        @endif
                         @error('formInternId')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror

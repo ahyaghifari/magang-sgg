@@ -75,6 +75,25 @@
                             </div>
                         </div>
 
+                        {{-- Jam (opsional) — kalau izin cuma sebagian jam, bukan sehari penuh --}}
+                        <div style="margin-bottom:1.1rem;">
+                            <span class="form-label">Jam <span style="color:var(--text-faint); font-weight:400;">(opsional — kosongkan kalau sehari penuh)</span></span>
+                            <div class="flex" style="gap:0.75rem;">
+                                <div style="flex:1;">
+                                    <input id="l-start-time" type="time" wire:model="startTime" class="form-input" aria-label="Jam mulai">
+                                    @error('startTime')
+                                        <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                <div style="flex:1;">
+                                    <input id="l-end-time" type="time" wire:model="endTime" class="form-input" aria-label="Jam selesai">
+                                    @error('endTime')
+                                        <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
                         {{-- Alasan --}}
                         <div style="margin-bottom:1.1rem;">
                             <label for="l-reason" class="form-label">Alasan</label>

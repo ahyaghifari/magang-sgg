@@ -4,6 +4,7 @@ namespace App\Livewire\Pembimbing;
 
 use App\Models\AttendanceRecord;
 use App\Models\Intern;
+use App\Models\LeaveRequest;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -89,9 +90,23 @@ class Attendance extends Component
             'menit_telat' => (int) (clone $base)->sum('late_minutes'),
         ];
 
+        // Izin/sakit yang disetujui, ditampilkan terpisah dari rekap presensi mesin sidik
+        // jari — supaya hari intern tidak masuk karena izin/sakit tidak terlihat begitu
+        // saja "hilang" dari daftar, dibedakan jelas dari yang benar-benar alfa.
+        $leaves = LeaveRequest::query()
+            ->whereIn('intern_id', $this->visibleInterns()->pluck('id'))
+            ->where('status', 'approved')
+            ->when($this->internId !== '', fn ($q) => $q->where('intern_id', $this->internId))
+            ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('end_date', '>=', $this->dateFrom))
+            ->when($this->dateTo !== '', fn ($q) => $q->whereDate('start_date', '<=', $this->dateTo))
+            ->with('intern.unit')
+            ->orderByDesc('start_date')
+            ->get();
+
         return view('livewire.pembimbing.attendance', [
             'records' => $records,
             'summary' => $summary,
+            'leaves' => $leaves,
             'interns' => $this->visibleInterns()->orderBy('nama')->get(['id', 'nama', 'nip']),
             'now' => Carbon::now('Asia/Makassar'),
         ]);

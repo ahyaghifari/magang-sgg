@@ -155,7 +155,7 @@
                         </div>
                     @endif
 
-                    @if ($canReview)
+                    @if ($canReview && in_array($journal->intern_id, $manageableInternIds, true))
                         @php($mine = $myReviews[$journal->id] ?? null)
                         <div class="flex items-center" style="gap:0.35rem; margin-top:0.55rem;" wire:key="rate-{{ $journal->id }}">
                             <span class="text-sm" style="color:var(--text-muted); margin-right:0.15rem;">Penilaianmu:</span>

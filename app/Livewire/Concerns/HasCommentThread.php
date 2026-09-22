@@ -65,11 +65,13 @@ trait HasCommentThread
         }
 
         // Bukan komentar sendiri — cuma boleh dihapus staff (pembimbing/mentor/admin) yang
-        // memang berhak atas intern pemilik jurnal/tugas tersebut, bukan sembarang staff.
+        // memang mengelola intern pemilik jurnal/tugas tersebut (manageableInterns(), BUKAN
+        // visibleInterns() — Mentor bisa MELIHAT semua intern tapi tetap tak boleh moderasi
+        // komentar punya intern yang bukan mentee-nya).
         $user = auth()->user();
         $internId = $comment->commentable?->intern_id;
 
-        if (! $internId || ! $user->isPortalMentor() || ! $user->visibleInterns()->whereKey($internId)->exists()) {
+        if (! $internId || ! $user->isPortalMentor() || ! $user->manageableInterns()->whereKey($internId)->exists()) {
             return;
         }
 

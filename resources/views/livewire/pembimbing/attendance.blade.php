@@ -60,6 +60,46 @@
         @endif
     </div>
 
+    {{-- ===== Izin/Sakit — dipisah dari rekap presensi mesin sidik jari, supaya hari intern
+         tidak masuk karena izin/sakit yang disetujui tidak terlihat "hilang begitu saja". ===== --}}
+    @if ($leaves->isNotEmpty())
+        <div style="margin-bottom:1.1rem;">
+            <p class="text-sm" style="font-weight:700; color:var(--text-muted); margin-bottom:0.5rem; letter-spacing:0.03em;">IZIN / SAKIT</p>
+            <div class="flex" style="flex-direction:column; gap:0.6rem;">
+                @foreach ($leaves as $leave)
+                    <article class="surface-card flex items-center justify-between"
+                             style="padding:0.85rem 1.1rem; gap:0.75rem; flex-wrap:wrap;">
+                        <div style="min-width:0;">
+                            <p style="font-size:0.8rem; font-weight:700; color:var(--text-heading);">
+                                {{ $leave->intern->nama ?? 'Peserta dihapus' }}
+                                @if ($leave->intern?->unit)
+                                    <span class="badge badge-neutral" style="margin-left:0.35rem;">
+                                        <i class="fa-solid fa-people-group"></i> {{ $leave->intern->unit->name }}
+                                    </span>
+                                @endif
+                            </p>
+                            <p class="text-sm" style="color:var(--text-muted); margin-top:0.15rem;">
+                                {{ $leave->start_date->translatedFormat('d M Y') }}
+                                @if (! $leave->start_date->equalTo($leave->end_date))
+                                    &ndash; {{ $leave->end_date->translatedFormat('d M Y') }}
+                                @endif
+                                @if ($leave->timeRangeLabel())
+                                    &middot; {{ $leave->timeRangeLabel() }}
+                                @endif
+                                @if ($leave->reason)
+                                    &middot; {{ $leave->reason }}
+                                @endif
+                            </p>
+                        </div>
+                        <span class="badge" style="background:{{ $leave->type === 'sakit' ? '#fee2e2' : '#e0e7ff' }}; color:{{ $leave->type === 'sakit' ? '#b91c1c' : '#3730a3' }};">
+                            {{ $leave->type === 'sakit' ? 'Sakit' : 'Izin' }}
+                        </span>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     {{-- ===== Daftar ===== --}}
     <div class="flex" style="flex-direction:column; gap:0.6rem;">
         @forelse ($records as $row)

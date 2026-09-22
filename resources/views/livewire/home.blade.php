@@ -38,12 +38,14 @@
                     <a href="{{ route('journals.index') }}" wire:navigate class="qa-btn">
                         <i class="fa-solid fa-list-ul"></i> Semua Jurnal
                     </a>
-                    <a href="{{ route('interns.certificate.view', $intern) }}" target="_blank" class="qa-btn">
-                        <i class="fa-solid fa-eye"></i> Lihat Sertifikat
-                    </a>
-                    <a href="{{ route('interns.certificate', $intern) }}" class="qa-btn">
-                        <i class="fa-solid fa-award"></i> Download Sertifikat
-                    </a>
+                    @if ($intern->tanggal_selesai && $intern->tanggal_selesai->lte(\Illuminate\Support\Carbon::now()))
+                        <a href="{{ route('interns.certificate.view', $intern) }}" target="_blank" class="qa-btn">
+                            <i class="fa-solid fa-eye"></i> Lihat Sertifikat
+                        </a>
+                        <a href="{{ route('interns.certificate', $intern) }}" class="qa-btn">
+                            <i class="fa-solid fa-award"></i> Download Sertifikat
+                        </a>
+                    @endif
                 </div>
             @endif
         </div>
@@ -161,12 +163,6 @@
                 <span class="stat-card-icon navy"><i class="fa-solid fa-book"></i></span>
                 <p style="margin-top:0.7rem; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Total Jurnal</p>
                 <p style="margin-top:0.2rem; font-size:1.75rem; font-weight:800; color:var(--brand);">{{ $totalJournals }}</p>
-            </div>
-            <div class="stat-card" style="padding:1.1rem 1.15rem;">
-                <span class="stat-card-deco"></span>
-                <span class="stat-card-icon green"><i class="fa-solid fa-calendar-days"></i></span>
-                <p style="margin-top:0.7rem; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Bulan Ini</p>
-                <p style="margin-top:0.2rem; font-size:1.75rem; font-weight:800; color:var(--brand-success);">{{ $journalsThisMonth }}</p>
             </div>
             <div class="stat-card" style="padding:1.1rem 1.15rem;">
                 <span class="stat-card-deco"></span>

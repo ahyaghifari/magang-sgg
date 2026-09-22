@@ -45,6 +45,7 @@
         <div class="portal-shell"
              x-data="{
                 nav: false,
+                confirmLogout: false,
                 touchStartX: 0,
                 touchStartY: 0,
                 onTouchStart(e) {
@@ -95,11 +96,6 @@
                             $pendingLeavesCount = \App\Models\LeaveRequest::whereIn('intern_id', $visibleInternIds)->where('status', 'pending')->count();
                             $rejectedTasksCount = \App\Models\Task::whereIn('intern_id', $visibleInternIds)->where('status', 'rejected')->count();
                         @endphp
-                        <a href="{{ route('pembimbing.certificates') }}" wire:navigate @click="nav = false"
-                           class="portal-nav-link {{ request()->routeIs('pembimbing.certificates') ? 'active' : '' }}">
-                            <i class="fa-solid fa-award"></i>
-                            <span>Sertifikat Intern</span>
-                        </a>
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
@@ -128,6 +124,11 @@
                                 @endif
                             </a>
                         @endif
+                        <a href="{{ route('pembimbing.certificates') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.certificates') ? 'active' : '' }}">
+                            <i class="fa-solid fa-award"></i>
+                            <span>Sertifikat Intern</span>
+                        </a>
                     @else
                         <a href="{{ route('home') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
@@ -178,9 +179,9 @@
                             @endif
                         </form>
                     @endif
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form id="logout-form" method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="portal-logout">
+                        <button type="button" @click="confirmLogout = true" class="portal-logout">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>
                             <span>Keluar</span>
                         </button>
@@ -213,6 +214,41 @@
             </div>
 
             <x-photo-lightbox />
+
+            {{-- Sengaja ditaruh sebagai sibling dari .portal-sidebar/.portal-content (bukan di
+                 dalamnya) — .portal-sidebar punya CSS transform untuk drawer mobile, dan elemen
+                 position:fixed di dalam ancestor ber-transform ikut terjebak di kotak ancestor
+                 itu, bukan viewport, jadi modal ini tidak akan pernah benar-benar center di layar
+                 kalau ditaruh di dalam sidebar. Tetap pakai x-data root di atas (confirmLogout)
+                 supaya tombol "Keluar" di sidebar bisa membuka modal ini. --}}
+            <div
+                x-show="confirmLogout"
+                x-cloak
+                x-transition.opacity
+                @keydown.escape.window="confirmLogout = false"
+                class="overlay-center"
+                style="position:fixed; inset:0; z-index:100; padding:1.25rem; background:rgba(2,6,23,0.55);"
+            >
+                <div
+                    @click.outside="confirmLogout = false"
+                    x-show="confirmLogout"
+                    x-transition
+                    class="surface-card"
+                    style="width:100%; max-width:24rem; padding:1.5rem; text-align:center;"
+                >
+                    <div style="width:3rem; height:3rem; margin:0 auto 1rem; border-radius:9999px; background:#fee2e2; display:flex; align-items:center; justify-content:center;">
+                        <i class="fa-solid fa-arrow-right-from-bracket" style="color:#dc2626; font-size:1.1rem;"></i>
+                    </div>
+                    <h2 style="font-size:1.05rem; font-weight:700; color:var(--text-heading);">Keluar dari akun?</h2>
+                    <p class="text-sm" style="color:var(--text-muted); margin-top:0.35rem;">
+                        Kamu perlu login kembali untuk mengakses portal ini.
+                    </p>
+                    <div class="flex items-center justify-center" style="gap:0.6rem; margin-top:1.35rem;">
+                        <button type="button" @click="confirmLogout = false" class="btn-ghost" style="flex:1;">Batal</button>
+                        <button type="submit" form="logout-form" class="btn-danger" style="flex:1;">Ya, Keluar</button>
+                    </div>
+                </div>
+            </div>
         </div>
     @else
         {{ $slot }}

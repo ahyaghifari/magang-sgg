@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Interns\Tables;
 
+use App\Models\Intern;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -73,6 +74,18 @@ class InternsTable
                     ->placeholder('—')
                     ->toggleable()
                     ->sortable(),
+                TextColumn::make('nilai_akhir')
+                    ->label('Nilai Akhir')
+                    ->placeholder('—')
+                    ->sortable()
+                    ->description(fn ($record): ?string => $record->predikat()),
+                ...collect(Intern::CRITERIA)
+                    ->map(fn ($c, $field) => TextColumn::make($field)
+                        ->label($c['title'])
+                        ->placeholder('—')
+                        ->toggleable(isToggledHiddenByDefault: true))
+                    ->values()
+                    ->all(),
                 TextColumn::make('user.name')
                     ->label('Pengguna')
                     ->searchable()

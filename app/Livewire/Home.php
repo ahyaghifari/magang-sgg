@@ -79,12 +79,6 @@ class Home extends Component
                 ? (clone $journalsQuery)->latest('date')->take(5)->get()
                 : collect(),
             'totalJournals' => $journalsQuery ? (clone $journalsQuery)->count() : 0,
-            'journalsThisMonth' => $journalsQuery
-                ? (clone $journalsQuery)->whereBetween('date', [
-                    Carbon::now()->startOfMonth(),
-                    Carbon::now()->endOfMonth(),
-                ])->count()
-                : 0,
             'lastJournalDate' => $journalsQuery
                 ? (clone $journalsQuery)->max('date')
                 : null,
