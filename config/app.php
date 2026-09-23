@@ -60,12 +60,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions. Sengaja diset ke
+    | WITA (bukan default UTC) karena seluruh jam kerja/presensi/jurnal di
+    | portal ini memakai patokan waktu Banjarbaru — tanpa ini, "hari ini"
+    | versi server (UTC) bisa beda dengan "hari ini" versi pengguna di WITA.
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Makassar',
 
     /*
     |--------------------------------------------------------------------------

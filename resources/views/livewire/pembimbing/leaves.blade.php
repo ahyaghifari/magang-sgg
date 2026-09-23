@@ -113,11 +113,12 @@
                                 <i class="fa-solid fa-quote-left" style="color:var(--text-faint); margin-right:0.3rem;"></i>{{ $leave->review_note }}
                             </p>
                         @endif
-                        <button type="button" wire:click="delete({{ $leave->id }})"
-                                wire:confirm="Hapus pengajuan izin ini? Tindakan tidak bisa dibatalkan."
-                                class="btn-ghost" style="margin-top:0.6rem; padding:0.4rem 0.75rem; color:#dc2626;">
-                            <i class="fa-solid fa-trash"></i> Hapus
-                        </button>
+                        <x-confirm-delete title="Hapus pengajuan izin ini?" confirm-wire-click="delete({{ $leave->id }})">
+                            <button type="button" @click="confirmOpen = true"
+                                    class="btn-ghost" style="margin-top:0.6rem; padding:0.4rem 0.75rem; color:#dc2626;">
+                                <i class="fa-solid fa-trash"></i> Hapus
+                            </button>
+                        </x-confirm-delete>
                     </div>
                 @endif
             </article>

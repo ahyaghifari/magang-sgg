@@ -158,27 +158,32 @@
                     </div>
                 @endif
 
-                <div class="flex items-center" style="gap:0.5rem; margin-top:0.9rem; padding-top:0.7rem; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
-                    @if ($task->status !== 'done' && $task->status !== 'rejected')
-                        <button type="button" wire:click="markDone({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
-                            <i class="fa-solid fa-check"></i> Tandai Selesai
-                        </button>
-                    @else
-                        <button type="button" wire:click="reopen({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
-                            <i class="fa-solid fa-rotate-left"></i> Buka lagi
-                        </button>
-                    @endif
-                    <button type="button" wire:click="openEditTask({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
-                        <i class="fa-solid fa-pen"></i> Edit
-                    </button>
-                    <button type="button" wire:click="delete({{ $task->id }})"
-                            wire:confirm="Hapus tugas ini?"
-                            class="btn-ghost" style="padding:0.4rem 0.75rem; color:#dc2626;">
-                        <i class="fa-solid fa-trash"></i> Hapus
-                    </button>
-                </div>
+                @php($taskManageable = in_array($task->intern_id, $manageableInternIds, true))
 
-                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task])
+                @if ($taskManageable)
+                    <div class="flex items-center" style="gap:0.5rem; margin-top:0.9rem; padding-top:0.7rem; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
+                        @if ($task->status !== 'done' && $task->status !== 'rejected')
+                            <button type="button" wire:click="markDone({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
+                                <i class="fa-solid fa-check"></i> Tandai Selesai
+                            </button>
+                        @else
+                            <button type="button" wire:click="reopen({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
+                                <i class="fa-solid fa-rotate-left"></i> Buka lagi
+                            </button>
+                        @endif
+                        <button type="button" wire:click="openEditTask({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
+                            <i class="fa-solid fa-pen"></i> Edit
+                        </button>
+                        <x-confirm-delete title="Hapus tugas ini?" confirm-wire-click="delete({{ $task->id }})">
+                            <button type="button" @click="confirmOpen = true"
+                                    class="btn-ghost" style="padding:0.4rem 0.75rem; color:#dc2626;">
+                                <i class="fa-solid fa-trash"></i> Hapus
+                            </button>
+                        </x-confirm-delete>
+                    </div>
+                @endif
+
+                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task, 'canComment' => $taskManageable])
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">

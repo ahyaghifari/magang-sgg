@@ -45,6 +45,14 @@ class Activities extends Component
         if (! $this->allowed()) {
             return $this->redirect(route('home'), navigate: true);
         }
+
+        // Default cuma "hari ini" saat pertama dibuka (tanpa query string di URL) — untuk
+        // tanggal lain, pakai filter. Kalau URL sudah bawa dateFrom/dateTo sendiri (mis.
+        // dari tautan yang dibagikan), itu tetap dihormati.
+        if ($this->dateFrom === '' && $this->dateTo === '') {
+            $this->dateFrom = Carbon::today()->toDateString();
+            $this->dateTo = Carbon::today()->toDateString();
+        }
     }
 
     public function updated($property): void
@@ -54,9 +62,11 @@ class Activities extends Component
         }
     }
 
+    /** Kembali ke tampilan default ("hari ini" saja), bukan menghapus filter jadi "semua tanggal". */
     public function resetDateFilter(): void
     {
-        $this->reset(['dateFrom', 'dateTo']);
+        $this->dateFrom = Carbon::today()->toDateString();
+        $this->dateTo = Carbon::today()->toDateString();
         $this->resetPage();
     }
 
@@ -192,6 +202,7 @@ class Activities extends Component
         return view('livewire.pembimbing.activities', [
             'journals' => $journals,
             'myReviews' => $myReviews,
+            'today' => Carbon::today()->toDateString(),
             'canReview' => $this->canReview(),
             // Per-jurnal: bintang & komentar cuma boleh diisi untuk intern yang memang
             // dibimbing/dimentori — dipakai di view untuk menyembunyikan kontrolnya pada

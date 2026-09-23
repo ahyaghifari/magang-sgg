@@ -49,14 +49,17 @@
             <label for="f-to" class="form-label">Sampai tanggal</label>
             <input id="f-to" type="date" wire:model.live="dateTo" class="form-input">
         </div>
-        @if ($dateFrom !== '' || $dateTo !== '')
+        @if ($dateFrom !== $today || $dateTo !== $today)
             <div style="display:flex; align-items:flex-end;">
                 <button type="button" wire:click="resetDateFilter" class="btn-ghost" style="padding:0.5rem 0.85rem;">
-                    <i class="fa-solid fa-xmark"></i> Reset tanggal
+                    <i class="fa-solid fa-xmark"></i> Kembali ke hari ini
                 </button>
             </div>
         @endif
     </div>
+    <p class="text-sm" style="color:var(--text-muted); margin:-0.5rem 0 1rem;">
+        Menampilkan kegiatan hari ini secara default — gunakan filter tanggal untuk melihat hari sebelumnya.
+    </p>
 
     {{-- ===== Daftar kegiatan (dikelompokkan per hari) ===== --}}
     <div class="flex" style="flex-direction:column; gap:0.6rem;">
@@ -176,7 +179,7 @@
                     @endif
                 </div>
 
-                @include('livewire.partials.comment-thread', ['type' => 'journal', 'model' => $journal])
+                @include('livewire.partials.comment-thread', ['type' => 'journal', 'model' => $journal, 'canComment' => in_array($journal->intern_id, $manageableInternIds, true)])
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">

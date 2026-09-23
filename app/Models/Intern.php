@@ -41,9 +41,14 @@ class Intern extends Model
         'dinilai_pada',
     ];
 
+    /** Skala penilaian per kriteria — 1 sampai 5 bintang (bulat, sama seperti rating jurnal). */
+    public const SCALE_MIN = 1;
+
+    public const SCALE_MAX = 5;
+
     /**
      * 10 kriteria form "Appraisal on the Job Training Result" resmi perusahaan —
-     * skala 1.00-4.00 per kriteria, terbagi 2 kategori. Dipakai bareng oleh form
+     * dinilai 1-5 bintang per kriteria, terbagi 2 kategori. Dipakai bareng oleh form
      * Filament, halaman edit portal pembimbing/mentor, dan PDF form penilaian,
      * supaya daftarnya cuma didefinisikan sekali di sini.
      *
@@ -227,9 +232,9 @@ class Intern extends Model
     }
 
     /**
-     * Rating dari nilai_akhir — sesuai skala di form resmi "Appraisal on the Job
-     * Training Result" (skala 1.00-4.00). Dihitung otomatis, tidak disimpan terpisah
-     * supaya selalu konsisten dengan nilai_akhir. Null kalau belum dinilai.
+     * Rating dari nilai_akhir — skala 1-5 bintang (tiap kriteria diisi lewat klik
+     * bintang, sama seperti penilaian jurnal). Dihitung otomatis, tidak disimpan
+     * terpisah supaya selalu konsisten dengan nilai_akhir. Null kalau belum dinilai.
      */
     public function predikat(): ?string
     {
@@ -240,8 +245,8 @@ class Intern extends Model
         $nilai = (float) $this->nilai_akhir;
 
         return match (true) {
-            $nilai >= 3.50 => 'Excellent',
-            $nilai >= 3.00 => 'Good',
+            $nilai >= 4.50 => 'Excellent',
+            $nilai >= 3.50 => 'Good',
             $nilai >= 2.50 => 'Fair',
             $nilai >= 1.50 => 'Below Average',
             default => 'Poor',
