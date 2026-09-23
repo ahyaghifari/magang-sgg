@@ -43,8 +43,11 @@ html.dark {
     --surface: #0f172a;
     --surface-alt: #1e293b;
     --surface-page: #020617;
-    --border: #1e293b;
-    --border-soft: #1e293b;
+    /* Sengaja beda dari --surface-alt (dulu sama persis #1e293b, jadi border
+       nyaris tak kelihatan di atas kartu/panel ber-latar --surface-alt — mis.
+       dropzone unggah foto, input, pembatas tabel — di seluruh mode gelap). */
+    --border: #334155;
+    --border-soft: #2a394f;
     --text-heading: #f1f5f9;
     --text-body: #cbd5e1;
     --text-muted: #94a3b8;

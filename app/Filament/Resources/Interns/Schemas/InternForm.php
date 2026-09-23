@@ -93,7 +93,7 @@ class InternForm
                             ->map(fn ($c, $field) => TextInput::make($field)
                                 ->label($c['title'])
                                 ->helperText($c['description'])
-                                ->numeric()->minValue(1)->maxValue(4)->step(0.01)->placeholder('1-4'))
+                                ->numeric()->integer()->minValue(Intern::SCALE_MIN)->maxValue(Intern::SCALE_MAX)->step(1)->placeholder('1-5'))
                             ->values()
                             ->all(),
                     ),
@@ -105,7 +105,7 @@ class InternForm
                             ->map(fn ($c, $field) => TextInput::make($field)
                                 ->label($c['title'])
                                 ->helperText($c['description'])
-                                ->numeric()->minValue(1)->maxValue(4)->step(0.01)->placeholder('1-4'))
+                                ->numeric()->integer()->minValue(Intern::SCALE_MIN)->maxValue(Intern::SCALE_MAX)->step(1)->placeholder('1-5'))
                             ->values()
                             ->all(),
                     ),

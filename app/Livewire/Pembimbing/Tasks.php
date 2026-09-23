@@ -285,13 +285,18 @@ class Tasks extends Component
             ->orderByDesc('created_at')
             ->paginate(10);
 
+        $manageableInternIds = $this->manageableInternIds();
+
         return view('livewire.pembimbing.tasks', [
             'tasks' => $tasks,
             'interns' => Intern::whereIn('id', $internIds)->orderBy('nama')->get(['id', 'nama']),
             // Khusus untuk pilihan peserta di form "Beri Tugas" — sengaja tetap sempit
             // (manageableInternIds()) meski daftar/filter tugas di atas sudah melebar untuk
             // Mentor, karena pemberian tugas baru cuma boleh ke intern yang dibimbing/dimentori.
-            'manageableInterns' => Intern::whereIn('id', $this->manageableInternIds())->orderBy('nama')->get(['id', 'nama']),
+            'manageableInterns' => Intern::whereIn('id', $manageableInternIds)->orderBy('nama')->get(['id', 'nama']),
+            // Dipakai buat sembunyikan tombol kelola (tandai selesai/edit/hapus/komentar) di
+            // tugas milik intern yang cuma boleh DILIHAT (Mentor) bukan mentee sendiri.
+            'manageableInternIds' => $manageableInternIds,
             'totalTasks' => Task::whereIn('intern_id', $internIds)->count(),
             'pendingTasks' => Task::whereIn('intern_id', $internIds)->where('status', '!=', 'done')->count(),
             'doneTasks' => Task::whereIn('intern_id', $internIds)->where('status', 'done')->count(),

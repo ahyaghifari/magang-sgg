@@ -50,28 +50,12 @@ trait HasCommentThread
         unset($this->commentDrafts[$id]);
     }
 
+    /** Komentar cuma boleh dihapus oleh yang menulisnya sendiri — bukan staff/admin lain. */
     public function deleteComment(int $commentId): void
     {
         $comment = Comment::find($commentId);
 
-        if (! $comment) {
-            return;
-        }
-
-        if ($comment->user_id === auth()->id()) {
-            $comment->delete();
-
-            return;
-        }
-
-        // Bukan komentar sendiri — cuma boleh dihapus staff (pembimbing/mentor/admin) yang
-        // memang mengelola intern pemilik jurnal/tugas tersebut (manageableInterns(), BUKAN
-        // visibleInterns() — Mentor bisa MELIHAT semua intern tapi tetap tak boleh moderasi
-        // komentar punya intern yang bukan mentee-nya).
-        $user = auth()->user();
-        $internId = $comment->commentable?->intern_id;
-
-        if (! $internId || ! $user->isPortalMentor() || ! $user->manageableInterns()->whereKey($internId)->exists()) {
+        if (! $comment || $comment->user_id !== auth()->id()) {
             return;
         }
 

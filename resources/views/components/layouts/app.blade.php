@@ -99,12 +99,12 @@
                         <a href="{{ route('pembimbing.activities') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.activities') ? 'active' : '' }}">
                             <i class="fa-solid fa-list-check"></i>
-                            <span>Kegiatan Intern</span>
+                            <span>Kegiatan</span>
                         </a>
                         <a href="{{ route('pembimbing.tasks') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.tasks') ? 'active' : '' }}">
                             <i class="fa-solid fa-clipboard-list"></i>
-                            <span>Tugas Intern</span>
+                            <span>Tugas</span>
                             @if ($rejectedTasksCount > 0)
                                 <span style="margin-left:auto; background:#dc2626; color:#fff; font-size:0.68rem; font-weight:700; line-height:1; padding:0.25rem 0.45rem; border-radius:999px; flex-shrink:0;">{{ $rejectedTasksCount }}</span>
                             @endif
@@ -112,13 +112,13 @@
                         <a href="{{ route('pembimbing.attendance') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.attendance') ? 'active' : '' }}">
                             <i class="fa-solid fa-fingerprint"></i>
-                            <span>Presensi Intern</span>
+                            <span>Presensi</span>
                         </a>
                         @if ($portalUser->canReviewLeaveRequests())
                             <a href="{{ route('pembimbing.leaves') }}" wire:navigate @click="nav = false"
                                class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
                                 <i class="fa-solid fa-calendar-xmark"></i>
-                                <span>Izin Intern</span>
+                                <span>Izin</span>
                                 @if ($pendingLeavesCount > 0)
                                     <span style="margin-left:auto; background:#dc2626; color:#fff; font-size:0.68rem; font-weight:700; line-height:1; padding:0.25rem 0.45rem; border-radius:999px; flex-shrink:0;">{{ $pendingLeavesCount }}</span>
                                 @endif
@@ -127,7 +127,7 @@
                         <a href="{{ route('pembimbing.certificates') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.certificates') ? 'active' : '' }}">
                             <i class="fa-solid fa-award"></i>
-                            <span>Sertifikat Intern</span>
+                            <span>Sertifikat</span>
                         </a>
                     @else
                         <a href="{{ route('home') }}" wire:navigate @click="nav = false"
