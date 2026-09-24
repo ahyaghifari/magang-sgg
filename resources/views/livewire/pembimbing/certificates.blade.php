@@ -63,19 +63,28 @@
                             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.6rem;">
                                 @foreach ($criteria as $field => $c)
                                     @continue($c['category'] !== $category)
-                                    @php($currentStars = $intern->{$field} !== null ? (int) round((float) $intern->{$field}) : null)
+                                    @php($currentStars = $intern->{$field} !== null ? (float) $intern->{$field} : null)
                                     <div wire:key="crit-{{ $intern->id }}-{{ $field }}"
                                          style="border:1px solid var(--border); border-radius:10px; padding:0.6rem 0.75rem; background:var(--surface-alt);">
                                         <p class="text-sm" style="color:var(--text-muted); margin-bottom:0.3rem;" title="{{ $c['description'] }}">{{ $c['title'] }}</p>
                                         <div class="flex items-center" style="gap:0.25rem;">
                                             @for ($i = 1; $i <= 5; $i++)
-                                                <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i }})"
-                                                        aria-label="{{ $i }} bintang"
-                                                        style="background:none; border:0; padding:0.1rem; cursor:pointer; font-size:1.1rem; line-height:1; color:{{ $currentStars && $i <= $currentStars ? '#f59e0b' : 'var(--text-faint)' }};">
-                                                    <i class="fa-{{ $currentStars && $i <= $currentStars ? 'solid' : 'regular' }} fa-star"></i>
-                                                </button>
+                                                @php($fillPercent = $currentStars === null ? 0 : ($currentStars >= $i ? 100 : ($currentStars >= $i - 0.5 ? 50 : 0)))
+                                                <span style="position:relative; display:inline-block; width:1.1rem; height:1.1rem; font-size:1.1rem; line-height:1;">
+                                                    <i class="fa-regular fa-star" style="position:absolute; inset:0; color:var(--text-faint);"></i>
+                                                    <span style="position:absolute; inset:0; overflow:hidden; width:{{ $fillPercent }}%; pointer-events:none;">
+                                                        <i class="fa-solid fa-star" style="color:#f59e0b;"></i>
+                                                    </span>
+                                                    <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i - 0.5 }})"
+                                                            aria-label="{{ number_format($i - 0.5, 1) }} bintang"
+                                                            style="position:absolute; left:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
+                                                    <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i }})"
+                                                            aria-label="{{ $i }} bintang"
+                                                            style="position:absolute; right:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
+                                                </span>
                                             @endfor
                                             @if ($currentStars)
+                                                <span class="text-sm" style="color:var(--text-muted); margin-left:0.3rem;">{{ number_format($currentStars, 1) }}</span>
                                                 <button type="button" wire:click="clearRating({{ $intern->id }}, '{{ $field }}')" class="text-sm"
                                                         style="color:var(--text-muted); margin-left:0.3rem; text-decoration:underline;">
                                                     hapus
