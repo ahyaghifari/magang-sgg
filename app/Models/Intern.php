@@ -21,6 +21,8 @@ class Intern extends Model
         'mentor_id',
         'nama',
         'nama_panggilan',
+        'avatar_path',
+        'dashboard_color',
         'nip',
         'jenis_kelamin',
         'tanggal_mulai',
@@ -236,6 +238,25 @@ class Intern extends Model
      * bintang, sama seperti penilaian jurnal). Dihitung otomatis, tidak disimpan
      * terpisah supaya selalu konsisten dengan nilai_akhir. Null kalau belum dinilai.
      */
+    /**
+     * True kalau dashboard_color yang dipilih intern terang — dipakai kartu beranda untuk
+     * menukar elemen putih transparan (teks, border avatar, tombol) jadi versi gelap supaya
+     * tetap kelihatan kontras di atas warna terang (bukan cuma di atas gradien navy bawaan).
+     */
+    public function isDashboardColorLight(): bool
+    {
+        $hex = ltrim((string) $this->dashboard_color, '#');
+
+        if (strlen($hex) !== 6) {
+            return false;
+        }
+
+        [$r, $g, $b] = [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
+
+        // Formula YIQ standar untuk kontras teks — >= 150 dianggap terang.
+        return (($r * 299) + ($g * 587) + ($b * 114)) / 1000 >= 150;
+    }
+
     public function predikat(): ?string
     {
         if ($this->nilai_akhir === null) {

@@ -179,7 +179,10 @@
                     @endif
                 </div>
 
-                @include('livewire.partials.comment-thread', ['type' => 'journal', 'model' => $journal, 'canComment' => in_array($journal->intern_id, $manageableInternIds, true)])
+                {{-- canComment default true — komentar boleh dikirim untuk semua intern yang
+                     kelihatan di halaman ini, tidak dibatasi ke mentee sendiri (beda dari bintang
+                     penilaian di atas, yang tetap dibatasi lewat manageableInternIds()). --}}
+                @include('livewire.partials.comment-thread', ['type' => 'journal', 'model' => $journal])
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">

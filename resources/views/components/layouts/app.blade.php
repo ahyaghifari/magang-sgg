@@ -124,6 +124,11 @@
                                 @endif
                             </a>
                         @endif
+                        <a href="{{ route('pembimbing.interns') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.interns') ? 'active' : '' }}">
+                            <i class="fa-solid fa-user-graduate"></i>
+                            <span>Intern</span>
+                        </a>
                         <a href="{{ route('pembimbing.certificates') }}" wire:navigate @click="nav = false"
                            class="portal-nav-link {{ request()->routeIs('pembimbing.certificates') ? 'active' : '' }}">
                             <i class="fa-solid fa-award"></i>

@@ -138,6 +138,7 @@
                     <p class="text-sm" style="margin-top:0.5rem; color:var(--text-muted);">
                         <i class="fa-solid fa-user"></i>
                         {{ $task->source === 'web' ? 'Diberikan oleh' : 'Disebut sebagai pemberi tugas' }}: {{ $task->assignedBy->name }}
+                        <span style="color:var(--text-faint);">&middot; {{ $task->created_at->translatedFormat('d F Y, H:i') }}</span>
                     </p>
                 @endif
 
@@ -158,7 +159,10 @@
                     </div>
                 @endif
 
-                @php($taskManageable = in_array($task->intern_id, $manageableInternIds, true))
+                {{-- Bisa dikelola kalau: intern-nya memang mentee sendiri, ATAU tugas ini
+                     memang aku sendiri yang berikan (lintas pembimbing tetap boleh diurus
+                     oleh pembuatnya — lihat Tasks::manageableTasksQuery()). --}}
+                @php($taskManageable = in_array($task->intern_id, $manageableInternIds, true) || $task->assigned_by === auth()->id())
 
                 @if ($taskManageable)
                     <div class="flex items-center" style="gap:0.5rem; margin-top:0.9rem; padding-top:0.7rem; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
@@ -239,23 +243,52 @@
 
             <div style="padding:1.35rem;">
                 <form wire:submit="assignTask">
+                    {{-- Select native biasa, satu peserta — lintas pembimbing (semua intern
+                         di sistem, bukan cuma mentee sendiri), tapi pilihannya dipisah lewat
+                         optgroup: bimbingan/mentee sendiri vs peserta lain. --}}
+                    @php($myInterns = $allInterns->whereIn('id', $manageableInternIds))
+                    @php($otherInterns = $allInterns->diff($myInterns))
                     <div style="margin-bottom:1.1rem;">
                         <label for="a-intern" class="form-label">Peserta</label>
-                        <select id="a-intern" wire:model="formInternId" class="form-input">
+                        <select id="a-intern" wire:model.live="formInternId" class="form-input">
                             <option value="">Pilih peserta...</option>
-                            @foreach ($manageableInterns as $i)
-                                <option value="{{ $i->id }}">{{ $i->nama }}</option>
-                            @endforeach
+                            @if ($myInterns->isNotEmpty())
+                                <optgroup label="Peserta yang Kamu Bimbing/Mentori">
+                                    @foreach ($myInterns as $i)
+                                        <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
+                            @if ($otherInterns->isNotEmpty())
+                                <optgroup label="Peserta Lain (Lintas Pembimbing)">
+                                    @foreach ($otherInterns as $i)
+                                        <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endif
                         </select>
-                        @if ($manageableInterns->isEmpty())
-                            <p class="text-sm" style="color:var(--text-faint); margin-top:0.35rem;">
-                                Belum ada peserta yang dibimbing/dimentori olehmu.
-                            </p>
-                        @endif
                         @error('formInternId')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    {{-- Kotak info pembimbing/mentor ASLI peserta yang dipilih — supaya kalau
+                         tugas ini diberikan bukan oleh pembimbing/mentor asli peserta (lintas
+                         pembimbing), tetap jelas siapa yang sebenarnya membimbing/mentori dia. --}}
+                    @if ($this->selectedInternInfo)
+                        <div class="{{ $this->selectedInternInfo['isMine'] ? 'surface-card' : 'callout-warning' }}" style="padding:0.75rem 0.9rem; margin-bottom:1.1rem;">
+                            @if (! $this->selectedInternInfo['isMine'])
+                                <p class="text-sm callout-warning-title" style="font-weight:600; margin-bottom:0.25rem;">
+                                    <i class="fa-solid fa-circle-info"></i> Peserta ini bukan yang kamu bimbing/mentori
+                                </p>
+                            @endif
+                            <p class="text-sm" style="color:var(--text-muted);">
+                                Pembimbing: <strong style="color:var(--text-heading);">{{ $this->selectedInternInfo['pembimbing'] ?? '—' }}</strong>
+                                &middot;
+                                Mentor: <strong style="color:var(--text-heading);">{{ $this->selectedInternInfo['mentor'] ?? '—' }}</strong>
+                            </p>
+                        </div>
+                    @endif
 
                     <div style="margin-bottom:1.1rem;">
                         <label for="a-title" class="form-label">Judul Tugas</label>
