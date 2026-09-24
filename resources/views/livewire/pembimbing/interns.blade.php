@@ -95,12 +95,6 @@
                         </p>
                     </div>
                 </div>
-
-                <div style="margin-top:0.9rem; padding-top:0.85rem; border-top:1px solid var(--border-soft);">
-                    <a href="{{ route('interns.certificate.view', $intern) }}" target="_blank" class="btn-ghost" style="width:100%; justify-content:center;">
-                        <i class="fa-solid fa-award"></i> Sertifikat
-                    </a>
-                </div>
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center; grid-column:1/-1;">
