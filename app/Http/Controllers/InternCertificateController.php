@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserRole;
 use App\Models\Intern;
-use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -79,18 +77,10 @@ class InternCertificateController extends Controller
 
         $nomor = sprintf('%03d/SGG-INT/%s', $intern->id, now()->format('Y'));
 
-        // Pimpinan perusahaan tempat intern ditempatkan (bukan pembimbing lapangan) —
-        // dicari dari akun berperan Pimpinan yang company_id-nya sama dengan company
-        // dari unit penempatan intern (lihat User::company()).
-        $pimpinan = $intern->unit?->company_id
-            ? User::where('role', UserRole::Pimpinan)->where('company_id', $intern->unit->company_id)->first()
-            : null;
-
         $tanggalTerbit = Carbon::now()->translatedFormat('d F Y');
 
         return Pdf::loadView('certificates.pkl', [
             'intern' => $intern,
-            'pimpinan' => $pimpinan,
             'logoDataUri' => $logoDataUri,
             'nomor' => $nomor,
             'tanggalTerbit' => $tanggalTerbit,

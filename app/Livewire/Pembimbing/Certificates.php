@@ -42,11 +42,12 @@ class Certificates extends Component
     }
 
     /**
-     * Beri bintang untuk satu kriteria — sengaja pakai manageableInterns(), BUKAN
+     * Beri nilai untuk satu kriteria — klik separuh bintang untuk nilai ",5" (mis. 4,5),
+     * separuh lain untuk bilangan bulat (mis. 5). Sengaja pakai manageableInterns(), BUKAN
      * visibleInterns() — Mentor bisa MELIHAT sertifikat semua intern, tapi cuma boleh
      * MENILAI intern yang memang dimentorinya.
      */
-    public function rate(int $internId, string $field, int $stars): void
+    public function rate(int $internId, string $field, float $stars): void
     {
         if (! array_key_exists($field, Intern::CRITERIA)) {
             return;
@@ -58,6 +59,9 @@ class Certificates extends Component
             return;
         }
 
+        // Bulatkan ke kelipatan 0,5 terdekat supaya nilai selalu rapi (1, 1.5, 2, ... 5)
+        // walau input yang dikirim dari klik separuh bintang seharusnya sudah tepat.
+        $stars = round($stars * 2) / 2;
         $stars = max(Intern::SCALE_MIN, min(Intern::SCALE_MAX, $stars));
 
         $intern->update([

@@ -11,6 +11,7 @@ use App\Livewire\Leaves\Index as LeaveIndex;
 use App\Livewire\Pembimbing\Activities as PembimbingActivities;
 use App\Livewire\Pembimbing\Attendance as PembimbingAttendance;
 use App\Livewire\Pembimbing\Certificates as PembimbingCertificates;
+use App\Livewire\Pembimbing\Interns as PembimbingInterns;
 use App\Livewire\Pembimbing\Leaves as PembimbingLeaves;
 use App\Livewire\Pembimbing\Tasks as PembimbingTasks;
 use App\Livewire\Pimpinan\Dashboard as PimpinanDashboard;
@@ -34,6 +35,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/presensi', AttendanceIndex::class)->name('attendance.index');
     Route::get('/presensi-intern', PembimbingAttendance::class)->name('pembimbing.attendance');
+
+    Route::get('/intern', PembimbingInterns::class)->name('pembimbing.interns');
 
     Route::get('/kegiatan', PembimbingActivities::class)->name('pembimbing.activities');
     Route::get('/sertifikat-intern', PembimbingCertificates::class)->name('pembimbing.certificates');

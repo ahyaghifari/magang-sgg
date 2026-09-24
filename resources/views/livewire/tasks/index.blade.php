@@ -115,6 +115,7 @@
                     @if ($task->assignedBy)
                         <p class="text-sm" style="margin-top:0.5rem; color:var(--text-muted);">
                             <i class="fa-solid fa-user"></i> Diberikan oleh {{ $task->assignedBy->name }}
+                            <span style="color:var(--text-faint);">&middot; {{ $task->created_at->translatedFormat('d F Y, H:i') }}</span>
                         </p>
                     @endif
 

@@ -23,4 +23,20 @@ class Brand
 
         return asset('images/syifa-logo.png');
     }
+
+    /**
+     * URL ikon bulat/persegi Syifa Global Group (cuma lambang, tanpa wordmark) —
+     * dipakai untuk favicon, supaya tidak memakai logo lebar (logoUrl()) yang jadi
+     * gepeng/kurang jelas kalau dipaksa persegi oleh browser.
+     */
+    public static function faviconUrl(): string
+    {
+        $relative = 'images/syifa-favicon.png';
+
+        if (is_file(public_path($relative))) {
+            return asset($relative);
+        }
+
+        return self::logoUrl();
+    }
 }

@@ -76,7 +76,10 @@ class Activities extends Component
             return null;
         }
 
-        return Journal::whereKey($id)->whereIn('intern_id', $this->manageableInternIds())->first();
+        // Sengaja pakai visibleInternIds() (BUKAN manageableInternIds()) — komentar di halaman
+        // Kegiatan Intern boleh dikirim untuk SEMUA intern yang kelihatan (termasuk Mentor yang
+        // melihat semua intern), beda dari beri bintang yang tetap dibatasi ke mentee sendiri.
+        return Journal::whereKey($id)->whereIn('intern_id', $this->visibleInternIds())->first();
     }
 
     protected function allowed(): bool

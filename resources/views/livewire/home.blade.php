@@ -11,21 +11,47 @@
     @endif
 
     {{-- ===== Welcome card ===== --}}
-    <section class="welcome-card" style="padding: 1.5rem;">
+    @php($isLight = $intern?->dashboard_color && $intern->isDashboardColorLight())
+    @php($fg = $isLight ? '#0f172a' : '#fff')
+    @php($overlaySoft = $isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.16)')
+    @php($overlayBorder = $isLight ? 'rgba(15,23,42,0.22)' : 'rgba(255,255,255,0.5)')
+    <section class="welcome-card {{ $isLight ? 'is-light-bg' : '' }}"
+             style="padding: 1.5rem; {{ $intern?->dashboard_color ? 'background:' . $intern->dashboard_color . ';' : '' }}">
         <span class="w-deco-1"></span>
         <span class="w-deco-2"></span>
         <span class="w-deco-3"></span>
 
         <div style="position: relative; z-index: 1;">
-            <p style="font-size:0.8125rem; opacity:0.8;">
-                <i class="fa-regular fa-calendar" style="margin-right:0.4rem;"></i>
-                {{ \Illuminate\Support\Carbon::now()->translatedFormat('l, d F Y') }}
-            </p>
-            <p style="margin-top:0.4rem; font-size:1.375rem; font-weight:700; color:#fff;">
-                Halo, {{ $intern?->nama ?? $user->name }} 👋
-            </p>
+            @if ($intern)
+                <button type="button" wire:click="openProfileModal"
+                        style="position:absolute; top:0; right:0; background:{{ $overlaySoft }}; border:0; color:{{ $fg }}; width:2.1rem; height:2.1rem; border-radius:9999px; cursor:pointer;"
+                        aria-label="Ubah profil">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+            @endif
+
+            <div class="flex items-center" style="gap:0.85rem;">
+                @if ($intern?->avatar_path)
+                    <img src="{{ url('storage/' . $intern->avatar_path) }}" alt="Foto profil"
+                         style="width:3.2rem; height:3.2rem; border-radius:9999px; object-fit:cover; border:2px solid {{ $overlayBorder }}; flex-shrink:0;">
+                @elseif ($intern)
+                    <div style="width:3.2rem; height:3.2rem; border-radius:9999px; background:{{ $overlaySoft }}; border:2px solid {{ $overlayBorder }}; color:{{ $fg }}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.1rem; flex-shrink:0;">
+                        {{ \Illuminate\Support\Str::of($intern->nama)->explode(' ')->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->join('') }}
+                    </div>
+                @endif
+
+                <div>
+                    <p style="font-size:0.8125rem; opacity:0.8; color:{{ $fg }};">
+                        <i class="fa-regular fa-calendar" style="margin-right:0.4rem;"></i>
+                        {{ \Illuminate\Support\Carbon::now()->translatedFormat('l, d F Y') }}
+                    </p>
+                    <p style="margin-top:0.4rem; font-size:1.375rem; font-weight:700; color:{{ $fg }};">
+                        Halo, {{ $intern?->nama ?? $user->name }} 👋
+                    </p>
+                </div>
+            </div>
             @unless ($intern)
-                <p style="margin-top:0.25rem; font-size:0.875rem; opacity:0.85;">
+                <p style="margin-top:0.25rem; font-size:0.875rem; opacity:0.85; color:{{ $fg }};">
                     Selamat datang di portal Internship Syifa Global Group
                 </p>
             @endunless
@@ -211,4 +237,86 @@
 
     {{-- Modal isi jurnal --}}
     <livewire:journals.create />
+
+    {{-- ===== Modal: Ubah Profil (foto profil & warna kartu beranda) ===== --}}
+    @if ($intern)
+        <div
+            x-data
+            x-show="$wire.showProfileModal"
+            x-cloak
+            x-transition.opacity
+            @keydown.escape.window="$wire.showProfileModal && $wire.closeProfileModal()"
+            style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
+        >
+            <div @click.outside="$wire.closeProfileModal()" x-show="$wire.showProfileModal" x-transition
+                 class="surface-card" style="width:100%; max-width:26rem; margin:auto; padding:0;">
+                <div class="flex items-center justify-between"
+                     style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft);">
+                    <h2 style="font-size:1.05rem; font-weight:700;">Ubah Profil</h2>
+                    <button type="button" wire:click="closeProfileModal" class="theme-toggle" aria-label="Tutup">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div style="padding:1.35rem;">
+                    <div style="margin-bottom:1.2rem;" x-data="avatarCropper" x-effect="! $wire.showProfileModal && reset()">
+                        <label class="form-label">Foto Profil</label>
+
+                        {{-- Stage "idle": belum pilih foto baru — tampilkan foto tersimpan/placeholder --}}
+                        <div x-show="stage === 'idle'" class="flex items-center" style="gap:0.85rem;">
+                            @if ($intern->avatar_path)
+                                <img src="{{ url('storage/' . $intern->avatar_path) }}" alt="Foto profil"
+                                     style="width:3.5rem; height:3.5rem; border-radius:9999px; object-fit:cover; flex-shrink:0;">
+                            @else
+                                <div style="width:3.5rem; height:3.5rem; border-radius:9999px; background:var(--surface-alt); display:flex; align-items:center; justify-content:center; color:var(--text-faint); flex-shrink:0;">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                            @endif
+                            <button type="button" @click="$refs.avatarFile.click()" class="btn-ghost" style="padding:0.45rem 0.8rem;">
+                                <i class="fa-solid fa-camera"></i> Pilih Foto
+                            </button>
+                            <input type="file" x-ref="avatarFile" accept="image/*" @change="onFile($event)" style="display:none;">
+                        </div>
+
+                        {{-- Stage "done": foto otomatis di-crop tengah jadi bulat, belum tersimpan sampai klik Simpan --}}
+                        <div x-show="stage === 'done'" x-cloak class="flex items-center" style="gap:0.85rem;">
+                            <img :src="preview" alt="Pratinjau foto baru" style="width:3.5rem; height:3.5rem; border-radius:9999px; object-fit:cover; flex-shrink:0;">
+                            <button type="button" @click="changePhoto()" class="btn-ghost" style="padding:0.45rem 0.8rem;">
+                                <i class="fa-solid fa-pen"></i> Ganti Foto
+                            </button>
+                        </div>
+
+                        @error('avatarDataUrl')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div style="margin-bottom:0.5rem;">
+                        <label for="p-color" class="form-label">Warna Kartu Beranda</label>
+                        <div class="flex items-center" style="gap:0.6rem;">
+                            <input id="p-color" type="color" wire:model="dashboardColor"
+                                   value="{{ $dashboardColor !== '' ? $dashboardColor : '#0b47a1' }}"
+                                   style="width:2.6rem; height:2.6rem; padding:0; border:1px solid var(--border); border-radius:8px; cursor:pointer;">
+                            <span class="text-sm" style="color:var(--text-muted);">
+                                {{ $dashboardColor !== '' ? $dashboardColor : 'Warna default' }}
+                            </span>
+                            @if ($dashboardColor !== '')
+                                <button type="button" wire:click="resetDashboardColor" class="text-sm" style="color:var(--text-muted); text-decoration:underline; margin-left:auto;">
+                                    Pakai warna default
+                                </button>
+                            @endif
+                        </div>
+                        @error('dashboardColor')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end" style="gap:0.5rem; padding:1.1rem 1.35rem; border-top:1px solid var(--border-soft);">
+                    <button type="button" wire:click="closeProfileModal" class="btn-ghost">Batal</button>
+                    <button type="button" wire:click="saveProfile" class="btn-primary">Simpan</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
