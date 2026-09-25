@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pimpinan;
 
+use App\Livewire\Concerns\HasInternDetailModals;
 use App\Models\AttendanceRecord;
 use App\Models\Intern;
 use App\Models\Journal;
@@ -15,16 +16,21 @@ use Livewire\WithPagination;
 /**
  * Dashboard ringkasan READ-ONLY untuk peran pimpinan — tidak ada aksi kelola
  * (tidak menilai jurnal, tidak konfirmasi izin, tidak assign tugas). Menampilkan
- * SELURUH data (bukan cuma cuplikan): semua kegiatan/jurnal, semua presensi
+ * SELURUH data (bukan cuma cuplikan): daftar semua intern (kartu + jurnal/tugas lengkap
+ * seperti halaman Intern mentor), semua kegiatan/jurnal, semua presensi
  * (masuk & telat, per tanggal), dan semua pengajuan izin — masing-masing bisa
  * difilter & dipaginasi sendiri-sendiri.
  */
 #[Layout('components.layouts.app')]
 class Dashboard extends Component
 {
+    use HasInternDetailModals;
     use WithPagination;
 
     private const TZ = 'Asia/Makassar';
+
+    // ----- Filter: Seluruh Intern -----
+    public string $internSearch = '';
 
     // ----- Filter: Kegiatan & Jurnal -----
     public string $kegiatanInternId = '';
@@ -69,8 +75,17 @@ class Dashboard extends Component
         return $user && $user->isPimpinan();
     }
 
+    protected function canViewIntern(int $internId): bool
+    {
+        return Intern::whereKey($internId)->exists();
+    }
+
     public function updated(string $property): void
     {
+        if ($property === 'internSearch') {
+            $this->resetPage('internPage');
+        }
+
         if (in_array($property, ['kegiatanInternId', 'kegiatanDateFrom', 'kegiatanDateTo'], true)) {
             $this->resetPage('kegiatanPage');
         }
@@ -146,7 +161,11 @@ class Dashboard extends Component
             ->orderByDesc('created_at')
             ->paginate(8, pageName: 'izinPage');
 
+        $allInterns = $this->internCardsQuery($this->internSearch)->paginate(9, pageName: 'internPage');
+
         return view('livewire.pimpinan.dashboard', [
+            'allInterns' => $allInterns,
+            ...$this->internDetailModalData(),
             'interns' => Intern::orderBy('nama')->get(['id', 'nama']),
             'totalInterns' => Intern::count(),
             'totalJournals' => Journal::count(),

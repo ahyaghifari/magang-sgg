@@ -22,13 +22,13 @@
         </div>
     </div>
 
-    <div x-data="{ show: false }" x-cloak
-         x-on:task-assigned.window="show = true; setTimeout(() => show = false, 4000)"
+    <div x-data="{ show: false, count: 1 }" x-cloak
+         x-on:task-assigned.window="count = $event.detail.count ?? 1; show = true; setTimeout(() => show = false, 4000)"
          x-show="show" x-transition
          class="surface-card flex items-center"
          style="gap:0.7rem; padding:0.8rem 1rem; margin-bottom:1rem; border-color:#a7f3d0;">
         <i class="fa-solid fa-circle-check" style="color:var(--brand-success);"></i>
-        <span class="text-sm" style="color:var(--text-body);">Tugas berhasil diberikan.</span>
+        <span class="text-sm" style="color:var(--text-body);" x-text="count > 1 ? `Tugas berhasil diberikan ke ${count} peserta.` : 'Tugas berhasil diberikan.'">Tugas berhasil diberikan.</span>
     </div>
 
     {{-- ===== Ringkasan ===== --}}
@@ -94,6 +94,7 @@
             <article class="surface-card" style="padding:1.1rem 1.15rem;">
                 <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
                     <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
+                        <x-intern-avatar :intern="$task->intern" />
                         <span style="font-weight:700; color:var(--text-heading);">{{ $task->intern->nama ?? 'Peserta dihapus' }}</span>
                         @if ($task->intern?->unit)
                             <span class="badge badge-neutral"><i class="fa-solid fa-people-group"></i> {{ $task->intern->unit->name }}</span>
@@ -187,7 +188,9 @@
                     </div>
                 @endif
 
-                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task, 'canComment' => $taskManageable])
+                {{-- canComment default true — komentar boleh untuk semua intern yang terlihat
+                     (lihat Tasks::resolveCommentable()), beda dari aksi kelola di atas. --}}
+                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task])
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">
@@ -243,50 +246,74 @@
 
             <div style="padding:1.35rem;">
                 <form wire:submit="assignTask">
-                    {{-- Select native biasa, satu peserta — lintas pembimbing (semua intern
-                         di sistem, bukan cuma mentee sendiri), tapi pilihannya dipisah lewat
-                         optgroup: bimbingan/mentee sendiri vs peserta lain. --}}
+                    {{-- Daftar centang, bisa pilih BEBERAPA peserta sekaligus kalau tugasnya sama
+                         (tiap peserta tetap dapat tugasnya sendiri, lihat Tasks::assignTask()).
+                         Lintas pembimbing (semua intern di sistem, bukan cuma mentee sendiri),
+                         dikelompokkan: bimbingan/mentee sendiri vs peserta lain. Kotak cari
+                         cuma menyaring tampilan di browser (Alpine), tidak mengubah pilihan. --}}
                     @php($myInterns = $allInterns->whereIn('id', $manageableInternIds))
                     @php($otherInterns = $allInterns->diff($myInterns))
-                    <div style="margin-bottom:1.1rem;">
-                        <label for="a-intern" class="form-label">Peserta</label>
-                        <select id="a-intern" wire:model.live="formInternId" class="form-input">
-                            <option value="">Pilih peserta...</option>
-                            @if ($myInterns->isNotEmpty())
-                                <optgroup label="Peserta yang Kamu Bimbing/Mentori">
-                                    @foreach ($myInterns as $i)
-                                        <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
+                    <div style="margin-bottom:1.1rem;" x-data="{ q: '' }">
+                        <div class="flex items-center justify-between" style="gap:0.5rem; flex-wrap:wrap;">
+                            <label for="a-intern-search" class="form-label" style="margin-bottom:0;">
+                                Peserta
+                                <span style="font-weight:400; color:var(--text-muted);">&middot; {{ count($formInternIds) }} dipilih</span>
+                            </label>
+                            <div class="flex items-center" style="gap:0.6rem;">
+                                @if ($myInterns->isNotEmpty())
+                                    <button type="button" class="text-sm" style="color:var(--brand); text-decoration:underline;"
+                                            wire:click="$set('formInternIds', {{ Js::from($myInterns->pluck('id')->map(fn ($id) => (string) $id)->values()) }})">
+                                        Pilih semua bimbinganku
+                                    </button>
+                                @endif
+                                @if ($formInternIds !== [])
+                                    <button type="button" class="text-sm" style="color:var(--text-muted); text-decoration:underline;"
+                                            wire:click="$set('formInternIds', [])">
+                                        Hapus pilihan
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                        <input id="a-intern-search" type="text" x-model="q" class="form-input" style="margin-top:0.45rem;"
+                               placeholder="Cari nama peserta atau unit...">
+                        <div style="margin-top:0.5rem; max-height:14rem; overflow-y:auto; border:1px solid var(--border); border-radius:10px; padding:0.35rem 0.6rem;">
+                            @foreach ([['Peserta yang Kamu Bimbing/Mentori', $myInterns], ['Peserta Lain (Lintas Pembimbing)', $otherInterns]] as [$groupLabel, $groupInterns])
+                                @if ($groupInterns->isNotEmpty())
+                                    <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; font-weight:600; color:var(--text-faint); margin:0.45rem 0 0.2rem;">{{ $groupLabel }}</p>
+                                    @foreach ($groupInterns as $i)
+                                        @php($label = $i->nama . ($i->unit ? ' — ' . $i->unit->name : ''))
+                                        <label wire:key="pick-intern-{{ $i->id }}" class="flex items-center text-sm"
+                                               x-show="q === '' || @js(mb_strtolower($label)).includes(q.toLowerCase())"
+                                               style="gap:0.55rem; padding:0.35rem 0.1rem; cursor:pointer; color:var(--text-body);">
+                                            <input type="checkbox" value="{{ $i->id }}" wire:model.live="formInternIds" style="width:1rem; height:1rem; flex-shrink:0;">
+                                            <span>{{ $label }}</span>
+                                        </label>
                                     @endforeach
-                                </optgroup>
-                            @endif
-                            @if ($otherInterns->isNotEmpty())
-                                <optgroup label="Peserta Lain (Lintas Pembimbing)">
-                                    @foreach ($otherInterns as $i)
-                                        <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
-                                    @endforeach
-                                </optgroup>
-                            @endif
-                        </select>
-                        @error('formInternId')
+                                @endif
+                            @endforeach
+                        </div>
+                        @error('formInternIds')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                        @error('formInternIds.*')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- Kotak info pembimbing/mentor ASLI peserta yang dipilih — supaya kalau
-                         tugas ini diberikan bukan oleh pembimbing/mentor asli peserta (lintas
-                         pembimbing), tetap jelas siapa yang sebenarnya membimbing/mentori dia. --}}
-                    @if ($this->selectedInternInfo)
-                        <div class="{{ $this->selectedInternInfo['isMine'] ? 'surface-card' : 'callout-warning' }}" style="padding:0.75rem 0.9rem; margin-bottom:1.1rem;">
-                            @if (! $this->selectedInternInfo['isMine'])
-                                <p class="text-sm callout-warning-title" style="font-weight:600; margin-bottom:0.25rem;">
-                                    <i class="fa-solid fa-circle-info"></i> Peserta ini bukan yang kamu bimbing/mentori
-                                </p>
-                            @endif
-                            <p class="text-sm" style="color:var(--text-muted);">
-                                Pembimbing: <strong style="color:var(--text-heading);">{{ $this->selectedInternInfo['pembimbing'] ?? '—' }}</strong>
-                                &middot;
-                                Mentor: <strong style="color:var(--text-heading);">{{ $this->selectedInternInfo['mentor'] ?? '—' }}</strong>
+                    {{-- Kotak info pembimbing/mentor ASLI untuk peserta terpilih yang bukan
+                         bimbingan sendiri — supaya kalau tugas diberikan lintas pembimbing,
+                         tetap jelas siapa yang sebenarnya membimbing/mentori mereka. --}}
+                    @if ($this->selectedOtherInterns !== [])
+                        <div class="callout-warning" style="padding:0.75rem 0.9rem; margin-bottom:1.1rem;">
+                            <p class="text-sm callout-warning-title" style="font-weight:600; margin-bottom:0.25rem;">
+                                <i class="fa-solid fa-circle-info"></i> Peserta berikut bukan yang kamu bimbing/mentori
                             </p>
+                            @foreach ($this->selectedOtherInterns as $other)
+                                <p class="text-sm" style="color:var(--text-muted);">
+                                    <strong style="color:var(--text-heading);">{{ $other['nama'] }}</strong> &mdash;
+                                    Pembimbing: {{ $other['pembimbing'] ?? '—' }} &middot; Mentor: {{ $other['mentor'] ?? '—' }}
+                                </p>
+                            @endforeach
                         </div>
                     @endif
 

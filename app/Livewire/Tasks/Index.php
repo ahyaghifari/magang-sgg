@@ -256,7 +256,7 @@ class Index extends Component
 
         $tasks = $intern
             ? $intern->tasks()
-                ->with(['assignedBy', 'comments.author', 'completionPhotos'])
+                ->with(['assignedBy', 'comments.author.intern', 'completionPhotos'])
                 ->when($this->status !== '', fn ($q) => $q->where('status', $this->status))
                 ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
                 ->when($this->dateTo !== '', fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))

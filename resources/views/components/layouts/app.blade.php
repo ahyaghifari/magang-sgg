@@ -161,7 +161,15 @@
                 <div class="portal-sidebar-foot">
                     <div class="portal-user flex items-center justify-between">
                         <div class="flex items-center" style="gap:0.65rem; min-width:0;">
-                            <span class="portal-user-avatar">{{ strtoupper(substr($portalUser->name, 0, 1)) }}</span>
+                            @php($portalAvatar = $portalUser->intern?->avatar_path)
+                            <span class="portal-user-avatar" style="overflow:hidden;">
+                                @if ($portalAvatar)
+                                    <img src="{{ url('storage/' . $portalAvatar) }}" alt="Foto profil {{ $portalUser->name }}"
+                                         style="width:100%; height:100%; object-fit:cover;">
+                                @else
+                                    {{ strtoupper(substr($portalUser->name, 0, 1)) }}
+                                @endif
+                            </span>
                             <span style="min-width:0; line-height:1.25;">
                                 <span style="display:block; font-weight:700; font-size:0.82rem; color:var(--text-heading); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->name }}</span>
                                 <span style="display:block; font-size:0.72rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $portalUser->email }}</span>

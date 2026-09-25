@@ -27,7 +27,11 @@ class Activities extends Component
     use HasCommentThread, WithPagination;
 
     /** Jumlah HARI kegiatan per halaman (bukan jumlah jurnal) — satu hari tak pernah terpotong. */
-    private const DAYS_PER_PAGE = 7;
+    // Hari ini + 7 hari sebelumnya muat dalam satu halaman default.
+    private const DAYS_PER_PAGE = 8;
+
+    // Rentang default: hari ini (utama, paling atas) + 1 minggu sebelumnya.
+    private const DEFAULT_PAST_DAYS = 7;
 
     public string $internId = '';
 
@@ -46,12 +50,11 @@ class Activities extends Component
             return $this->redirect(route('home'), navigate: true);
         }
 
-        // Default cuma "hari ini" saat pertama dibuka (tanpa query string di URL) — untuk
-        // tanggal lain, pakai filter. Kalau URL sudah bawa dateFrom/dateTo sendiri (mis.
-        // dari tautan yang dibagikan), itu tetap dihormati.
+        // Default "hari ini + 1 minggu sebelumnya" saat pertama dibuka (tanpa query string di
+        // URL) — hari ini tetap paling atas. Untuk tanggal lain, pakai filter. Kalau URL sudah
+        // bawa dateFrom/dateTo sendiri (mis. dari tautan yang dibagikan), itu tetap dihormati.
         if ($this->dateFrom === '' && $this->dateTo === '') {
-            $this->dateFrom = Carbon::today()->toDateString();
-            $this->dateTo = Carbon::today()->toDateString();
+            $this->applyDefaultRange();
         }
     }
 
@@ -62,11 +65,21 @@ class Activities extends Component
         }
     }
 
-    /** Kembali ke tampilan default ("hari ini" saja), bukan menghapus filter jadi "semua tanggal". */
+    protected function defaultDateFrom(): string
+    {
+        return Carbon::today()->subDays(self::DEFAULT_PAST_DAYS)->toDateString();
+    }
+
+    protected function applyDefaultRange(): void
+    {
+        $this->dateFrom = $this->defaultDateFrom();
+        $this->dateTo = Carbon::today()->toDateString();
+    }
+
+    /** Kembali ke tampilan default (hari ini + 1 minggu sebelumnya), bukan menghapus filter jadi "semua tanggal". */
     public function resetDateFilter(): void
     {
-        $this->dateFrom = Carbon::today()->toDateString();
-        $this->dateTo = Carbon::today()->toDateString();
+        $this->applyDefaultRange();
         $this->resetPage();
     }
 
@@ -178,7 +191,7 @@ class Activities extends Component
 
         // 2) Ambil SEMUA jurnal untuk hari-hari tersebut (satu hari tidak akan terpotong).
         $items = $this->baseQuery()
-            ->with(['intern.institusi', 'intern.unit', 'attachments', 'reviews.reviewer', 'comments.author'])
+            ->with(['intern.institusi', 'intern.unit', 'attachments', 'reviews.reviewer', 'comments.author.intern'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->when($dates !== [], fn ($q) => $q->whereIn('date', $dates), fn ($q) => $q->whereRaw('1 = 0'))
@@ -206,6 +219,7 @@ class Activities extends Component
             'journals' => $journals,
             'myReviews' => $myReviews,
             'today' => Carbon::today()->toDateString(),
+            'defaultDateFrom' => $this->defaultDateFrom(),
             'canReview' => $this->canReview(),
             // Per-jurnal: bintang & komentar cuma boleh diisi untuk intern yang memang
             // dibimbing/dimentori — dipakai di view untuk menyembunyikan kontrolnya pada

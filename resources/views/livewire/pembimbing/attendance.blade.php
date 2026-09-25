@@ -71,6 +71,7 @@
                              style="padding:0.85rem 1.1rem; gap:0.75rem; flex-wrap:wrap;">
                         <div style="min-width:0;">
                             <p style="font-size:0.8rem; font-weight:700; color:var(--text-heading);">
+                                <x-intern-avatar :intern="$leave->intern" size="1.6rem" style="margin-right:0.35rem;" />
                                 {{ $leave->intern->nama ?? 'Peserta dihapus' }}
                                 @if ($leave->intern?->unit)
                                     <span class="badge badge-neutral" style="margin-left:0.35rem;">
@@ -107,6 +108,7 @@
                      style="padding:0.85rem 1.1rem; gap:0.75rem; flex-wrap:wrap;">
                 <div style="min-width:0;">
                     <p style="font-size:0.8rem; font-weight:700; color:var(--text-heading);">
+                        <x-intern-avatar :intern="$row->intern" size="1.6rem" style="margin-right:0.35rem;" />
                         {{ $row->intern->nama ?? 'NIP ' . $row->nip }}
                         @if ($row->intern?->unit)
                             <span class="badge badge-neutral" style="margin-left:0.35rem;">

@@ -58,7 +58,7 @@ class Index extends Component
 
         $journals = $intern
             ? $intern->journals()
-                ->with(['attachments', 'comments.author'])
+                ->with(['attachments', 'comments.author.intern'])
                 ->withAvg('reviews', 'rating')
                 ->withCount('reviews')
                 ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))

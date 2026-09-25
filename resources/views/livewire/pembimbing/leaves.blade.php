@@ -42,6 +42,7 @@
             <article class="surface-card" style="padding:1.1rem 1.15rem;">
                 <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
                     <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
+                        <x-intern-avatar :intern="$leave->intern" />
                         <span style="font-weight:700; color:var(--text-heading);">{{ $leave->intern->nama ?? 'Peserta dihapus' }}</span>
                         @if ($leave->intern?->unit)
                             <span class="badge badge-neutral"><i class="fa-solid fa-people-group"></i> {{ $leave->intern->unit->name }}</span>
