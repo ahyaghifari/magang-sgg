@@ -36,7 +36,8 @@ class Tasks extends Component
     // ===== Form pemberian tugas =====
     public bool $showForm = false;
 
-    public string $formInternId = '';
+    /** Peserta yang dipilih di form "Beri Tugas" — bisa lebih dari satu kalau tugasnya sama. */
+    public array $formInternIds = [];
 
     public string $title = '';
 
@@ -83,7 +84,10 @@ class Tasks extends Component
             return null;
         }
 
-        return $this->manageableTasksQuery()->whereKey($id)->first();
+        // Sengaja pakai visibleInternIds() (BUKAN manageableTasksQuery()) — komentar tugas boleh
+        // dikirim untuk SEMUA intern yang kelihatan (Mentor melihat semua intern), sama seperti
+        // komentar jurnal di halaman Kegiatan. Aksi kelola tugas (edit/hapus/selesai) tetap sempit.
+        return Task::whereKey($id)->whereIn('intern_id', $this->visibleInternIds())->first();
     }
 
     protected function allowed(): bool
@@ -104,7 +108,7 @@ class Tasks extends Component
 
     /**
      * Id intern yang boleh DIKELOLA user yang sedang login — dipakai untuk pemberian
-     * tugas baru dan setiap aksi yang mengubah tugas (edit/hapus/tandai selesai/komentar).
+     * tugas baru dan setiap aksi yang mengubah tugas (edit/hapus/tandai selesai).
      * SELALU sempit ke intern yang memang dibimbing/dimentori (lihat User::manageableInterns()),
      * beda dari visibleInternIds() yang melebar untuk Mentor.
      */
@@ -114,7 +118,7 @@ class Tasks extends Component
     }
 
     /**
-     * Tugas yang boleh DIKELOLA (edit/hapus/tandai selesai/komentar) user yang sedang login:
+     * Tugas yang boleh DIKELOLA (edit/hapus/tandai selesai) user yang sedang login:
      * milik intern yang memang dibimbing/dimentori, ATAU tugas yang dia SENDIRI berikan
      * (bisa lintas pembimbing, ke intern bukan mentee-nya) — orang yang membuat tugas
      * tetap boleh mengurus tugas buatannya sendiri.
@@ -131,7 +135,7 @@ class Tasks extends Component
 
     public function openForm(): void
     {
-        $this->reset(['formInternId', 'title', 'description', 'dueDate', 'dueTime']);
+        $this->reset(['formInternIds', 'title', 'description', 'dueDate', 'dueTime']);
         $this->resetValidation();
         $this->showForm = true;
     }
@@ -141,12 +145,42 @@ class Tasks extends Component
         $this->showForm = false;
     }
 
+    /** Tambah satu peserta dari select "Peserta" ke pilihan (abaikan kalau sudah dipilih). */
+    public function addFormIntern(int $internId): void
+    {
+        $ids = array_map('intval', $this->formInternIds);
+
+        if (! in_array($internId, $ids, true)) {
+            $this->formInternIds = [...$ids, $internId];
+        }
+    }
+
+    /** Pilih/batal satu peserta di form "Beri Tugas" — dipakai tombol peserta terpilih untuk membatalkan. */
+    public function toggleFormIntern(int $internId): void
+    {
+        $ids = array_map('intval', $this->formInternIds);
+
+        $this->formInternIds = in_array($internId, $ids, true)
+            ? array_values(array_diff($ids, [$internId]))
+            : [...$ids, $internId];
+    }
+
+    /** Tambahkan semua bimbingan/mentee sendiri ke pilihan, tanpa membuang peserta lain yang sudah dipilih. */
+    public function selectAllMyInterns(): void
+    {
+        $this->formInternIds = array_values(array_unique([
+            ...array_map('intval', $this->formInternIds),
+            ...$this->manageableInternIds(),
+        ]));
+    }
+
     protected function rules(): array
     {
         return [
             // Sengaja TIDAK dibatasi ke manageableInternIds() — pemberian tugas boleh lintas
             // pembimbing, ke intern siapa pun di sistem (lihat allInterns() di render()).
-            'formInternId' => ['required', 'integer', Rule::exists('interns', 'id')],
+            'formInternIds' => ['required', 'array', 'min:1'],
+            'formInternIds.*' => ['integer', 'distinct', Rule::exists('interns', 'id')],
             'title' => ['required', 'string', 'min:3', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
             'dueDate' => ['nullable', 'date'],
@@ -157,39 +191,40 @@ class Tasks extends Component
     protected function validationAttributes(): array
     {
         return [
-            'formInternId' => 'peserta',
+            'formInternIds' => 'peserta',
+            'formInternIds.*' => 'peserta',
             'title' => 'judul tugas',
             'description' => 'keterangan',
             'dueDate' => 'tanggal tenggat',
             'dueTime' => 'jam tenggat',
         ];
     }
-
     /**
-     * Info pembimbing & mentor ASLI dari peserta yang sedang dipilih di form "Beri Tugas" —
-     * dipakai untuk kotak keterangan di antara field Peserta dan Judul Tugas, supaya kalau
-     * yang memberi tugas BUKAN pembimbing/mentor asli peserta itu (fitur lintas pembimbing),
-     * tetap jelas siapa pembimbing/mentor sebenarnya.
+     * Peserta terpilih di form "Beri Tugas" yang BUKAN bimbingan/mentee user yang login,
+     * beserta pembimbing & mentor ASLI-nya — dipakai untuk kotak keterangan di bawah daftar
+     * Peserta, supaya kalau tugas diberikan lintas pembimbing tetap jelas siapa pembimbing/
+     * mentor sebenarnya. Kosong kalau semua yang dipilih memang bimbingan sendiri.
      */
-    public function getSelectedInternInfoProperty(): ?array
+    public function getSelectedOtherInternsProperty(): array
     {
-        if ($this->formInternId === '') {
-            return null;
-        }
-
-        $intern = Intern::with(['pembimbing', 'mentor'])->find($this->formInternId);
-
-        if (! $intern) {
-            return null;
+        if ($this->formInternIds === []) {
+            return [];
         }
 
         $myId = auth()->id();
 
-        return [
-            'pembimbing' => $intern->pembimbing?->name,
-            'mentor' => $intern->mentor?->name,
-            'isMine' => $intern->pembimbing_id === $myId || $intern->mentor_id === $myId,
-        ];
+        return Intern::with(['pembimbing', 'mentor'])
+            ->whereIn('id', $this->formInternIds)
+            ->where(fn ($q) => $q->where('pembimbing_id', '!=', $myId)->orWhereNull('pembimbing_id'))
+            ->where(fn ($q) => $q->where('mentor_id', '!=', $myId)->orWhereNull('mentor_id'))
+            ->orderBy('nama')
+            ->get()
+            ->map(fn (Intern $intern) => [
+                'nama' => $intern->nama,
+                'pembimbing' => $intern->pembimbing?->name,
+                'mentor' => $intern->mentor?->name,
+            ])
+            ->all();
     }
 
     /** Gabungkan input tanggal + jam terpisah jadi satu nilai datetime (atau null kalau tanggal kosong). */
@@ -202,6 +237,11 @@ class Tasks extends Component
         return $date . ' ' . ($time !== '' ? $time : '00:00');
     }
 
+    /**
+     * Beri tugas ke SATU ATAU LEBIH peserta sekaligus. Tiap peserta dapat baris tugasnya
+     * sendiri (bukan satu tugas bersama), supaya status selesai/ditolak, foto bukti, dan
+     * komentar tetap terpisah per peserta.
+     */
     public function assignTask(): void
     {
         if (! $this->allowed()) {
@@ -210,20 +250,24 @@ class Tasks extends Component
 
         $this->validate();
 
-        $task = Task::create([
-            'intern_id' => $this->formInternId,
-            'assigned_by' => auth()->id(),
-            'title' => $this->title,
-            'description' => $this->description !== '' ? $this->description : null,
-            'source' => 'web',
-            'status' => 'pending',
-            'due_date' => $this->combineDueDateTime($this->dueDate, $this->dueTime),
-        ]);
+        $interns = Intern::with('user')->whereIn('id', $this->formInternIds)->get();
 
-        $task->intern->user?->notify(new TaskAssigned($task));
+        foreach ($interns as $intern) {
+            $task = Task::create([
+                'intern_id' => $intern->id,
+                'assigned_by' => auth()->id(),
+                'title' => $this->title,
+                'description' => $this->description !== '' ? $this->description : null,
+                'source' => 'web',
+                'status' => 'pending',
+                'due_date' => $this->combineDueDateTime($this->dueDate, $this->dueTime),
+            ]);
+
+            $intern->user?->notify(new TaskAssigned($task));
+        }
 
         $this->closeForm();
-        $this->dispatch('task-assigned');
+        $this->dispatch('task-assigned', count: $interns->count());
     }
 
     /** Buka modal edit tugas — dipakai a.l. saat intern menolak tugas dan pembimbing mau menyesuaikannya. */
@@ -327,7 +371,7 @@ class Tasks extends Component
             ->when($this->dateTo !== '', fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo));
 
         $tasks = (clone $base)
-            ->with(['intern.unit', 'assignedBy', 'comments.author', 'completionPhotos'])
+            ->with(['intern.unit', 'assignedBy', 'comments.author.intern', 'completionPhotos'])
             ->orderByRaw("field(status, 'pending', 'in_progress', 'done')")
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -340,7 +384,7 @@ class Tasks extends Component
             // Pilihan peserta di form "Beri Tugas" — SEMUA intern di sistem, lintas pembimbing
             // (bukan cuma mentee sendiri).
             'allInterns' => Intern::with('unit')->orderBy('nama')->get(['id', 'nama', 'unit_id']),
-            // Dipakai buat sembunyikan tombol kelola (tandai selesai/edit/hapus/komentar) di
+            // Dipakai buat sembunyikan tombol kelola (tandai selesai/edit/hapus) di
             // tugas milik intern yang cuma boleh DILIHAT (Mentor) bukan mentee sendiri — kecuali
             // tugas itu memang dia sendiri yang berikan (lihat manageableTasksQuery()).
             'manageableInternIds' => $manageableInternIds,

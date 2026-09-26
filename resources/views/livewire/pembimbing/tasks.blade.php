@@ -22,13 +22,13 @@
         </div>
     </div>
 
-    <div x-data="{ show: false }" x-cloak
-         x-on:task-assigned.window="show = true; setTimeout(() => show = false, 4000)"
+    <div x-data="{ show: false, count: 1 }" x-cloak
+         x-on:task-assigned.window="count = $event.detail.count ?? 1; show = true; setTimeout(() => show = false, 4000)"
          x-show="show" x-transition
          class="surface-card flex items-center"
          style="gap:0.7rem; padding:0.8rem 1rem; margin-bottom:1rem; border-color:#a7f3d0;">
         <i class="fa-solid fa-circle-check" style="color:var(--brand-success);"></i>
-        <span class="text-sm" style="color:var(--text-body);">Tugas berhasil diberikan.</span>
+        <span class="text-sm" style="color:var(--text-body);" x-text="count > 1 ? `Tugas berhasil diberikan ke ${count} peserta.` : 'Tugas berhasil diberikan.'">Tugas berhasil diberikan.</span>
     </div>
 
     {{-- ===== Ringkasan ===== --}}
@@ -94,6 +94,7 @@
             <article class="surface-card" style="padding:1.1rem 1.15rem;">
                 <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
                     <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
+                        <x-intern-avatar :intern="$task->intern" />
                         <span style="font-weight:700; color:var(--text-heading);">{{ $task->intern->nama ?? 'Peserta dihapus' }}</span>
                         @if ($task->intern?->unit)
                             <span class="badge badge-neutral"><i class="fa-solid fa-people-group"></i> {{ $task->intern->unit->name }}</span>
@@ -187,7 +188,9 @@
                     </div>
                 @endif
 
-                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task, 'canComment' => $taskManageable])
+                {{-- canComment default true — komentar boleh untuk semua intern yang terlihat
+                     (lihat Tasks::resolveCommentable()), beda dari aksi kelola di atas. --}}
+                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task])
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">
@@ -243,50 +246,107 @@
 
             <div style="padding:1.35rem;">
                 <form wire:submit="assignTask">
-                    {{-- Select native biasa, satu peserta — lintas pembimbing (semua intern
-                         di sistem, bukan cuma mentee sendiri), tapi pilihannya dipisah lewat
-                         optgroup: bimbingan/mentee sendiri vs peserta lain. --}}
+                    {{-- Pilih BEBERAPA peserta sekaligus kalau tugasnya sama (tiap peserta tetap dapat
+                         tugasnya sendiri, lihat Tasks::assignTask()). Dua kotak terpisah — bimbingan/
+                         mentee sendiri vs peserta lain (lintas pembimbing) — masing-masing dengan select
+                         native sendiri: tiap kali satu nama dipilih, nama itu masuk ke daftar di kotak
+                         tersebut dan select kembali kosong, jadi bisa terus menambah. Nama yang sudah
+                         dipilih tidak muncul lagi di select. --}}
                     @php($myInterns = $allInterns->whereIn('id', $manageableInternIds))
                     @php($otherInterns = $allInterns->diff($myInterns))
+                    @php($selectedIds = array_map('intval', $formInternIds))
                     <div style="margin-bottom:1.1rem;">
-                        <label for="a-intern" class="form-label">Peserta</label>
-                        <select id="a-intern" wire:model.live="formInternId" class="form-input">
-                            <option value="">Pilih peserta...</option>
-                            @if ($myInterns->isNotEmpty())
-                                <optgroup label="Peserta yang Kamu Bimbing/Mentori">
-                                    @foreach ($myInterns as $i)
-                                        <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
-                                    @endforeach
-                                </optgroup>
+                        <div class="flex items-center justify-between" style="gap:0.5rem; flex-wrap:wrap;">
+                            <span class="form-label" style="margin-bottom:0;">
+                                Peserta
+                                <span style="font-weight:400; color:var(--text-muted);">&middot; {{ count($selectedIds) }} dipilih</span>
+                            </span>
+                            @if ($selectedIds !== [])
+                                <button type="button" class="text-sm" style="color:var(--text-muted); text-decoration:underline;"
+                                        wire:click="$set('formInternIds', [])">
+                                    Hapus pilihan
+                                </button>
                             @endif
-                            @if ($otherInterns->isNotEmpty())
-                                <optgroup label="Peserta Lain (Lintas Pembimbing)">
-                                    @foreach ($otherInterns as $i)
-                                        <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
-                                    @endforeach
-                                </optgroup>
+                        </div>
+
+                        @foreach ([
+                            ['key' => 'mine', 'label' => 'Peserta yang Kamu Bimbing/Mentori', 'icon' => 'fa-user-check', 'interns' => $myInterns],
+                            ['key' => 'other', 'label' => 'Peserta Lain (Lintas Pembimbing)', 'icon' => 'fa-users', 'interns' => $otherInterns],
+                        ] as $group)
+                            @if ($group['interns']->isNotEmpty())
+                                @php($available = $group['interns']->whereNotIn('id', $selectedIds))
+                                @php($picked = $group['interns']->whereIn('id', $selectedIds))
+                                <div wire:key="pick-group-{{ $group['key'] }}"
+                                     style="margin-top:0.6rem; border:1px solid var(--border); border-radius:12px; padding:0.75rem; {{ $group['key'] === 'other' ? 'background:var(--surface-alt);' : '' }}">
+                                    <div class="flex items-center justify-between" style="gap:0.5rem; margin-bottom:0.5rem;">
+                                        <label for="a-intern-{{ $group['key'] }}"
+                                               style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; font-weight:700; color:var(--text-muted);">
+                                            <i class="fa-solid {{ $group['icon'] }}" style="margin-right:0.3rem;"></i>{{ $group['label'] }}
+                                            @if ($picked->isNotEmpty())
+                                                <span style="font-weight:400;">({{ $picked->count() }} dipilih)</span>
+                                            @endif
+                                        </label>
+                                        @if ($group['key'] === 'mine' && $available->isNotEmpty())
+                                            <button type="button" class="text-sm" style="color:var(--brand); text-decoration:underline; flex-shrink:0;"
+                                                    wire:click="selectAllMyInterns">
+                                                Pilih semua
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    @if ($available->isNotEmpty())
+                                        <select id="a-intern-{{ $group['key'] }}" class="form-input"
+                                                x-data
+                                                x-on:change="if ($event.target.value) { $wire.addFormIntern(Number($event.target.value)); } $event.target.value = ''">
+                                            <option value="">{{ $picked->isEmpty() ? 'Pilih peserta...' : 'Tambah peserta lain...' }}</option>
+                                            @foreach ($available as $i)
+                                                <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <p class="text-sm" style="color:var(--text-faint);">Semua peserta di kelompok ini sudah dipilih.</p>
+                                    @endif
+
+                                    @if ($picked->isNotEmpty())
+                                        <div class="flex" style="flex-wrap:wrap; gap:0.45rem; margin-top:0.6rem;">
+                                            @foreach ($picked as $i)
+                                                <button type="button" wire:key="pick-intern-{{ $i->id }}"
+                                                        wire:click="toggleFormIntern({{ $i->id }})"
+                                                        title="Batalkan pilihan"
+                                                        class="text-sm"
+                                                        style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.75rem; border-radius:9999px; cursor:pointer; background:var(--brand); color:#fff; border:1px solid var(--brand); font-weight:600;">
+                                                    <span>{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</span>
+                                                    <i class="fa-solid fa-xmark" style="font-size:0.75rem; opacity:0.85;"></i>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
                             @endif
-                        </select>
-                        @error('formInternId')
+                        @endforeach
+
+                        @error('formInternIds')
+                            <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
+                        @enderror
+                        @error('formInternIds.*')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    {{-- Kotak info pembimbing/mentor ASLI peserta yang dipilih — supaya kalau
-                         tugas ini diberikan bukan oleh pembimbing/mentor asli peserta (lintas
-                         pembimbing), tetap jelas siapa yang sebenarnya membimbing/mentori dia. --}}
-                    @if ($this->selectedInternInfo)
-                        <div class="{{ $this->selectedInternInfo['isMine'] ? 'surface-card' : 'callout-warning' }}" style="padding:0.75rem 0.9rem; margin-bottom:1.1rem;">
-                            @if (! $this->selectedInternInfo['isMine'])
-                                <p class="text-sm callout-warning-title" style="font-weight:600; margin-bottom:0.25rem;">
-                                    <i class="fa-solid fa-circle-info"></i> Peserta ini bukan yang kamu bimbing/mentori
-                                </p>
-                            @endif
-                            <p class="text-sm" style="color:var(--text-muted);">
-                                Pembimbing: <strong style="color:var(--text-heading);">{{ $this->selectedInternInfo['pembimbing'] ?? '—' }}</strong>
-                                &middot;
-                                Mentor: <strong style="color:var(--text-heading);">{{ $this->selectedInternInfo['mentor'] ?? '—' }}</strong>
+                    {{-- Kotak info pembimbing/mentor ASLI untuk peserta terpilih yang bukan
+                         bimbingan sendiri — supaya kalau tugas diberikan lintas pembimbing,
+                         tetap jelas siapa yang sebenarnya membimbing/mentori mereka. --}}
+                    @if ($this->selectedOtherInterns !== [])
+                        <div class="callout-warning" style="padding:0.75rem 0.9rem; margin-bottom:1.1rem;">
+                            <p class="text-sm callout-warning-title" style="font-weight:600; margin-bottom:0.25rem;">
+                                <i class="fa-solid fa-circle-info"></i> Peserta berikut bukan yang kamu bimbing/mentori
                             </p>
+                            @foreach ($this->selectedOtherInterns as $other)
+                                <p class="text-sm" style="color:var(--text-muted);">
+                                    <strong style="color:var(--text-heading);">{{ $other['nama'] }}</strong> &mdash;
+                                    Pembimbing: {{ $other['pembimbing'] ?? '—' }} &middot; Mentor: {{ $other['mentor'] ?? '—' }}
+                                </p>
+                            @endforeach
                         </div>
                     @endif
 

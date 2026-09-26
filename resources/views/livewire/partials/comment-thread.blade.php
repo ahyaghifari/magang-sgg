@@ -21,8 +21,14 @@
     @foreach ($model->comments as $comment)
         <div wire:key="comment-{{ $comment->id }}"
              style="display:flex; gap:0.6rem; padding:0.55rem 0; border-bottom:1px solid var(--border-soft);">
-            <span class="portal-user-avatar" style="flex-shrink:0; width:1.9rem; height:1.9rem; font-size:0.75rem;">
-                {{ strtoupper(mb_substr($comment->author?->name ?? '?', 0, 1)) }}
+            @php($__avatar = $comment->author?->intern?->avatar_path)
+            <span class="portal-user-avatar" style="flex-shrink:0; width:1.9rem; height:1.9rem; font-size:0.75rem; overflow:hidden;">
+                @if ($__avatar)
+                    <img src="{{ url('storage/' . $__avatar) }}" alt="Foto profil {{ $comment->author->name }}" loading="lazy"
+                         style="width:100%; height:100%; object-fit:cover;">
+                @else
+                    {{ strtoupper(mb_substr($comment->author?->name ?? '?', 0, 1)) }}
+                @endif
             </span>
             <div style="min-width:0; flex:1;">
                 <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap;">

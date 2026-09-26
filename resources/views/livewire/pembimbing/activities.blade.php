@@ -49,34 +49,57 @@
             <label for="f-to" class="form-label">Sampai tanggal</label>
             <input id="f-to" type="date" wire:model.live="dateTo" class="form-input">
         </div>
-        @if ($dateFrom !== $today || $dateTo !== $today)
+        @if ($dateFrom !== $defaultDateFrom || $dateTo !== $today)
             <div style="display:flex; align-items:flex-end;">
                 <button type="button" wire:click="resetDateFilter" class="btn-ghost" style="padding:0.5rem 0.85rem;">
-                    <i class="fa-solid fa-xmark"></i> Kembali ke hari ini
+                    <i class="fa-solid fa-xmark"></i> Kembali ke default
                 </button>
             </div>
         @endif
     </div>
     <p class="text-sm" style="color:var(--text-muted); margin:-0.5rem 0 1rem;">
-        Menampilkan kegiatan hari ini secara default — gunakan filter tanggal untuk melihat hari sebelumnya.
+        Menampilkan kegiatan hari ini (paling atas) dan 1 minggu sebelumnya secara default — gunakan filter tanggal untuk melihat hari lain.
     </p>
 
     {{-- ===== Daftar kegiatan (dikelompokkan per hari) ===== --}}
+    @php
+        // Judul grup cuma nama hari ("Hari Ini", "Selasa", "Rabu", ...) dengan warna tetap per
+        // hari dalam seminggu; hari ini selalu warna brand supaya tetap paling menonjol.
+        $dayColors = [
+            0 => '#dc2626', // Minggu
+            1 => '#0891b2', // Senin
+            2 => '#16a34a', // Selasa
+            3 => '#d97706', // Rabu
+            4 => '#7c3aed', // Kamis
+            5 => '#db2777', // Jumat
+            6 => '#ea580c', // Sabtu
+        ];
+        $dayHeading = fn (\Illuminate\Support\Carbon $d) => $d->isToday()
+            ? ['title' => 'Hari Ini', 'color' => 'var(--brand)']
+            : ['title' => $d->translatedFormat('l'), 'color' => $dayColors[$d->dayOfWeek]];
+    @endphp
     <div class="flex" style="flex-direction:column; gap:0.6rem;">
         @php($lastGroup = null)
+        {{-- Hari ini tetap jadi bagian utama di atas walau belum ada jurnal masuk. --}}
+        @php($showEmptyToday = $journals->onFirstPage() && $dateFrom <= $today && $dateTo >= $today
+            && $journals->isNotEmpty() && \Illuminate\Support\Carbon::parse($journals->first()->date)->toDateString() !== $today)
+        @if ($showEmptyToday)
+            @php($todayDate = \Illuminate\Support\Carbon::parse($today))
+            @include('livewire.pembimbing.partials.day-heading', ['heading' => $dayHeading($todayDate), 'date' => $todayDate, 'first' => true])
+            <div class="surface-card" style="padding:1.25rem 1.15rem; text-align:center;">
+                <p class="text-sm" style="color:var(--text-muted);">Belum ada kegiatan yang dicatat hari ini.</p>
+            </div>
+        @endif
         @forelse ($journals as $journal)
             @php($d = \Illuminate\Support\Carbon::parse($journal->date))
             @if ($d->toDateString() !== $lastGroup)
                 @php($lastGroup = $d->toDateString())
-                @php($groupTitle = $d->isToday() ? 'Hari Ini' : ($d->isYesterday() ? 'Kemarin' : $d->translatedFormat('l')))
-                <div class="flex" style="align-items:baseline; gap:0.55rem; margin-top:{{ $loop->first ? '0' : '0.9rem' }}; padding-bottom:0.15rem; border-bottom:1px solid var(--border-soft);">
-                    <span style="font-size:0.95rem; font-weight:800; color:var(--text-heading);">{{ $groupTitle }}</span>
-                    <span class="text-sm" style="color:var(--text-muted);">{{ $d->translatedFormat('d F Y') }}</span>
-                </div>
+                @include('livewire.pembimbing.partials.day-heading', ['heading' => $dayHeading($d), 'date' => $d, 'first' => $loop->first && ! $showEmptyToday])
             @endif
             <article class="surface-card" style="padding:1.1rem 1.15rem;">
                 <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
                     <div class="flex items-center" style="gap:0.55rem; flex-wrap:wrap;">
+                        <x-intern-avatar :intern="$journal->intern" />
                         <span style="font-weight:700; color:var(--text-heading);">
                             {{ $journal->intern->nama ?? 'Peserta dihapus' }}
                         </span>

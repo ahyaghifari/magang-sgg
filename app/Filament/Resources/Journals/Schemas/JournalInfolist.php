@@ -63,6 +63,10 @@ class JournalInfolist
                                     ->label('Berkas foto')
                                     ->state(fn (JournalAttachment $record): ?string => $record->path ? url('storage/' . $record->path) : null)
                                     ->height(180)
+                                    // Klik foto untuk membuka ukuran aslinya di tab baru.
+                                    ->url(fn (JournalAttachment $record): ?string => $record->path ? url('storage/' . $record->path) : null)
+                                    ->openUrlInNewTab()
+                                    ->extraImgAttributes(['style' => 'cursor: zoom-in;', 'title' => 'Klik untuk melihat ukuran penuh'])
                                     ->columnSpanFull()
                                     ->visible(fn (JournalAttachment $record): bool => $record->type === 'photo'),
                                 TextEntry::make('document_link')

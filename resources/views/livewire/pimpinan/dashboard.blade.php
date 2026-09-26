@@ -42,6 +42,43 @@
         </div>
     </div>
 
+    {{-- ===== Seluruh Intern ===== --}}
+    <section style="margin-bottom:1.75rem;">
+        <h2 style="font-size:1rem; font-weight:700; color:var(--text-heading); margin-bottom:0.7rem;">
+            <i class="fa-solid fa-user-graduate" style="color:var(--brand); margin-right:0.35rem;"></i>
+            Seluruh Intern
+        </h2>
+
+        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:0.85rem;">
+            <label for="all-intern-search" class="form-label">Cari</label>
+            <input id="all-intern-search" type="text" wire:model.live.debounce.400ms="internSearch" class="form-input"
+                   placeholder="Nama peserta atau nama sekolah/institusi...">
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:0.9rem;">
+            @forelse ($allInterns as $intern)
+                @include('livewire.partials.intern-card', ['intern' => $intern])
+            @empty
+                <div class="surface-card" style="padding:2.5rem 1.15rem; text-align:center; grid-column:1/-1;">
+                    <i class="fa-regular fa-folder-open" style="font-size:1.6rem; color:var(--text-faint);"></i>
+                    <p class="text-sm" style="margin-top:0.6rem; color:var(--text-muted);">Belum ada peserta yang cocok dengan pencarian.</p>
+                </div>
+            @endforelse
+        </div>
+
+        @if ($allInterns->hasPages())
+            <div class="flex items-center justify-between" style="margin-top:1rem;">
+                <button wire:click="previousPage('internPage')" class="btn-ghost" @disabled($allInterns->onFirstPage())>
+                    <i class="fa-solid fa-chevron-left"></i> Sebelumnya
+                </button>
+                <span style="font-size:0.8rem; color:var(--text-muted);">Halaman {{ $allInterns->currentPage() }} dari {{ $allInterns->lastPage() }}</span>
+                <button wire:click="nextPage('internPage')" class="btn-ghost" @disabled(! $allInterns->hasMorePages())>
+                    Berikutnya <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        @endif
+    </section>
+
     {{-- ===== Kegiatan & Jurnal (semua) ===== --}}
     <section style="margin-bottom:1.75rem;">
         <h2 style="font-size:1rem; font-weight:700; color:var(--text-heading); margin-bottom:0.7rem;">
@@ -280,4 +317,6 @@
             </div>
         @endif
     </section>
+
+    @include('livewire.partials.intern-detail-modals')
 </div>

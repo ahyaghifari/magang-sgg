@@ -16,6 +16,7 @@
                 <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap; margin-bottom:0.75rem;">
                     <div style="min-width:0;">
                         <p style="font-size:0.9rem; font-weight:700; color:var(--text-heading);">
+                            <x-intern-avatar :intern="$intern" size="2.2rem" style="margin-right:0.45rem;" />
                             {{ $intern->nama }}
                             @if ($intern->nama_panggilan)
                                 <span class="text-sm" style="font-weight:400; color:var(--text-muted);">({{ $intern->nama_panggilan }})</span>
