@@ -10,6 +10,7 @@
             <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap;">
                 <button type="button"
                         x-data="{ state: 'off' }"
+                        x-init="window.pushNotificationsActive?.().then(on => { if (on) state = 'on' })"
                         x-show="state !== 'on'"
                         x-on:click="enablePushNotifications().then(ok => { state = ok ? 'on' : 'off' })"
                         class="btn-ghost">
@@ -82,7 +83,7 @@
                             @elseif ($task->status === 'in_progress')
                                 <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
                             @elseif ($task->status === 'rejected')
-                                <span class="badge" style="background:#fee2e2; color:#b91c1c;"><i class="fa-solid fa-circle-xmark"></i> Ditolak</span>
+                                <span class="badge" style="background:#ffedd5; color:#c2410c;"><i class="fa-solid fa-circle-pause"></i> Ditunda</span>
                             @else
                                 <span class="badge" style="background:#ffedd5; color:#c2410c;"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
                             @endif
@@ -107,8 +108,8 @@
                     @endif
 
                     @if ($task->status === 'rejected' && $task->rejection_reason)
-                        <p class="text-sm" style="margin-top:0.5rem; padding:0.6rem 0.75rem; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c;">
-                            <i class="fa-solid fa-circle-exclamation"></i> Alasan kamu menolak: {{ $task->rejection_reason }}
+                        <p class="text-sm" style="margin-top:0.5rem; padding:0.6rem 0.75rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; color:#c2410c;">
+                            <i class="fa-solid fa-comment-dots"></i> Alasan kamu menunda: {{ $task->rejection_reason }}
                         </p>
                     @endif
 
@@ -152,8 +153,8 @@
                             </button>
                         @endif
                         @if ($task->status !== 'done' && $task->status !== 'rejected')
-                            <button type="button" wire:click="openReject({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem; color:#b91c1c;">
-                                <i class="fa-solid fa-circle-xmark"></i> Tolak
+                            <button type="button" wire:click="openReject({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem; color:#c2410c;">
+                                <i class="fa-solid fa-circle-pause"></i> Tunda
                             </button>
                         @endif
                     </div>
@@ -315,7 +316,7 @@
         </div>
     </div>
 
-    {{-- ===== Modal: tolak tugas ===== --}}
+    {{-- ===== Modal: tunda tugas (status tugas "rejected") ===== --}}
     <div
         x-data
         x-show="$wire.rejectingTaskId !== null"
@@ -335,9 +336,9 @@
             <div class="flex items-center justify-between"
                  style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft);">
                 <div>
-                    <h2 style="font-size:1.05rem; font-weight:700;">Tolak Tugas</h2>
+                    <h2 style="font-size:1.05rem; font-weight:700;">Tunda Tugas</h2>
                     <p class="text-sm" style="color:var(--text-muted); margin-top:0.1rem;">
-                        Beri tahu pembimbing kenapa tugas ini belum bisa kamu kerjakan
+                        Sampaikan dengan sopan kepada pemberi tugas kenapa tugas ini perlu ditunda, supaya bisa disesuaikan
                     </p>
                 </div>
                 <button type="button" wire:click="closeReject" class="theme-toggle" aria-label="Tutup">
@@ -348,18 +349,18 @@
             <div style="padding:1.35rem;">
                 <form wire:submit="confirmReject">
                     <div style="margin-bottom:1.25rem;">
-                        <label for="reject-reason" class="form-label">Alasan Penolakan</label>
+                        <label for="reject-reason" class="form-label">Alasan Ditunda</label>
                         <textarea id="reject-reason" wire:model="rejectionReason" rows="4" class="form-input"
-                                  placeholder="Contoh: Belum bisa mengerjakan karena ada urusan keluarga hari ini..."></textarea>
+                                  placeholder="Contoh: Mohon maaf kak, tugas ini saya tunda dulu karena ada urusan keluarga hari ini. Apakah boleh saya kerjakan besok?"></textarea>
                         @error('rejectionReason')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div class="flex items-center" style="gap:0.65rem;">
-                        <button type="submit" class="btn-primary" style="background:#dc2626;" wire:loading.attr="disabled" wire:target="confirmReject">
+                        <button type="submit" class="btn-primary" wire:loading.attr="disabled" wire:target="confirmReject">
                             <span wire:loading.remove wire:target="confirmReject">
-                                <i class="fa-solid fa-circle-xmark" style="margin-right:0.4rem;"></i>Kirim Penolakan
+                                <i class="fa-solid fa-circle-pause" style="margin-right:0.4rem;"></i>Tunda Tugas
                             </span>
                             <span wire:loading wire:target="confirmReject">
                                 <i class="fa-solid fa-spinner fa-spin" style="margin-right:0.4rem;"></i>Mengirim...

@@ -9,6 +9,7 @@
         <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap;">
             <button type="button"
                     x-data="{ state: 'off' }"
+                    x-init="window.pushNotificationsActive?.().then(on => { if (on) state = 'on' })"
                     x-show="state !== 'on'"
                     x-on:click="enablePushNotifications().then(ok => { state = ok ? 'on' : 'off' })"
                     class="btn-ghost">
@@ -68,7 +69,7 @@
                 <option value="pending">Belum dikerjakan</option>
                 <option value="in_progress">Dikerjakan</option>
                 <option value="done">Selesai</option>
-                <option value="rejected">Ditolak</option>
+                <option value="rejected">Ditunda intern</option>
             </select>
         </div>
         <div>
@@ -104,7 +105,7 @@
                         @elseif ($task->status === 'in_progress')
                             <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
                         @elseif ($task->status === 'rejected')
-                            <span class="badge" style="background:#fee2e2; color:#b91c1c;"><i class="fa-solid fa-circle-xmark"></i> Ditolak intern</span>
+                            <span class="badge" style="background:#ffedd5; color:#c2410c;"><i class="fa-solid fa-circle-pause"></i> Ditunda intern</span>
                         @else
                             <span class="badge badge-neutral"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
                         @endif
@@ -130,8 +131,8 @@
                 @endif
 
                 @if ($task->status === 'rejected' && $task->rejection_reason)
-                    <p class="text-sm" style="margin-top:0.5rem; padding:0.6rem 0.75rem; background:#fef2f2; border:1px solid #fecaca; border-radius:10px; color:#b91c1c;">
-                        <i class="fa-solid fa-circle-exclamation"></i> Alasan intern menolak: {{ $task->rejection_reason }}
+                    <p class="text-sm" style="margin-top:0.5rem; padding:0.6rem 0.75rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; color:#c2410c;">
+                        <i class="fa-solid fa-comment-dots"></i> Alasan intern menunda: {{ $task->rejection_reason }}
                     </p>
                 @endif
 
@@ -424,7 +425,7 @@
                  style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft);">
                 <div>
                     <h2 style="font-size:1.05rem; font-weight:700;">Edit Tugas</h2>
-                    <p class="text-sm" style="color:var(--text-muted); margin-top:0.1rem;">Sesuaikan tugas ini — mis. kalau intern belum bisa mengerjakan, ubah tenggat atau detailnya</p>
+                    <p class="text-sm" style="color:var(--text-muted); margin-top:0.1rem;">Sesuaikan tugas ini — mis. kalau intern menunda tugas ini, ubah tenggat atau detailnya</p>
                 </div>
                 <button type="button" wire:click="closeEditTask" class="theme-toggle" aria-label="Tutup">
                     <i class="fa-solid fa-xmark"></i>

@@ -14,6 +14,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="icon" href="{{ \App\Support\Brand::faviconUrl() }}">
 
+    {{-- PWA: wajib supaya portal bisa di-"Add to Home Screen" — di iPhone/iPad (iOS 16.4+)
+         notifikasi push HANYA jalan kalau portal dibuka dari ikon Home Screen, bukan dari Safari. --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#042c6c">
+    <link rel="apple-touch-icon" href="/images/app-icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Magang SGG">
+
     {{-- Theme: apply the saved/system preference before styles paint, then re-apply after every
          wire:navigate — Livewire morphs <html> back to the server markup (no `dark` class),
          which would otherwise reset the theme until the toggle is pressed. --}}
@@ -162,10 +171,12 @@
                     <div class="portal-user flex items-center justify-between">
                         <div class="flex items-center" style="gap:0.65rem; min-width:0;">
                             @php($portalAvatar = $portalUser->intern?->avatar_path)
-                            <span class="portal-user-avatar" style="overflow:hidden;">
+                            {{-- Ada foto → bulat penuh tanpa latar gradien (banyak foto profil sudah berbentuk
+                                 lingkaran berlatar hitam; di kotak bersudut, pojok hitamnya kelihatan). --}}
+                            <span class="portal-user-avatar" style="overflow:hidden; {{ $portalAvatar ? 'border-radius:9999px; background:none;' : '' }}">
                                 @if ($portalAvatar)
                                     <img src="{{ url('storage/' . $portalAvatar) }}" alt="Foto profil {{ $portalUser->name }}"
-                                         style="width:100%; height:100%; object-fit:cover;">
+                                         style="display:block; width:100%; height:100%; object-fit:cover; border-radius:9999px;">
                                 @else
                                     {{ strtoupper(substr($portalUser->name, 0, 1)) }}
                                 @endif

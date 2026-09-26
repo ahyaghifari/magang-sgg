@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\LeaveRequest;
+use App\Notifications\Concerns\BuildsWebPush;
+use Illuminate\Support\Carbon;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
@@ -15,6 +17,8 @@ use NotificationChannels\WebPush\WebPushMessage;
  */
 class LeaveRequestSubmitted extends Notification
 {
+    use BuildsWebPush;
+
     public function __construct(private readonly LeaveRequest $leaveRequest)
     {
     }
@@ -32,10 +36,18 @@ class LeaveRequestSubmitted extends Notification
         $internName = $this->leaveRequest->intern?->nama ?? 'Peserta magang';
         $type = $this->leaveRequest->type === 'sakit' ? 'Sakit' : 'Izin';
 
-        return (new WebPushMessage)
-            ->title("Pengajuan {$type} baru dari {$internName}")
-            ->body($this->leaveRequest->reason)
-            ->icon('/images/syifa-logo.png')
-            ->data(['url' => route('pembimbing.leaves')]);
+        $start = $this->leaveRequest->start_date ? Carbon::parse($this->leaveRequest->start_date) : null;
+        $end = $this->leaveRequest->end_date ? Carbon::parse($this->leaveRequest->end_date) : null;
+
+        return $this->pushMessage(
+            title: ($type === 'Sakit' ? '🤒' : '📝') . " Pengajuan {$type} dari {$internName}",
+            lines: [
+                $start ? '📅 ' . $start->translatedFormat('d M Y') . ($end && ! $end->isSameDay($start) ? ' – ' . $end->translatedFormat('d M Y') : '') : null,
+                '💬 "' . $this->leaveRequest->reason . '"',
+            ],
+            url: route('pembimbing.leaves'),
+            actionLabel: 'Tinjau',
+            sender: $this->leaveRequest->intern?->user,
+        );
     }
 }

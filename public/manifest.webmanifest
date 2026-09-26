@@ -1,0 +1,24 @@
+{
+    "name": "Internship Syifa Global Group",
+    "short_name": "Magang SGG",
+    "description": "Portal magang Syifa Global Group — jurnal, tugas, presensi, dan izin.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#042c6c",
+    "icons": [
+        {
+            "src": "/images/app-icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/app-icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

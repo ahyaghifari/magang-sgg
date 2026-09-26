@@ -177,7 +177,7 @@ class Index extends Component
         $this->validate([
             'rejectionReason' => ['required', 'string', 'min:3', 'max:500'],
         ], [], [
-            'rejectionReason' => 'alasan penolakan',
+            'rejectionReason' => 'alasan ditunda',
         ]);
 
         $task->update([
