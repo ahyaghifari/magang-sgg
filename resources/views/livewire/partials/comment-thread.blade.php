@@ -22,10 +22,10 @@
         <div wire:key="comment-{{ $comment->id }}"
              style="display:flex; gap:0.6rem; padding:0.55rem 0; border-bottom:1px solid var(--border-soft);">
             @php($__avatar = $comment->author?->intern?->avatar_path)
-            <span class="portal-user-avatar" style="flex-shrink:0; width:1.9rem; height:1.9rem; font-size:0.75rem; overflow:hidden;">
+            <span class="portal-user-avatar" style="flex-shrink:0; width:1.9rem; height:1.9rem; font-size:0.75rem; overflow:hidden; {{ $__avatar ? 'border-radius:9999px; background:none;' : '' }}">
                 @if ($__avatar)
                     <img src="{{ url('storage/' . $__avatar) }}" alt="Foto profil {{ $comment->author->name }}" loading="lazy"
-                         style="width:100%; height:100%; object-fit:cover;">
+                         style="display:block; width:100%; height:100%; object-fit:cover; border-radius:9999px;">
                 @else
                     {{ strtoupper(mb_substr($comment->author?->name ?? '?', 0, 1)) }}
                 @endif

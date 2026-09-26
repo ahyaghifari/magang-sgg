@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\LeaveRequest;
+use App\Notifications\Concerns\BuildsWebPush;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
@@ -13,6 +14,8 @@ use NotificationChannels\WebPush\WebPushMessage;
  */
 class LeaveRequestReviewed extends Notification
 {
+    use BuildsWebPush;
+
     public function __construct(private readonly LeaveRequest $leaveRequest)
     {
     }
@@ -29,12 +32,17 @@ class LeaveRequestReviewed extends Notification
     {
         $isApproved = $this->leaveRequest->status === 'approved';
 
-        return (new WebPushMessage)
-            ->title($isApproved ? 'Pengajuan izin disetujui' : 'Pengajuan izin ditolak')
-            ->body($isApproved
-                ? 'Pengajuan izin/sakitmu sudah disetujui pembimbing.'
-                : 'Pengajuan izin/sakitmu ditolak.' . ($this->leaveRequest->review_note ? ' Catatan: ' . $this->leaveRequest->review_note : ''))
-            ->icon('/images/syifa-logo.png')
-            ->data(['url' => route('leaves.index')]);
+        $reviewer = $this->leaveRequest->reviewer?->name;
+
+        return $this->pushMessage(
+            title: $isApproved ? '✅ Pengajuan izin disetujui' : '❌ Pengajuan izin ditolak',
+            lines: [
+                ($isApproved ? 'Pengajuan izin/sakitmu sudah disetujui' : 'Pengajuan izin/sakitmu ditolak')
+                    . ($reviewer ? ' oleh ' . $reviewer : '') . '.',
+                $this->leaveRequest->review_note ? '💬 "' . $this->leaveRequest->review_note . '"' : null,
+            ],
+            url: route('leaves.index'),
+            actionLabel: 'Lihat Izin',
+        );
     }
 }

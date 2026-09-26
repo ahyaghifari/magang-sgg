@@ -9,7 +9,7 @@
     style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
 >
     <div @click.outside="$wire.closeJournals()" x-show="$wire.viewingJournalsFor !== null" x-transition
-         class="surface-card" style="width:100%; max-width:34rem; margin:auto; padding:0; max-height:85vh; display:flex; flex-direction:column;">
+         class="surface-card" style="width:100%; max-width:34rem; margin:4vh auto; padding:0; overflow:hidden;">
         <div class="flex items-center justify-between" style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft); flex-shrink:0;">
             <div>
                 <h2 style="font-size:1.05rem; font-weight:700;">Semua Jurnal</h2>
@@ -21,7 +21,10 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div style="padding:1.1rem 1.35rem; overflow-y:auto;">
+        {{-- Batas tinggi dipasang langsung di sini (bukan lewat flex di kartu): x-show Alpine
+             menghapus display:flex inline saat modal dibuka, jadi max-height via flex tidak berlaku
+             dan isi panjang meluber keluar kartu. --}}
+        <div style="padding:1.1rem 1.35rem; overflow-y:auto; max-height:calc(85vh - 5.5rem); overscroll-behavior:contain;">
             @if ($journalsList && $journalsList->isNotEmpty())
                 <div class="flex" style="flex-direction:column; gap:0.75rem;">
                     @foreach ($journalsList as $journal)
@@ -75,7 +78,7 @@
     style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
 >
     <div @click.outside="$wire.closeTasks()" x-show="$wire.viewingTasksFor !== null" x-transition
-         class="surface-card" style="width:100%; max-width:34rem; margin:auto; padding:0; max-height:85vh; display:flex; flex-direction:column;">
+         class="surface-card" style="width:100%; max-width:34rem; margin:4vh auto; padding:0; overflow:hidden;">
         <div class="flex items-center justify-between" style="padding:1.1rem 1.35rem; border-bottom:1px solid var(--border-soft); flex-shrink:0;">
             <div>
                 <h2 style="font-size:1.05rem; font-weight:700;">Semua Tugas</h2>
@@ -87,7 +90,10 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div style="padding:1.1rem 1.35rem; overflow-y:auto;">
+        {{-- Batas tinggi dipasang langsung di sini (bukan lewat flex di kartu): x-show Alpine
+             menghapus display:flex inline saat modal dibuka, jadi max-height via flex tidak berlaku
+             dan isi panjang meluber keluar kartu. --}}
+        <div style="padding:1.1rem 1.35rem; overflow-y:auto; max-height:calc(85vh - 5.5rem); overscroll-behavior:contain;">
             @if ($tasksList && $tasksList->isNotEmpty())
                 <div class="flex" style="flex-direction:column; gap:0.75rem;">
                     @foreach ($tasksList as $task)
@@ -99,7 +105,7 @@
                                 @elseif ($task->status === 'in_progress')
                                     <span class="badge" style="background:#fef3c7; color:#b45309; flex-shrink:0;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
                                 @elseif ($task->status === 'rejected')
-                                    <span class="badge" style="background:#fee2e2; color:#b91c1c; flex-shrink:0;"><i class="fa-solid fa-circle-xmark"></i> Ditolak</span>
+                                    <span class="badge" style="background:#ffedd5; color:#c2410c; flex-shrink:0;"><i class="fa-solid fa-circle-pause"></i> Ditunda</span>
                                 @else
                                     <span class="badge badge-neutral" style="flex-shrink:0;"><i class="fa-regular fa-circle"></i> Belum</span>
                                 @endif
