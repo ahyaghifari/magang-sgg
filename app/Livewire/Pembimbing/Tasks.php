@@ -145,6 +145,35 @@ class Tasks extends Component
         $this->showForm = false;
     }
 
+    /** Tambah satu peserta dari select "Peserta" ke pilihan (abaikan kalau sudah dipilih). */
+    public function addFormIntern(int $internId): void
+    {
+        $ids = array_map('intval', $this->formInternIds);
+
+        if (! in_array($internId, $ids, true)) {
+            $this->formInternIds = [...$ids, $internId];
+        }
+    }
+
+    /** Pilih/batal satu peserta di form "Beri Tugas" — dipakai tombol peserta terpilih untuk membatalkan. */
+    public function toggleFormIntern(int $internId): void
+    {
+        $ids = array_map('intval', $this->formInternIds);
+
+        $this->formInternIds = in_array($internId, $ids, true)
+            ? array_values(array_diff($ids, [$internId]))
+            : [...$ids, $internId];
+    }
+
+    /** Tambahkan semua bimbingan/mentee sendiri ke pilihan, tanpa membuang peserta lain yang sudah dipilih. */
+    public function selectAllMyInterns(): void
+    {
+        $this->formInternIds = array_values(array_unique([
+            ...array_map('intval', $this->formInternIds),
+            ...$this->manageableInternIds(),
+        ]));
+    }
+
     protected function rules(): array
     {
         return [

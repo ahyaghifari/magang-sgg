@@ -246,52 +246,85 @@
 
             <div style="padding:1.35rem;">
                 <form wire:submit="assignTask">
-                    {{-- Daftar centang, bisa pilih BEBERAPA peserta sekaligus kalau tugasnya sama
-                         (tiap peserta tetap dapat tugasnya sendiri, lihat Tasks::assignTask()).
-                         Lintas pembimbing (semua intern di sistem, bukan cuma mentee sendiri),
-                         dikelompokkan: bimbingan/mentee sendiri vs peserta lain. Kotak cari
-                         cuma menyaring tampilan di browser (Alpine), tidak mengubah pilihan. --}}
+                    {{-- Pilih BEBERAPA peserta sekaligus kalau tugasnya sama (tiap peserta tetap dapat
+                         tugasnya sendiri, lihat Tasks::assignTask()). Dua kotak terpisah — bimbingan/
+                         mentee sendiri vs peserta lain (lintas pembimbing) — masing-masing dengan select
+                         native sendiri: tiap kali satu nama dipilih, nama itu masuk ke daftar di kotak
+                         tersebut dan select kembali kosong, jadi bisa terus menambah. Nama yang sudah
+                         dipilih tidak muncul lagi di select. --}}
                     @php($myInterns = $allInterns->whereIn('id', $manageableInternIds))
                     @php($otherInterns = $allInterns->diff($myInterns))
-                    <div style="margin-bottom:1.1rem;" x-data="{ q: '' }">
+                    @php($selectedIds = array_map('intval', $formInternIds))
+                    <div style="margin-bottom:1.1rem;">
                         <div class="flex items-center justify-between" style="gap:0.5rem; flex-wrap:wrap;">
-                            <label for="a-intern-search" class="form-label" style="margin-bottom:0;">
+                            <span class="form-label" style="margin-bottom:0;">
                                 Peserta
-                                <span style="font-weight:400; color:var(--text-muted);">&middot; {{ count($formInternIds) }} dipilih</span>
-                            </label>
-                            <div class="flex items-center" style="gap:0.6rem;">
-                                @if ($myInterns->isNotEmpty())
-                                    <button type="button" class="text-sm" style="color:var(--brand); text-decoration:underline;"
-                                            wire:click="$set('formInternIds', {{ Js::from($myInterns->pluck('id')->map(fn ($id) => (string) $id)->values()) }})">
-                                        Pilih semua bimbinganku
-                                    </button>
-                                @endif
-                                @if ($formInternIds !== [])
-                                    <button type="button" class="text-sm" style="color:var(--text-muted); text-decoration:underline;"
-                                            wire:click="$set('formInternIds', [])">
-                                        Hapus pilihan
-                                    </button>
-                                @endif
-                            </div>
+                                <span style="font-weight:400; color:var(--text-muted);">&middot; {{ count($selectedIds) }} dipilih</span>
+                            </span>
+                            @if ($selectedIds !== [])
+                                <button type="button" class="text-sm" style="color:var(--text-muted); text-decoration:underline;"
+                                        wire:click="$set('formInternIds', [])">
+                                    Hapus pilihan
+                                </button>
+                            @endif
                         </div>
-                        <input id="a-intern-search" type="text" x-model="q" class="form-input" style="margin-top:0.45rem;"
-                               placeholder="Cari nama peserta atau unit...">
-                        <div style="margin-top:0.5rem; max-height:14rem; overflow-y:auto; border:1px solid var(--border); border-radius:10px; padding:0.35rem 0.6rem;">
-                            @foreach ([['Peserta yang Kamu Bimbing/Mentori', $myInterns], ['Peserta Lain (Lintas Pembimbing)', $otherInterns]] as [$groupLabel, $groupInterns])
-                                @if ($groupInterns->isNotEmpty())
-                                    <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; font-weight:600; color:var(--text-faint); margin:0.45rem 0 0.2rem;">{{ $groupLabel }}</p>
-                                    @foreach ($groupInterns as $i)
-                                        @php($label = $i->nama . ($i->unit ? ' — ' . $i->unit->name : ''))
-                                        <label wire:key="pick-intern-{{ $i->id }}" class="flex items-center text-sm"
-                                               x-show="q === '' || @js(mb_strtolower($label)).includes(q.toLowerCase())"
-                                               style="gap:0.55rem; padding:0.35rem 0.1rem; cursor:pointer; color:var(--text-body);">
-                                            <input type="checkbox" value="{{ $i->id }}" wire:model.live="formInternIds" style="width:1rem; height:1rem; flex-shrink:0;">
-                                            <span>{{ $label }}</span>
+
+                        @foreach ([
+                            ['key' => 'mine', 'label' => 'Peserta yang Kamu Bimbing/Mentori', 'icon' => 'fa-user-check', 'interns' => $myInterns],
+                            ['key' => 'other', 'label' => 'Peserta Lain (Lintas Pembimbing)', 'icon' => 'fa-users', 'interns' => $otherInterns],
+                        ] as $group)
+                            @if ($group['interns']->isNotEmpty())
+                                @php($available = $group['interns']->whereNotIn('id', $selectedIds))
+                                @php($picked = $group['interns']->whereIn('id', $selectedIds))
+                                <div wire:key="pick-group-{{ $group['key'] }}"
+                                     style="margin-top:0.6rem; border:1px solid var(--border); border-radius:12px; padding:0.75rem; {{ $group['key'] === 'other' ? 'background:var(--surface-alt);' : '' }}">
+                                    <div class="flex items-center justify-between" style="gap:0.5rem; margin-bottom:0.5rem;">
+                                        <label for="a-intern-{{ $group['key'] }}"
+                                               style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; font-weight:700; color:var(--text-muted);">
+                                            <i class="fa-solid {{ $group['icon'] }}" style="margin-right:0.3rem;"></i>{{ $group['label'] }}
+                                            @if ($picked->isNotEmpty())
+                                                <span style="font-weight:400;">({{ $picked->count() }} dipilih)</span>
+                                            @endif
                                         </label>
-                                    @endforeach
-                                @endif
-                            @endforeach
-                        </div>
+                                        @if ($group['key'] === 'mine' && $available->isNotEmpty())
+                                            <button type="button" class="text-sm" style="color:var(--brand); text-decoration:underline; flex-shrink:0;"
+                                                    wire:click="selectAllMyInterns">
+                                                Pilih semua
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    @if ($available->isNotEmpty())
+                                        <select id="a-intern-{{ $group['key'] }}" class="form-input"
+                                                x-data
+                                                x-on:change="if ($event.target.value) { $wire.addFormIntern(Number($event.target.value)); } $event.target.value = ''">
+                                            <option value="">{{ $picked->isEmpty() ? 'Pilih peserta...' : 'Tambah peserta lain...' }}</option>
+                                            @foreach ($available as $i)
+                                                <option value="{{ $i->id }}">{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <p class="text-sm" style="color:var(--text-faint);">Semua peserta di kelompok ini sudah dipilih.</p>
+                                    @endif
+
+                                    @if ($picked->isNotEmpty())
+                                        <div class="flex" style="flex-wrap:wrap; gap:0.45rem; margin-top:0.6rem;">
+                                            @foreach ($picked as $i)
+                                                <button type="button" wire:key="pick-intern-{{ $i->id }}"
+                                                        wire:click="toggleFormIntern({{ $i->id }})"
+                                                        title="Batalkan pilihan"
+                                                        class="text-sm"
+                                                        style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.75rem; border-radius:9999px; cursor:pointer; background:var(--brand); color:#fff; border:1px solid var(--brand); font-weight:600;">
+                                                    <span>{{ $i->nama }}{{ $i->unit ? ' — ' . $i->unit->name : '' }}</span>
+                                                    <i class="fa-solid fa-xmark" style="font-size:0.75rem; opacity:0.85;"></i>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                        @endforeach
+
                         @error('formInternIds')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                         @enderror
