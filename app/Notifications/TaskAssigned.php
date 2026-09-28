@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\Task;
 use App\Notifications\Concerns\BuildsWebPush;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
@@ -31,10 +32,13 @@ class TaskAssigned extends Notification
     public function toWebPush(object $notifiable, self $notification): WebPushMessage
     {
         return $this->pushMessage(
-            title: '📋 Tugas baru dari ' . ($this->task->assignedBy?->name ?? 'pembimbing'),
+            title: 'Tugas baru dari ' . ($this->task->assignedBy?->name ?? 'pembimbing'),
             lines: [
                 $this->task->title,
-                $this->task->due_date ? '⏰ Tenggat ' . $this->task->due_date->translatedFormat('l, d M Y H:i') : null,
+                $this->task->description ? Str::limit($this->task->description, 100) : null,
+                'Tenggat: ' . ($this->task->due_date
+                    ? $this->task->due_date->translatedFormat('l, d M Y') . ' · ' . $this->task->due_date->format('H:i')
+                    : 'tidak ada'),
             ],
             url: route('tasks.index'),
             actionLabel: 'Lihat Tugas',

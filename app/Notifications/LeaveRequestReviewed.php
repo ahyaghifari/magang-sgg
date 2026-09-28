@@ -35,11 +35,11 @@ class LeaveRequestReviewed extends Notification
         $reviewer = $this->leaveRequest->reviewer?->name;
 
         return $this->pushMessage(
-            title: $isApproved ? '✅ Pengajuan izin disetujui' : '❌ Pengajuan izin ditolak',
+            title: $isApproved ? 'Pengajuan izin disetujui' : 'Pengajuan izin ditolak',
             lines: [
                 ($isApproved ? 'Pengajuan izin/sakitmu sudah disetujui' : 'Pengajuan izin/sakitmu ditolak')
                     . ($reviewer ? ' oleh ' . $reviewer : '') . '.',
-                $this->leaveRequest->review_note ? '💬 "' . $this->leaveRequest->review_note . '"' : null,
+                $this->leaveRequest->review_note ? 'Catatan: ' . $this->leaveRequest->review_note : null,
             ],
             url: route('leaves.index'),
             actionLabel: 'Lihat Izin',

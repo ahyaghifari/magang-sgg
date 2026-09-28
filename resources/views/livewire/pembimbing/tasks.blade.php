@@ -51,6 +51,37 @@
         </div>
     </div>
 
+    {{-- ===== Tombol cepat cakupan: sekali klik langsung tampil semua tugas bimbingan/mentee
+         sendiri (intern yang langsung ditugaskan ke user ini sebagai pembimbing/mentor).
+         Tampil untuk Pembimbing, Mentor, dan Admin yang punya bimbingan/mentee. ===== --}}
+    @if ($canScope)
+        <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;" role="group" aria-label="Tampilkan tugas">
+            @php
+                $scopeOptions = [
+                    ['value' => '', 'label' => 'Semua intern', 'icon' => 'fa-users', 'count' => $scopeCounts['all']],
+                    ['value' => 'mine', 'label' => 'Bimbingan/mentee saya', 'icon' => 'fa-user-check', 'count' => $scopeCounts['mine']],
+                ];
+            @endphp
+            @foreach ($scopeOptions as $opt)
+                @php
+                    $active = $scope === $opt['value'];
+                    $label = $opt['label'];
+                    $icon = $opt['icon'];
+                    $count = $opt['count'];
+                @endphp
+                <button type="button" wire:click="$set('scope', '{{ $opt['value'] }}')" aria-pressed="{{ $active ? 'true' : 'false' }}"
+                        style="display:inline-flex; align-items:center; gap:0.45rem; padding:0.55rem 1rem; border-radius:9999px; font-size:0.875rem; font-weight:600; cursor:pointer; transition:all .15s;
+                               {{ $active
+                                   ? 'background:var(--brand); color:#fff; border:1px solid var(--brand); box-shadow:0 4px 12px rgba(4,44,108,.18);'
+                                   : 'background:var(--surface); color:var(--text-body); border:1px solid var(--border);' }}">
+                    <i class="fa-solid {{ $icon }}"></i>
+                    {{ $label }}
+                    <span style="font-size:0.75rem; font-weight:700; padding:0.05rem 0.45rem; border-radius:9999px; {{ $active ? 'background:rgba(255,255,255,.22);' : 'background:var(--surface-alt); color:var(--text-muted);' }}">{{ $count }}</span>
+                </button>
+            @endforeach
+        </div>
+    @endif
+
     {{-- ===== Filter ===== --}}
     <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem;">
         <div>
@@ -91,107 +122,211 @@
 
     {{-- ===== Daftar tugas ===== --}}
     <div class="flex" style="flex-direction:column; gap:0.75rem;">
-        @forelse ($tasks as $task)
-            <article class="surface-card" style="padding:1.1rem 1.15rem;">
-                <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
-                    <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
-                        <x-intern-avatar :intern="$task->intern" />
-                        <span style="font-weight:700; color:var(--text-heading);">{{ $task->intern->nama ?? 'Peserta dihapus' }}</span>
-                        @if ($task->intern?->unit)
-                            <span class="badge badge-neutral"><i class="fa-solid fa-people-group"></i> {{ $task->intern->unit->name }}</span>
+        {{-- Satu kotak = satu pengiriman tugas, bisa untuk beberapa intern sekaligus (lihat
+             Tasks::paginateTaskGroups() & Task::groupKey()). Kalau isi tugasnya SAMA, judul/
+             keterangan/tenggat tampil sekali di atas. Kalau BERBEDA (mis. pakai "Tugas berbeda
+             untuk tiap peserta", atau satu peserta diedit sendiri), bagian yang berbeda tampil
+             per baris peserta dan edit dilakukan per peserta. Tiap intern punya baris sendiri
+             berisi status, aksi, foto bukti, dan diskusi (sisi intern tetap satu per satu). --}}
+        @forelse ($taskGroups as $group)
+            @php
+                $groupTasks = $group['tasks'];
+                $first = $groupTasks->first();
+                $isMulti = $groupTasks->count() > 1;
+                $myId = auth()->id();
+                $canManage = fn ($t) => in_array($t->intern_id, $manageableInternIds, true) || $t->assigned_by === $myId;
+                $manageableIds = $groupTasks->filter($canManage)->pluck('id')->values()->all();
+                $doneCount = $groupTasks->where('status', 'done')->count();
+
+                $sameTitle = $groupTasks->pluck('title')->unique()->count() <= 1;
+                $sameDesc = $groupTasks->map(fn ($t) => trim((string) $t->description))->unique()->count() <= 1;
+                $sameDue = $groupTasks->map(fn ($t) => $t->due_date?->format('Y-m-d H:i'))->unique()->count() <= 1;
+                // "Edit untuk semua" hanya aman kalau isinya memang sama persis.
+                $uniform = $sameTitle && $sameDesc && $sameDue;
+            @endphp
+            <article wire:key="task-group-{{ md5($group['key']) }}" class="surface-card" style="padding:1.1rem 1.15rem;">
+                <div class="flex items-start justify-between" style="gap:0.75rem; flex-wrap:wrap;">
+                    <div style="min-width:0; flex:1;">
+                        {{-- Isi berbeda per peserta → judul kotak "Tugas berbeda untuk tiap peserta";
+                             judul tugas aslinya (kalau semua masih sama) tampil kecil di bawahnya. --}}
+                        <p style="font-weight:700; font-size:1rem; color:var(--text-heading);">
+                            {{ $uniform ? $first->title : 'Tugas berbeda untuk tiap peserta' }}
+                        </p>
+                        @if (! $uniform && $sameTitle)
+                            <p class="text-sm" style="color:var(--text-muted); margin-top:0.1rem;">
+                                <i class="fa-solid fa-thumbtack" style="font-size:0.75rem;"></i> {{ $first->title }}
+                            </p>
                         @endif
-                        @if ($task->status === 'done')
-                            <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Selesai</span>
-                        @elseif ($task->status === 'in_progress')
-                            <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
-                        @elseif ($task->status === 'rejected')
-                            <span class="badge" style="background:#ffedd5; color:#c2410c;"><i class="fa-solid fa-circle-pause"></i> Ditunda intern</span>
-                        @else
-                            <span class="badge badge-neutral"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
-                        @endif
-                        <span class="badge badge-neutral">
-                            @if ($task->source === 'web')
-                                <i class="fa-solid fa-globe"></i> Dari web
-                            @else
-                                <i class="fa-solid fa-comment"></i> Lisan
+                        <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap; margin-top:0.35rem;">
+                            <span class="badge badge-neutral">
+                                @if ($first->source === 'web')
+                                    <i class="fa-solid fa-globe"></i> Dari web
+                                @else
+                                    <i class="fa-solid fa-comment"></i> Lisan
+                                @endif
+                            </span>
+                            @if ($isMulti)
+                                <span class="badge" style="background:#e0e7ff; color:#3730a3;">
+                                    <i class="fa-solid fa-users"></i> {{ $groupTasks->count() }} peserta
+                                </span>
+                                <span class="badge" style="{{ $doneCount === $groupTasks->count() ? 'background:#dcfce7; color:#15803d;' : 'background:var(--surface-alt); color:var(--text-muted);' }}">
+                                    <i class="fa-solid fa-circle-check"></i> {{ $doneCount }}/{{ $groupTasks->count() }} selesai
+                                </span>
+                                @unless ($uniform)
+                                    <span class="badge" style="background:#fef3c7; color:#92400e;">
+                                        <i class="fa-solid fa-user-pen"></i> Isi berbeda per peserta
+                                    </span>
+                                @endunless
                             @endif
-                        </span>
+                        </div>
                     </div>
-                    @if ($task->due_date)
+                    @if ($sameDue && $first->due_date)
                         <span class="text-sm" style="color:var(--text-muted); flex-shrink:0;">
-                            <i class="fa-regular fa-calendar"></i> Tenggat {{ $task->due_date->translatedFormat('d F Y') }}
-                            <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $task->due_date->format('H:i') }}
+                            <i class="fa-regular fa-calendar"></i> Tenggat {{ $first->due_date->translatedFormat('d F Y') }}
+                            <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $first->due_date->format('H:i') }}
                         </span>
                     @endif
                 </div>
 
-                <p style="margin-top:0.55rem; font-weight:600; color:var(--text-body);">{{ $task->title }}</p>
-                @if ($task->description)
-                    <p class="text-sm" style="margin-top:0.3rem; color:var(--text-body); white-space:pre-line;">{{ $task->description }}</p>
+                @if ($sameDesc && $first->description)
+                    <p class="text-sm" style="margin-top:0.55rem; color:var(--text-body); white-space:pre-line;">{{ $first->description }}</p>
                 @endif
 
-                @if ($task->status === 'rejected' && $task->rejection_reason)
-                    <p class="text-sm" style="margin-top:0.5rem; padding:0.6rem 0.75rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; color:#c2410c;">
-                        <i class="fa-solid fa-comment-dots"></i> Alasan intern menunda: {{ $task->rejection_reason }}
-                    </p>
-                @endif
-
-                @if ($task->assignedBy)
+                @if ($first->assignedBy)
                     <p class="text-sm" style="margin-top:0.5rem; color:var(--text-muted);">
                         <i class="fa-solid fa-user"></i>
-                        {{ $task->source === 'web' ? 'Diberikan oleh' : 'Disebut sebagai pemberi tugas' }}: {{ $task->assignedBy->name }}
-                        <span style="color:var(--text-faint);">&middot; {{ $task->created_at->translatedFormat('d F Y, H:i') }}</span>
+                        {{ $first->source === 'web' ? 'Diberikan oleh' : 'Disebut sebagai pemberi tugas' }}: {{ $first->assignedBy->name }}
+                        <span style="color:var(--text-faint);">&middot; {{ $first->created_at->translatedFormat('d F Y, H:i') }}</span>
                     </p>
                 @endif
 
-                @if ($task->status === 'done' && $task->completionPhotos->isNotEmpty())
-                    <div style="margin-top:0.75rem;">
-                        <div class="flex" style="gap:0.5rem; flex-wrap:wrap;">
-                            @foreach ($task->completionPhotos as $photo)
-                                <button type="button" onclick="openLightbox(@js(url('storage/' . $photo->path)), 'Bukti selesai')"
-                                        style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
-                                    <img src="{{ url('storage/' . $photo->path) }}" alt="Bukti selesai"
-                                         style="width:84px; height:84px; object-fit:cover; display:block;">
-                                </button>
-                            @endforeach
-                        </div>
-                        <p class="text-sm" style="margin-top:0.3rem; color:var(--text-faint);">
-                            <i class="fa-regular fa-image"></i> Foto bukti pengerjaan dari intern
-                        </p>
-                    </div>
-                @endif
-
-                {{-- Bisa dikelola kalau: intern-nya memang mentee sendiri, ATAU tugas ini
-                     memang aku sendiri yang berikan (lintas pembimbing tetap boleh diurus
-                     oleh pembuatnya — lihat Tasks::manageableTasksQuery()). --}}
-                @php($taskManageable = in_array($task->intern_id, $manageableInternIds, true) || $task->assigned_by === auth()->id())
-
-                @if ($taskManageable)
-                    <div class="flex items-center" style="gap:0.5rem; margin-top:0.9rem; padding-top:0.7rem; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
-                        @if ($task->status !== 'done' && $task->status !== 'rejected')
-                            <button type="button" wire:click="markDone({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
-                                <i class="fa-solid fa-check"></i> Tandai Selesai
-                            </button>
-                        @else
-                            <button type="button" wire:click="reopen({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
-                                <i class="fa-solid fa-rotate-left"></i> Buka lagi
+                {{-- Aksi untuk seluruh kotak: "Edit untuk semua" hanya kalau isi tugasnya sama
+                     (kalau berbeda, edit lewat tombol di tiap baris peserta); hapus menghapus semuanya. --}}
+                @if ($manageableIds !== [])
+                    <div class="flex items-center" style="gap:0.5rem; margin-top:0.8rem; flex-wrap:wrap;">
+                        @if ($uniform)
+                            <button type="button" wire:click="openEditTask({{ $manageableIds[0] }}, {{ Js::from($manageableIds) }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
+                                <i class="fa-solid fa-pen"></i> Edit{{ $isMulti ? ' untuk semua' : '' }}
                             </button>
                         @endif
-                        <button type="button" wire:click="openEditTask({{ $task->id }})" class="btn-ghost" style="padding:0.4rem 0.75rem;">
-                            <i class="fa-solid fa-pen"></i> Edit
-                        </button>
-                        <x-confirm-delete title="Hapus tugas ini?" confirm-wire-click="delete({{ $task->id }})">
+                        <x-confirm-delete :title="$isMulti ? 'Hapus tugas ini untuk semua peserta?' : 'Hapus tugas ini?'"
+                                          confirm-wire-click="deleteGroup({{ Js::from($manageableIds) }})">
                             <button type="button" @click="confirmOpen = true"
                                     class="btn-ghost" style="padding:0.4rem 0.75rem; color:#dc2626;">
-                                <i class="fa-solid fa-trash"></i> Hapus
+                                <i class="fa-solid fa-trash"></i> Hapus{{ $isMulti ? ' semua' : '' }}
                             </button>
                         </x-confirm-delete>
                     </div>
                 @endif
 
-                {{-- canComment default true — komentar boleh untuk semua intern yang terlihat
-                     (lihat Tasks::resolveCommentable()), beda dari aksi kelola di atas. --}}
-                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task])
+                {{-- Daftar peserta di kotak ini --}}
+                <div style="margin-top:0.9rem; border:1px solid var(--border-soft); border-radius:12px; overflow:hidden;">
+                    @foreach ($groupTasks as $task)
+                        @php($taskManageable = $canManage($task))
+                        <div wire:key="task-row-{{ $task->id }}"
+                             x-data="{ diskusi: false }"
+                             style="padding:0.75rem 0.85rem; {{ $loop->first ? '' : 'border-top:1px solid var(--border-soft);' }}">
+                            <div class="flex items-center justify-between" style="gap:0.6rem; flex-wrap:wrap;">
+                                <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap; min-width:0;">
+                                    <x-intern-avatar :intern="$task->intern" />
+                                    <span style="font-weight:700; color:var(--text-heading);">{{ $task->intern->nama ?? 'Peserta dihapus' }}</span>
+                                    @if ($task->intern?->unit)
+                                        <span class="badge badge-neutral"><i class="fa-solid fa-people-group"></i> {{ $task->intern->unit->name }}</span>
+                                    @endif
+                                    @if ($task->status === 'done')
+                                        <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Selesai</span>
+                                    @elseif ($task->status === 'in_progress')
+                                        <span class="badge" style="background:#fef3c7; color:#b45309;"><i class="fa-solid fa-spinner"></i> Dikerjakan</span>
+                                    @elseif ($task->status === 'rejected')
+                                        <span class="badge" style="background:#ffedd5; color:#c2410c;"><i class="fa-solid fa-circle-pause"></i> Ditunda intern</span>
+                                    @else
+                                        <span class="badge badge-neutral"><i class="fa-regular fa-circle"></i> Belum dikerjakan</span>
+                                    @endif
+                                </div>
+                                <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap;">
+                                    @if ($taskManageable)
+                                        @if ($task->status !== 'done' && $task->status !== 'rejected')
+                                            <button type="button" wire:click="markDone({{ $task->id }})" class="btn-ghost" style="padding:0.3rem 0.6rem; font-size:0.8rem;">
+                                                <i class="fa-solid fa-check"></i> Tandai Selesai
+                                            </button>
+                                        @else
+                                            <button type="button" wire:click="reopen({{ $task->id }})" class="btn-ghost" style="padding:0.3rem 0.6rem; font-size:0.8rem;">
+                                                <i class="fa-solid fa-rotate-left"></i> Buka lagi
+                                            </button>
+                                        @endif
+                                        @unless ($uniform)
+                                            <button type="button" wire:click="openEditTask({{ $task->id }})" title="Edit tugas peserta ini"
+                                                    class="btn-ghost" style="padding:0.3rem 0.6rem; font-size:0.8rem;">
+                                                <i class="fa-solid fa-pen"></i> Edit
+                                            </button>
+                                        @endunless
+                                        @if ($isMulti)
+                                            <x-confirm-delete title="Hapus tugas ini untuk {{ $task->intern->nama ?? 'peserta ini' }} saja?" confirm-wire-click="delete({{ $task->id }})">
+                                                <button type="button" @click="confirmOpen = true" title="Hapus untuk peserta ini saja"
+                                                        class="btn-ghost" style="padding:0.3rem 0.55rem; font-size:0.8rem; color:#dc2626;">
+                                                    <i class="fa-solid fa-user-minus"></i>
+                                                </button>
+                                            </x-confirm-delete>
+                                        @endif
+                                    @endif
+                                    @if ($isMulti)
+                                        <button type="button" @click="diskusi = ! diskusi" class="btn-ghost" style="padding:0.3rem 0.6rem; font-size:0.8rem;">
+                                            <i class="fa-regular fa-comments"></i> Diskusi{{ $task->comments->isNotEmpty() ? ' (' . $task->comments->count() . ')' : '' }}
+                                            <i class="fa-solid" :class="diskusi ? 'fa-chevron-up' : 'fa-chevron-down'" style="font-size:0.65rem;"></i>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Isi tugas milik peserta ini — hanya bagian yang berbeda antar-peserta. --}}
+                            @if (! $uniform && ((! $sameTitle) || (! $sameDue && $task->due_date) || (! $sameDesc && $task->description)))
+                                <div style="margin-top:0.5rem; padding:0.55rem 0.7rem; background:var(--surface-alt); border-radius:10px;">
+                                    @unless ($sameTitle)
+                                        <p style="font-weight:700; font-size:0.9rem; color:var(--text-heading);">{{ $task->title }}</p>
+                                    @endunless
+                                    @if (! $sameDue && $task->due_date)
+                                        <p class="text-sm" style="color:var(--text-muted); {{ $sameTitle ? '' : 'margin-top:0.15rem;' }}">
+                                            <i class="fa-regular fa-calendar"></i> Tenggat {{ $task->due_date->translatedFormat('d F Y') }}
+                                            <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $task->due_date->format('H:i') }}
+                                        </p>
+                                    @endif
+                                    @if (! $sameDesc && $task->description)
+                                        <p class="text-sm" style="color:var(--text-body); white-space:pre-line; {{ $sameTitle && ($sameDue || ! $task->due_date) ? '' : 'margin-top:0.3rem;' }}">{{ $task->description }}</p>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if ($task->status === 'rejected' && $task->rejection_reason)
+                                <p class="text-sm" style="margin-top:0.5rem; padding:0.55rem 0.7rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; color:#c2410c;">
+                                    <i class="fa-solid fa-comment-dots"></i> Alasan intern menunda: {{ $task->rejection_reason }}
+                                </p>
+                            @endif
+
+                            @if ($task->status === 'done' && $task->completionPhotos->isNotEmpty())
+                                <div class="flex" style="gap:0.45rem; flex-wrap:wrap; margin-top:0.55rem;">
+                                    @foreach ($task->completionPhotos as $photo)
+                                        <button type="button" onclick="openLightbox(@js(url('storage/' . $photo->path)), @js('Bukti selesai — ' . ($task->intern->nama ?? '')))"
+                                                style="display:inline-block; padding:0; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:none; cursor:zoom-in;">
+                                            <img src="{{ url('storage/' . $photo->path) }}" alt="Bukti selesai"
+                                                 style="width:72px; height:72px; object-fit:cover; display:block;">
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            {{-- Diskusi per intern. Kotak berisi satu intern: langsung tampil; kotak
+                                 berisi beberapa intern: dibuka lewat tombol "Diskusi" di barisnya.
+                                 canComment default true (lihat Tasks::resolveCommentable()). --}}
+                            @if ($isMulti)
+                                <div x-show="diskusi" x-cloak x-transition>
+                                    @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task])
+                                </div>
+                            @else
+                                @include('livewire.partials.comment-thread', ['type' => 'task', 'model' => $task])
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
             </article>
         @empty
             <div class="surface-card" style="padding:2.75rem 1.15rem; text-align:center;">
@@ -203,21 +338,23 @@
         @endforelse
     </div>
 
-    @if ($tasks->hasPages())
+    @if ($taskGroups->hasPages())
         <div class="flex items-center justify-between" style="margin-top:1.25rem;">
-            <button wire:click="previousPage" class="btn-ghost" @disabled($tasks->onFirstPage())>
+            <button wire:click="previousPage" class="btn-ghost" @disabled($taskGroups->onFirstPage())>
                 <i class="fa-solid fa-chevron-left"></i> Sebelumnya
             </button>
             <span style="font-size:0.8rem; color:var(--text-muted);">
-                Halaman {{ $tasks->currentPage() }} dari {{ $tasks->lastPage() }}
+                Halaman {{ $taskGroups->currentPage() }} dari {{ $taskGroups->lastPage() }}
             </span>
-            <button wire:click="nextPage" class="btn-ghost" @disabled(! $tasks->hasMorePages())>
+            <button wire:click="nextPage" class="btn-ghost" @disabled(! $taskGroups->hasMorePages())>
                 Berikutnya <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
     @endif
 
-    {{-- ===== Modal: beri tugas ===== --}}
+    {{-- ===== Modal: beri tugas =====
+         Sengaja TIDAK menutup saat klik di luar kotak — supaya isian tidak hilang karena
+         salah klik. Tutup lewat tombol ✕ / Batal / tombol Esc. --}}
     <div
         x-data
         x-show="$wire.showForm"
@@ -228,7 +365,6 @@
         style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
     >
         <div
-            @click.outside="$wire.closeForm()"
             x-show="$wire.showForm"
             x-transition
             class="surface-card"
@@ -352,7 +488,7 @@
                     @endif
 
                     <div style="margin-bottom:1.1rem;">
-                        <label for="a-title" class="form-label">Judul Tugas</label>
+                        <label for="a-title" class="form-label">Judul Tugas <span style="color:var(--text-faint); font-weight:400;">(opsional — kosong = diambil dari keterangan)</span></label>
                         <input id="a-title" type="text" wire:model="title" class="form-input"
                                placeholder="Contoh: Buat laporan mingguan unit IT">
                         @error('title')
@@ -360,8 +496,93 @@
                         @enderror
                     </div>
 
+                    {{-- ===== Opsional: tugas berbeda untuk tiap peserta =====
+                         Hanya muncul kalau peserta terpilih >= 2; default tertutup. Buka/tutup cuma
+                         state tampilan (Alpine) — isi kotak tetap tersimpan di $perInternNotes dan
+                         tetap dipakai saat simpan walau bagiannya ditutup. Kotak ikut daftar chip
+                         peserta terpilih; kotak kosong = peserta itu memakai Keterangan umum
+                         (lihat Tasks::descriptionFor()). --}}
+                    @php($notePeserta = $allInterns->whereIn('id', $selectedIds)->sortBy('nama')->values())
+                    @if ($notePeserta->count() >= 2)
+                        @php($filledNotes = collect($perInternNotes)->filter(fn ($n) => trim((string) $n) !== '')->count())
+                        <div wire:key="per-intern-notes"
+                             x-data="{ open: false }"
+                             style="margin-bottom:1.1rem; border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+                            <button type="button" @click="open = ! open" :aria-expanded="open"
+                                    class="flex items-center justify-between"
+                                    style="width:100%; gap:0.6rem; padding:0.7rem 0.85rem; background:var(--surface-alt); border:0; cursor:pointer; text-align:left;">
+                                <span style="min-width:0;">
+                                    <span style="display:block; font-size:0.85rem; font-weight:700; color:var(--text-heading);">
+                                        <i class="fa-solid fa-user-pen" style="color:var(--brand); margin-right:0.35rem;"></i>
+                                        Tugas berbeda untuk tiap peserta
+                                        <span style="font-weight:400; color:var(--text-faint);">(opsional)</span>
+                                    </span>
+                                    <span style="display:block; font-size:0.75rem; color:var(--text-muted); margin-top:0.1rem;">
+                                        @if ($filledNotes > 0)
+                                            {{ $filledNotes }} dari {{ $notePeserta->count() }} peserta punya tugas khusus
+                                        @else
+                                            Tambahkan tugas khusus untuk peserta tertentu
+                                        @endif
+                                    </span>
+                                </span>
+                                <i class="fa-solid" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'" style="color:var(--text-muted); flex-shrink:0;"></i>
+                            </button>
+
+                            <div x-show="open" x-cloak x-transition style="padding:0.75rem 0.85rem; border-top:1px solid var(--border);">
+                                <div class="flex items-center justify-between" style="gap:0.5rem; flex-wrap:wrap; margin-bottom:0.6rem;">
+                                    <p style="font-size:0.75rem; color:var(--text-muted); flex:1; min-width:12rem;">
+                                        Kotak kosong = peserta itu memakai Keterangan umum. Kalau diisi, keterangan
+                                        umum tampil di atas lalu tugas khusus di bawahnya.
+                                    </p>
+                                    {{-- Konfirmasi dulu kalau ada kotak yang sudah diisi, karena isinya akan tertimpa. --}}
+                                    <button type="button" class="text-sm"
+                                            style="color:var(--brand); text-decoration:underline; flex-shrink:0;"
+                                            @click="
+                                                const filled = [...$root.querySelectorAll('textarea[data-note]')].some(t => t.value.trim() !== '');
+                                                if (! filled || confirm('Isi kotak yang sudah diketik akan ditimpa dengan keterangan umum. Lanjutkan?')) { $wire.copyGeneralToAll() }
+                                            ">
+                                        Salin keterangan umum ke semua kotak
+                                    </button>
+                                </div>
+
+                                <div class="flex" style="flex-direction:column; gap:0.6rem; max-height:20rem; overflow-y:auto; padding-right:0.15rem; overscroll-behavior:contain;">
+                                    @foreach ($notePeserta as $p)
+                                        @php($isOther = ! in_array($p->id, $manageableInternIds, true))
+                                        <div wire:key="note-box-{{ $p->id }}"
+                                             style="border:1px solid var(--border-soft); border-radius:10px; padding:0.6rem 0.7rem; background:var(--surface);">
+                                            <div class="flex items-center" style="gap:0.5rem; margin-bottom:0.45rem; min-width:0;">
+                                                <x-intern-avatar :intern="$p" size="1.7rem" />
+                                                <label for="note-{{ $p->id }}" style="font-size:0.85rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                                    Tugas khusus <b style="color:var(--text-heading);">{{ $p->nama }}</b>
+                                                </label>
+                                                @if ($isOther)
+                                                    <span class="badge" style="background:#fef3c7; color:#92400e; flex-shrink:0;">lintas</span>
+                                                @endif
+                                            </div>
+                                            <textarea id="note-{{ $p->id }}" data-note
+                                                      wire:model="perInternNotes.{{ $p->id }}" rows="2" class="form-input"
+                                                      aria-label="Tugas khusus {{ $p->nama }}"
+                                                      placeholder="Kosongkan kalau sama dengan keterangan umum"></textarea>
+                                            @error('perInternNotes.' . $p->id)
+                                                <p class="text-sm" style="color:#dc2626; margin-top:0.35rem;">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <div style="margin-bottom:1.1rem;">
-                        <label for="a-description" class="form-label">Keterangan <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
+                        {{-- Dengan >= 2 peserta, labelnya dipertegas "umum" supaya jelas bedanya dengan
+                             kotak "Tugas khusus" per peserta di atas. --}}
+                        <label for="a-description" class="form-label">
+                            @if (count($selectedIds) >= 2)
+                                Keterangan umum <span style="color:var(--text-faint); font-weight:400;">(untuk semua peserta, opsional)</span>
+                            @else
+                                Keterangan <span style="color:var(--text-faint); font-weight:400;">(opsional)</span>
+                            @endif
+                        </label>
                         <textarea id="a-description" wire:model="description" rows="4" class="form-input"
                                   placeholder="Detail tugas..."></textarea>
                         @error('description')
@@ -404,7 +625,7 @@
         </div>
     </div>
 
-    {{-- ===== Modal: edit tugas ===== --}}
+    {{-- ===== Modal: edit tugas ===== (sama: tidak tertutup saat klik di luar kotak) --}}
     <div
         x-data
         x-show="$wire.editingTaskId !== null"
@@ -415,7 +636,6 @@
         style="position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1.25rem; overflow-y:auto; background:rgba(2,6,23,0.55);"
     >
         <div
-            @click.outside="$wire.closeEditTask()"
             x-show="$wire.editingTaskId !== null"
             x-transition
             class="surface-card"
@@ -435,7 +655,7 @@
             <div style="padding:1.35rem;">
                 <form wire:submit="confirmEditTask">
                     <div style="margin-bottom:1.1rem;">
-                        <label for="e-title" class="form-label">Judul Tugas</label>
+                        <label for="e-title" class="form-label">Judul Tugas <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
                         <input id="e-title" type="text" wire:model="editTitle" class="form-input">
                         @error('editTitle')
                             <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>

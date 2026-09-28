@@ -57,13 +57,10 @@
     .brand-text { font-size: 8pt; letter-spacing: 1px; color: #64748b; font-weight: bold; }
     .brand-text b { display: block; font-size: 10pt; color: #042c6c; }
 
-    .title-block { position: absolute; top: 40mm; left: 20mm; right: 20mm; text-align: center; }
-    .eyebrow {
-        display: inline-block; background-color: #1c8a4d; color: #ffffff;
-        font-size: 9pt; font-weight: bold; letter-spacing: 1.5px;
-        padding: 1.8mm 7mm; border-radius: 20mm;
-    }
-    .title-block h1 { font-size: 26pt; margin: 4mm 0 0; color: #042c6c; font-weight: bold; }
+    /* Label hijau "PRAKTIK KERJA LAPANGAN" di atas judul sudah dihapus; blok judul diturunkan
+       supaya judul tetap di posisi yang sama seperti sebelumnya. */
+    .title-block { position: absolute; top: 50mm; left: 20mm; right: 20mm; text-align: center; }
+    .title-block h1 { font-size: 26pt; margin: 0; color: #042c6c; font-weight: bold; }
     .given { font-size: 10pt; color: #334155; margin-top: 6mm; }
 
     .name {
@@ -171,62 +168,64 @@
             <div class="brand-text"><b>SYIFA GLOBAL GROUP</b>INTERNSHIP</div>
         </div>
 
+        {{-- Semua teks dari $content = data asli digabung editan editor sertifikat
+             (App\Support\CertificateContent::for). Layout tidak berubah — hanya sumber datanya. --}}
         <div class="title-block">
-            <div class="eyebrow">PRAKTIK KERJA LAPANGAN</div>
-            <h1>SERTIFIKAT PENGHARGAAN</h1>
-            <div class="given">Dengan bangga diberikan kepada:</div>
+            <h1>{{ $content['judul'] }}</h1>
+            <div class="given">{{ $content['pengantar'] }}</div>
         </div>
 
-        <div class="name">{{ $intern->nama }}</div>
+        <div class="name">{{ $content['nama'] }}</div>
 
-        <div class="body-text">Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $intern->unit->company->name ?? 'Syifa Global Group' }}</b>@if ($intern->tanggal_mulai && $intern->tanggal_selesai), terhitung sejak <b>{{ $intern->tanggal_mulai->translatedFormat('d F Y') }}</b> sampai dengan <b>{{ $intern->tanggal_selesai->translatedFormat('d F Y') }}</b>@endif. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.</div>
+        {{-- Selama kalimat kegiatan & periode belum diedit, paragraf tetap persis seperti versi
+             lama (dengan penebalan). Kalau salah satunya diedit: teks kegiatan hasil editan +
+             kalimat periode dari field periode. --}}
+        @if (! in_array('kegiatan', $content['overridden'], true) && ! in_array('periode', $content['overridden'], true))
+            <div class="body-text">Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $intern->unit->company->name ?? 'Syifa Global Group' }}</b>@if ($intern->tanggal_mulai && $intern->tanggal_selesai), terhitung sejak <b>{{ $intern->tanggal_mulai->translatedFormat('d F Y') }}</b> sampai dengan <b>{{ $intern->tanggal_selesai->translatedFormat('d F Y') }}</b>@endif. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.</div>
+        @else
+            <div class="body-text">{!! nl2br(e($content['kegiatan'])) !!}@if (trim($content['periode']) !== '' && trim($content['periode']) !== '-') Periode: <b>{{ $content['periode'] }}</b>.@endif</div>
+        @endif
 
         <div class="sign sign-left">
             <div class="line">
-                <div class="who">{{ $intern->pembimbing->name ?? '..............................' }}</div>
-                <div class="role">Pembimbing Lapangan</div>
+                <div class="who">{{ $content['ttd_nama'] }}</div>
+                <div class="role">{{ $content['ttd_jabatan'] }}</div>
             </div>
         </div>
 
         <div class="sign sign-right">
             <div class="line">
-                <div class="who">..............................</div>
-                <div class="role">Pimpinan Perusahaan</div>
+                <div class="who">{{ $content['ttd2_nama'] }}</div>
+                <div class="role">{{ $content['ttd2_jabatan'] }}</div>
             </div>
         </div>
 
-        <div class="no"><span class="no-label">NO. SERTIFIKAT</span><span class="no-value">{{ $nomor }}</span></div>
+        <div class="no"><span class="no-label">NO. SERTIFIKAT</span><span class="no-value">{{ $content['no'] }}</span></div>
     </div>
 
     <div class="appraisal">
-        <h1>PENILAIAN</h1>
+        <h1>{{ $content['form_judul'] }}</h1>
 
         <table class="info-table">
             <tr>
-                <td class="label">Name</td><td class="colon">:</td><td>{{ $intern->nama }}</td>
+                <td class="label">Name</td><td class="colon">:</td><td>{{ $content['info_nama'] }}</td>
                 <td class="sep"></td>
-                <td class="label">Department / Section</td><td class="colon">:</td><td>{{ $intern->unit->name ?? '-' }}</td>
+                <td class="label">Department / Section</td><td class="colon">:</td><td>{{ $content['info_unit'] }}</td>
             </tr>
             <tr>
-                <td class="label">School</td><td class="colon">:</td><td>{{ $intern->institusi->name ?? '-' }}</td>
+                <td class="label">School</td><td class="colon">:</td><td>{{ $content['info_sekolah'] }}</td>
                 <td class="sep"></td>
-                <td class="label">Period</td><td class="colon">:</td>
-                <td>
-                    @if ($intern->tanggal_mulai && $intern->tanggal_selesai)
-                        {{ $intern->tanggal_mulai->translatedFormat('d F Y') }} — {{ $intern->tanggal_selesai->translatedFormat('d F Y') }}
-                    @else
-                        -
-                    @endif
-                </td>
+                <td class="label">Period</td><td class="colon">:</td><td>{{ $content['info_periode'] }}</td>
             </tr>
         </table>
 
         {{-- ATTITUDE dan KNOWLEDGE & SKILL berdampingan (bukan bertumpuk) supaya muat
-             tinggi halaman 196mm tanpa perlu font mini. --}}
+             tinggi halaman 196mm tanpa perlu font mini. Teks kriteria & nilai dari $content
+             (bisa sudah diedit lewat editor sertifikat — nilai penilaian asli tidak berubah). --}}
         @php $categoryStartNo = ['ATTITUDE' => 1, 'KNOWLEDGE & SKILL' => 6]; @endphp
         @foreach (['ATTITUDE', 'KNOWLEDGE & SKILL'] as $category)
             <div class="col-cat {{ $loop->first ? 'left' : 'right' }}">
-                <p class="cat-label {{ $loop->first ? 'attitude' : 'knowledge' }}">{{ $category }}</p>
+                <p class="cat-label {{ $loop->first ? 'attitude' : 'knowledge' }}">{{ $content[$loop->first ? 'kategori_1' : 'kategori_2'] }}</p>
                 <table class="grid">
                     <tr>
                         <th class="col-no">NO</th>
@@ -236,13 +235,14 @@
                     @php $no = $categoryStartNo[$category]; @endphp
                     @foreach (\App\Models\Intern::CRITERIA as $field => $c)
                         @continue($c['category'] !== $category)
+                        @php $row = $content['kriteria'][$field]; @endphp
                         <tr @class(['alt' => $no % 2 === 0])>
                             <td class="col-no">{{ $no++ }}</td>
                             <td>
-                                <div class="criteria-title">{{ strtoupper($c['title']) }}</div>
-                                <div class="criteria-desc">{{ $c['description'] }}</div>
+                                <div class="criteria-title">{{ $row['nama'] }}</div>
+                                <div class="criteria-desc">{{ $row['catatan'] }}</div>
                             </td>
-                            <td class="col-grade">{{ $intern->{$field} !== null ? number_format((float) $intern->{$field}, 2) : '-' }}</td>
+                            <td class="col-grade">{{ $row['nilai'] }}</td>
                         </tr>
                     @endforeach
                 </table>
@@ -250,13 +250,13 @@
         @endforeach
 
         <div class="bottom-block left">
-            <div class="sign-date">Banjarbaru, {{ $tanggalTerbit }}</div>
-            <div class="sign-line">{{ $intern->pembimbing->name ?? $intern->mentor->name ?? '' }}<br>Head of Department</div>
+            <div class="sign-date">{{ $content['form_tanggal'] }}</div>
+            <div class="sign-line">{{ $content['form_ttd_nama'] }}<br>{{ $content['form_ttd_jabatan'] }}</div>
         </div>
 
         <div class="bottom-block right">
             @php
-                $predikatColor = match ($intern->predikat()) {
+                $predikatColor = match (trim($content['rating'])) {
                     'Excellent' => '#1c8a4d',
                     'Good' => '#0b47a1',
                     'Fair' => '#b45309',
@@ -265,8 +265,8 @@
                 };
             @endphp
             <table class="summary">
-                <tr><td class="label">Total Score</td><td class="colon">:</td><td class="value">{{ number_format($intern->nilai_akhir ?? 0, 2) }}</td></tr>
-                <tr><td class="label">Rating</td><td class="colon">:</td><td class="value" style="color:{{ $predikatColor }};">{{ $intern->predikat() ?? 'Poor' }}</td></tr>
+                <tr><td class="label">Total Score</td><td class="colon">:</td><td class="value">{{ $content['nilai_akhir'] }}</td></tr>
+                <tr><td class="label">Rating</td><td class="colon">:</td><td class="value" style="color:{{ $predikatColor }};">{{ $content['rating'] }}</td></tr>
             </table>
         </div>
     </div>

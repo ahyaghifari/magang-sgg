@@ -1,6 +1,6 @@
 # Brief: Dokumentasi Sistem — Portal Internship Syifa Global Group
 
-> File ini adalah **bahan presentasi/dokumentasi**, ditulis dengan bahasa yang mudah dipahami orang non-teknis (atasan, pembimbing, atau audiens presentasi). Istilah teknis (nama file, class, route) sengaja diminimalkan di badan teks — kalau perlu contoh lebih rinci untuk keperluan teknis, bisa ditambahkan sebagai lampiran terpisah. Semua fakta di sini diambil langsung dari kode per 2026-09-26.
+> File ini adalah **bahan presentasi/dokumentasi**, ditulis dengan bahasa yang mudah dipahami orang non-teknis (atasan, pembimbing, atau audiens presentasi). Istilah teknis (nama file, class, route) sengaja diminimalkan di badan teks — kalau perlu contoh lebih rinci untuk keperluan teknis, bisa ditambahkan sebagai lampiran terpisah. Semua fakta di sini diambil langsung dari kode per 2026-09-28.
 
 ---
 
@@ -42,7 +42,7 @@ Ringkasan teknologi yang dipakai, untuk memberi gambaran skala dan kematangan si
 | Tampilan interaktif | Livewire | Halaman terasa interaktif (tanpa reload penuh) tanpa perlu membangun aplikasi front-end terpisah. |
 | Panel admin | Filament | Panel khusus untuk admin mengelola data master (pengguna, institusi, perusahaan, dll.), dengan tampilan yang sudah disesuaikan warna & gaya perusahaan. |
 | Basis data | MySQL/relasional | Data tersimpan terstruktur dan saling terhubung (mis. satu intern terhubung ke satu institusi, satu unit kerja, dst). Ada pula sambungan **baca-saja** ke sistem absensi (HRIS) perusahaan untuk mengambil data mentah alat sidik jari. |
-| Dokumen PDF | DomPDF | Membuat sertifikat magang & form penilaian resmi langsung dari sistem dalam bentuk PDF siap cetak. |
+| Dokumen PDF | DomPDF, plus html2canvas & jsPDF di editor sertifikat | Membuat sertifikat magang & form penilaian resmi langsung dari sistem dalam bentuk PDF siap cetak. Editor sertifikat juga bisa membuat PDF langsung di browser dari tampilan yang sedang diedit. |
 | Login | Login email/password, plus opsional **Single Sign-On (SSO)** lewat Keycloak | Karyawan yang sudah punya akun terpusat perusahaan bisa langsung login tanpa akun terpisah. |
 | Desain | Mobile-first, mendukung mode gelap di sisi portal | Portal dirancang supaya nyaman dipakai dari HP, karena peserta magang & pembimbing sering mengaksesnya di lapangan. |
 | Notifikasi | Web Push (standar notifikasi browser) | Pemberitahuan muncul di panel notifikasi HP/komputer seperti aplikasi chat — tanpa perlu memasang aplikasi dari Play Store/App Store. Portal juga bisa "dipasang" ke layar utama HP layaknya aplikasi. |
@@ -79,7 +79,7 @@ Login pakai email dan kata sandi seperti biasa. Sebagai alternatif, tersedia **S
 Peserta magang mengisi catatan kegiatan setiap hari, boleh dilengkapi lampiran foto atau dokumen PDF (kolom teks kegiatan boleh dikosongkan kalau lampiran sudah cukup menjelaskan). Foto yang diunggah otomatis dikecilkan ukurannya di perangkat pengguna sebelum dikirim (supaya hemat kuota & penyimpanan), dan ada tombol untuk langsung memotret dari kamera HP. Pembimbing/Mentor melihat jurnal peserta dalam satu tampilan (halaman "Kegiatan"). Secara bawaan halaman ini menampilkan **hari ini dan satu minggu sebelumnya**, dengan **hari ini selalu di paling atas** sebagai fokus utama — kalau hari ini belum ada jurnal masuk, bagian "Hari Ini" tetap tampil dengan keterangan kosong. Jurnal dikelompokkan per hari dengan judul nama hari saja ("Hari Ini", "Selasa", "Rabu", …) yang masing-masing punya **warna berbeda** supaya mudah dibedakan sekilas. Tampilan bisa difilter per tanggal, peserta, atau kata kunci. Pembimbing/Mentor lalu bisa memberi **penilaian bintang 1–5** pada jurnal peserta binaannya sendiri sebagai bentuk evaluasi kinerja — nilai rata-rata dari semua pembimbing yang menilai ditampilkan kembali ke peserta. Foto lampiran bisa diperbesar (zoom) langsung di halaman yang sama tanpa membuka tab baru.
 
 ### 5.4 Presensi
-Data kehadiran berasal dari dua sumber: presensi manual dari portal, dan sinkronisasi otomatis dari alat sidik jari perusahaan. Sistem membaca data mentah dari alat tersebut, mencocokkan ke identitas peserta magang, lalu menghitung jam masuk/pulang, keterlambatan, dan pulang cepat berdasarkan jadwal kerja yang berlaku di masing-masing perusahaan. Pembimbing bisa memantau presensi seluruh peserta binaannya dari satu halaman. Halaman yang sama juga menampilkan daftar **izin/sakit yang sudah disetujui**, terpisah dari rekap sidik jari, supaya hari tidak masuk karena izin tidak disangka alfa. (Catatan: sistem ini sengaja disederhanakan untuk jadwal kerja tetap — belum mendukung shift fleksibel atau lembur lintas hari.)
+Data kehadiran berasal dari dua sumber: presensi manual dari portal, dan sinkronisasi otomatis dari alat sidik jari perusahaan. Sistem membaca data mentah dari alat tersebut, mencocokkan ke identitas peserta magang, lalu menghitung jam masuk/pulang, keterlambatan, dan pulang cepat berdasarkan jadwal kerja yang berlaku di masing-masing perusahaan. Pembimbing bisa memantau presensi seluruh peserta binaannya dari satu halaman. Halaman yang sama juga menampilkan daftar **izin/sakit yang sudah disetujui**, terpisah dari rekap sidik jari, supaya hari tidak masuk karena izin tidak disangka alfa. Izin hanya tampil **pada tanggal izin itu berlaku** — secara bawaan yang terlihat hanya izin/sakit **hari ini**, dan kalau pembimbing memilih rentang tanggal tertentu, yang tampil adalah izin pada tanggal-tanggal tersebut (bukan seluruh riwayat izin sekaligus). (Catatan: sistem ini sengaja disederhanakan untuk jadwal kerja tetap — belum mendukung shift fleksibel atau lembur lintas hari.)
 
 ### 5.5 Pengajuan Izin
 Peserta magang mengajukan izin atau sakit lewat portal, lalu Pembimbing-nya (atau admin) meninjau untuk menyetujui atau menolak. Izin bisa untuk **sehari penuh** atau hanya **beberapa jam** (mis. pulang cepat, ada urusan 2 jam) dengan mengisi jam mulai & jam selesai.
@@ -93,6 +93,7 @@ Peserta magang mengajukan izin atau sakit lewat portal, lalu Pembimbing-nya (ata
 Pembimbing bisa memberi tugas langsung ke peserta magang lewat portal (lengkap dengan tenggat waktu — tanggal dan jam), atau peserta magang mencatat sendiri tugas yang disampaikan secara lisan. Saat tugas selesai, peserta mengunggah **satu atau beberapa foto** sebagai bukti pengerjaan (foto-foto ini bisa langsung dijadikan catatan jurnal harian juga, sekali klik).
 
 - **Satu tugas untuk banyak peserta sekaligus**: kalau tugasnya sama, pembimbing/mentor cukup mengisi form sekali lalu memilih beberapa peserta. Pilihan peserta dibagi dua kotak terpisah — **"Peserta yang Kamu Bimbing/Mentori"** dan **"Peserta Lain (Lintas Pembimbing)"** — masing-masing dengan pilihan dropdown sendiri; peserta yang sudah dipilih tampil sebagai label yang bisa dibatalkan dengan sekali klik, dan ada tombol "Pilih semua" untuk seluruh binaan sendiri. Walau dikirim sekaligus, **setiap peserta tetap mendapat tugasnya masing-masing**, sehingga status selesai/ditunda, foto bukti, dan diskusinya tidak tercampur antar-peserta.
+- **Tugas yang sama tampil dalam satu kotak (sisi pembimbing/mentor)**: di halaman "Tugas Intern", tugas yang diberikan sekaligus ke beberapa peserta tidak lagi berulang satu per satu, melainkan digabung dalam **satu kotak**. Judul, keterangan, tenggat, dan pemberi tugas tampil sekali di atas, disertai ringkasan seperti *"3 peserta · 1/3 selesai"*. Di bawahnya ada daftar peserta — masing-masing dengan status, tombol tandai selesai/buka lagi, alasan menunda, foto bukti, dan tombol **Diskusi** miliknya sendiri. Pembimbing/mentor bisa **mengedit tugas untuk semua peserta sekaligus**, menghapus seluruh kotak, atau mengeluarkan satu peserta saja. Di **sisi peserta magang tidak ada perubahan** — setiap peserta tetap melihat tugasnya sendiri seperti biasa. Tugas lama yang dibuat sebelum fitur ini juga ikut tergabung otomatis bila isinya sama persis.
 - **Tugas lintas pembimbing**: Pembimbing/Mentor boleh memberi tugas ke peserta magang mana pun, tidak hanya binaannya sendiri, misalnya saat butuh bantuan peserta dari unit lain. Kalau ada peserta lintas pembimbing yang dipilih, form menampilkan siapa Pembimbing & Mentor asli peserta tersebut supaya tetap jelas. Pemberi tugas tetap bisa mengelola tugas buatannya sendiri.
 - Peserta magang langsung mendapat **notifikasi di HP** begitu diberi tugas, lengkap dengan nama pemberi tugas dan tenggatnya (lihat 5.15).
 - **Kalau peserta belum bisa mengerjakan** (ada urusan lain, dsb.), tersedia tombol **Tunda** dengan alasan singkat. Bahasanya sengaja dibuat sopan — form mengajak peserta menyampaikan alasan dengan santun, misalnya *"Mohon maaf kak, tugas ini saya tunda dulu karena… Apakah boleh saya kerjakan besok?"*. Pemberi tugas langsung mendapat notifikasi beserta alasannya, lalu bisa menyesuaikan tugas tersebut (ubah tenggat/keterangan) atau membukanya kembali. Tugas seperti ini diberi label **"Ditunda"** berwarna oranye (bukan merah) supaya tidak terkesan sebagai penolakan.
@@ -135,11 +136,21 @@ Di akhir masa magang, Pembimbing/Mentor mengisi **penilaian akhir** mengikuti fo
 | **Attitude** (sikap) | Performance & nilai-nilai Syifa, Motivation, Responsibility, Cooperativeness, Attendance |
 | **Knowledge & Skill** | Job Knowledge, Quality of Work, Job Speed, Initiative, Improvement Achieved |
 
-- Setiap kriteria dinilai dengan klik **bintang 1–5** (boleh setengah bintang, mis. 4,5), sama seperti menilai jurnal. Penilai juga bisa menambahkan catatan bebas.
+- Setiap kriteria dinilai dengan klik **bintang 1–5** (boleh setengah bintang, mis. 4,5), sama seperti menilai jurnal. Setiap kartu kriteria menampilkan nama kriteria, penjelasan singkatnya, deretan bintang, angka nilai, dan tombol hapus — atau keterangan "belum dinilai" bila belum diisi. Penilai juga bisa menambahkan catatan bebas.
 - **Nilai akhir** dihitung otomatis dari rata-rata 10 kriteria, lalu diberi predikat: **Excellent** (≥ 4,5), **Good** (≥ 3,5), **Fair** (≥ 2,5), **Below Average** (≥ 1,5), dan **Poor** (di bawahnya). Sistem juga mencatat siapa yang menilai dan kapan.
 - Mentor bisa melihat sertifikat semua peserta, tetapi hanya bisa menilai peserta yang dimentorinya.
-- Sistem langsung membuat **dokumen PDF yang bisa dicetak bolak-balik**. Halaman depan berisi **Sertifikat PKL** (logo perusahaan, nomor sertifikat, dan nama pembimbing), dan halaman belakang berisi **form penilaian resmi** lengkap dengan nilai dan predikatnya. Dokumen bisa dilihat di browser atau diunduh.
+- Sistem langsung membuat **dokumen PDF yang bisa dicetak bolak-balik**. Halaman depan berisi **Sertifikat PKL** (logo perusahaan, judul, nama peserta, keterangan program & periode, penanda tangan, dan nomor sertifikat), dan halaman belakang berisi **form penilaian resmi** lengkap dengan nilai dan predikatnya. Dokumen bisa dilihat di browser atau diunduh.
 - Peserta magang bisa melihat & mengunduh sertifikatnya sendiri dari halaman Beranda **setelah tanggal selesai magangnya tiba**. Pembimbing/Mentor dan admin bisa mengaksesnya kapan saja untuk pratinjau atau cetak.
+
+**Editor Sertifikat.** Sebelum sertifikat dicetak atau diunduh, isinya bisa dirapikan langsung lewat halaman editor (tombol **Buka Editor** di halaman Sertifikat sisi pembimbing/mentor dan di panel admin):
+
+- Editor menampilkan pratinjau **dua halaman A4 landscape** yang tampilannya sama dengan sertifikat asli. **Setiap teks bisa diklik lalu diketik ulang** — nama peserta, asal sekolah, kalimat kegiatan, periode, predikat, nama & jabatan penanda tangan, nomor sertifikat, nama dan penjelasan tiap kriteria, nilai, catatan penilai, total nilai, dan rating. Kalau nilai per kriteria diubah, total nilai dan predikat di sertifikat ikut dihitung ulang otomatis.
+- Setelah selesai, tekan **Simpan** (atau Ctrl+S). Editan **tersimpan permanen** dan otomatis dipakai juga oleh **PDF resmi** yang diunduh peserta magang, pembimbing, maupun admin. Toolbar menampilkan status ("Belum disimpan", "Tersimpan", atau alasan gagal) dan catatan **siapa yang terakhir mengedit dan kapan**. Kalau halaman ditutup padahal ada editan yang belum disimpan, sistem memberi peringatan dulu.
+- Tombol **Reset ke Data Asli** menghapus semua editan sehingga sertifikat kembali mengikuti data di sistem.
+- Yang disimpan hanya bagian yang benar-benar diubah. Bagian lain tetap mengikuti data terbaru — misalnya kalau penilaian diperbarui setelah nama peserta dirapikan, nilai barunya tetap tampil di sertifikat.
+- **Editan hanya berlaku untuk tampilan sertifikat.** Mengubah angka di editor **tidak** mengubah data penilaian asli (bintang di halaman Sertifikat tetap seperti semula) — hal ini juga dicantumkan sebagai pengingat di editor.
+- Editor juga menyediakan tombol **Unduh PDF** (dibuat langsung di browser) dan **Print**; toolbar dan tanda sorotan teks tidak ikut tercetak.
+- **Hak akses mengikuti aturan sertifikat yang sudah ada**: yang boleh mengedit dan menyimpan hanya Admin, Pembimbing untuk binaannya, dan Mentor untuk mentee-nya sendiri. Mentor yang membuka sertifikat intern lain, serta peserta magang (setelah tanggal selesai magang), hanya melihat versi final dalam mode baca-saja. Pimpinan tidak mengakses sertifikat.
 
 ### 5.13 Profil & Personalisasi Beranda Peserta
 Peserta magang bisa mengganti **foto profil** sendiri dan memilih **warna kartu Beranda** sesuai selera. Foto dipotong bulat langsung di HP sebelum dikirim, jadi foto aslinya tidak ikut diunggah. Warna teks di kartu otomatis menyesuaikan supaya tetap terbaca, baik di warna terang maupun gelap.
@@ -156,15 +167,27 @@ Supaya informasi penting tidak terlewat, portal mengirim notifikasi yang muncul 
 
 | Kejadian | Siapa yang diberi tahu | Isi notifikasi |
 |---|---|---|
-| 📋 Tugas baru diberikan | Peserta yang diberi tugas | Nama pemberi tugas, judul tugas, tenggat |
-| ⏸️ Tugas ditunda peserta | Pemberi tugas | Nama peserta, judul tugas, alasan menunda |
-| 💬 Komentar baru di diskusi | Semua pihak di diskusi itu (kecuali penulisnya) | Nama penulis, jurnal/tugas yang dibahas, isi komentar |
-| 📝 / 🤒 Pengajuan izin/sakit baru | Pembimbing | Nama peserta, tanggal izin, alasan |
-| ✅ / ❌ Izin diputuskan | Peserta pengaju | Hasil keputusan, siapa yang memutuskan, catatan |
+| Tugas baru diberikan | Peserta yang diberi tugas | Nama pemberi tugas, judul & keterangan tugas, tenggat |
+| Tugas ditunda peserta | Pemberi tugas (pembimbing atau mentor) | Nama peserta, judul tugas, alasan menunda |
+| Komentar baru di diskusi | Semua pihak di diskusi itu (kecuali penulisnya) | Nama penulis, jurnal/tugas yang dibahas, isi komentar |
+| Pengajuan izin/sakit baru | Pembimbing yang ditugaskan ke peserta tersebut | Nama peserta, tanggal izin, alasan |
+| Izin diputuskan | Peserta pengaju | Hasil keputusan, siapa yang memutuskan, catatan |
 
-- **Tampilan notifikasi** dibuat rapi dan mudah dibaca sekilas: judul diawali emoji sesuai jenisnya, isi dipecah beberapa baris berlabel, gambar di sisi kanan memakai **foto profil pengirim** (atau logo Syifa), serta tombol aksi seperti **Lihat Tugas / Balas / Tinjau** dan **Nanti**. Mengetuk notifikasi langsung membuka halaman yang relevan. (Warna dan huruf notifikasi mengikuti bawaan masing-masing HP — ini batasan standar notifikasi, bukan dari sistem.)
+Ringkasnya per peran: **peserta magang** menerima notifikasi tugas baru, komentar, dan hasil izin; **mentor** menerima notifikasi tugas yang ditunda (untuk tugas yang ia berikan) dan komentar; **pembimbing** menerima semua yang diterima mentor ditambah pengajuan izin baru. Mentor sengaja tidak menerima notifikasi izin karena keputusan izin adalah wewenang Pembimbing, dan Pimpinan tidak menerima notifikasi karena perannya hanya memantau.
+
+Contoh tampilan notifikasi di HP:
+
+```
+Tugas baru dari Labib
+Rekap inventaris laboratorium
+Kerjakan sampai selesai lalu unggah fotonya
+Tenggat: Selasa, 29 Sep 2026 · 16:30
+                                  [Lihat Tugas]   [Nanti]
+```
+
+- **Tampilan notifikasi** dibuat bersih dan mudah dibaca sekilas: judul singkat, isi dipecah beberapa baris dengan label yang jelas (mis. *Tugas:*, *Alasan:*, *Tanggal:*, *Tenggat:*) tanpa emoji, gambar di sisi kanan berupa **foto profil pengirim** bila ada (logo tidak diulang karena sudah tampil sebagai ikon aplikasi), serta tombol aksi seperti **Lihat Tugas / Balas / Tinjau** dan **Nanti**. Mengetuk notifikasi langsung membuka halaman yang relevan. (Warna dan huruf notifikasi mengikuti bawaan masing-masing HP — ini batasan standar notifikasi, bukan dari sistem.)
 - **Berlaku untuk Android maupun iPhone.** Di Android cukup lewat Chrome. Di iPhone (iOS 16.4 ke atas), portal harus dipasang dulu ke layar utama lalu dibuka dari ikon tersebut — kalau pengguna iPhone menekan tombol aktifkan dari Safari biasa, sistem menampilkan petunjuk langkah-langkahnya.
-- **Perlu diaktifkan sekali per perangkat** lewat tombol "Aktifkan Notifikasi" (di halaman Tugas), lalu memilih "Izinkan". Tombol ini otomatis tersembunyi kalau notifikasi di perangkat tersebut sudah aktif. Satu akun bisa menerima notifikasi di beberapa perangkat sekaligus, asalkan masing-masing sudah diaktifkan.
+- **Perlu diaktifkan sekali per perangkat** lewat tombol "Aktifkan Notifikasi" — di menu **Tugas** untuk peserta magang, dan di menu **Tugas Intern** untuk pembimbing/mentor — lalu memilih "Izinkan". Tombol ini otomatis tersembunyi kalau notifikasi di perangkat tersebut sudah aktif. Satu akun bisa menerima notifikasi di beberapa perangkat sekaligus, asalkan masing-masing sudah diaktifkan.
 - **Tahan gangguan**: setiap kali portal dibuka, sistem otomatis memperbarui "alamat" notifikasi perangkat di server, sehingga notifikasi tetap sampai walaupun browser memperbarui datanya. Notifikasi dikirim dengan prioritas tinggi dan disimpan hingga 24 jam, jadi HP yang sedang mati atau tanpa sinyal tetap menerimanya begitu tersambung lagi.
 - Hal di luar kendali sistem yang bisa membuat notifikasi terlambat/tidak berbunyi: mode Senyap/Jangan Ganggu, izin notifikasi Chrome dimatikan di pengaturan HP, atau penghemat baterai yang agresif (umum di beberapa merek HP Android).
 
@@ -196,6 +219,9 @@ Pembimbing/Mentor memantau, menilai jurnal, memberi tugas & berdiskusi
 Akhir magang: Pembimbing/Mentor mengisi penilaian 10 kriteria
         │
         ▼
+(Opsional) Pembimbing/Mentor/Admin merapikan teks sertifikat di Editor Sertifikat → Simpan
+        │
+        ▼
 Sertifikat PKL + form penilaian (PDF) bisa diunduh peserta
 ```
 
@@ -219,6 +245,11 @@ Sertifikat PKL + form penilaian (PDF) bisa diunduh peserta
 - Nama aplikasi secara resmi (`APP_NAME`) di pengaturan server belum disesuaikan dari nilai bawaan — ini murni pengaturan teknis, tidak memengaruhi tampilan yang dilihat pengguna.
 - Per 2026-09-26, istilah "menolak tugas" di sisi pengguna diganti menjadi **"menunda tugas"** (tombol, label status, dan notifikasi) supaya lebih sopan. Di balik layar status datanya tetap sama, jadi tugas lama yang dulu "ditolak" otomatis tampil sebagai "Ditunda".
 - Notifikasi HP (Web Push) **hanya bisa diterima dari portal yang diakses lewat HTTPS** (server online), bukan dari alamat lokal di laptop pengembang. Setiap kali pengiriman notifikasi gagal, sistem mencatatnya di log server beserta alasannya, sehingga masalah (mis. pengaturan sertifikat SSL server) mudah dilacak. Setelah pembaruan, pengguna cukup membuka ulang portal sekali agar komponen notifikasi versi terbaru aktif di perangkatnya.
+- Pengiriman notifikasi membutuhkan sepasang **kunci VAPID** (semacam "stempel resmi" portal yang membuktikan ke server notifikasi Google/Apple bahwa notifikasi benar berasal dari portal ini). Per 2026-09-28 kunci ini sudah dipasang di server online dan notifikasi tugas baru sudah terbukti sampai ke HP. Kunci privatnya bersifat rahasia (hanya disimpan di pengaturan server) dan sebaiknya **tidak diganti-ganti** — mengganti kunci membuat semua perangkat harus mengaktifkan ulang notifikasinya.
+- Per 2026-09-28 ditambahkan **Editor Sertifikat** dengan penyimpanan permanen. Editan disimpan di tabel baru khusus sertifikat (satu baris per peserta, berisi hanya bagian yang diubah beserta siapa dan kapan terakhir mengedit); data penilaian asli tidak pernah ikut diubah. Server online perlu menjalankan *migrate* satu kali untuk membuat tabel ini — kalau lupa, sertifikat dan PDF tetap tampil dengan data asli (tidak error), hanya fitur Simpan yang belum bisa dipakai.
+- Karena tata letak PDF resmi sengaja tidak diubah, beberapa teks yang bisa diedit di editor **hanya tampil di editor** dan tidak punya tempat di PDF: asal sekolah, predikat, dan tanggal di halaman depan, serta subjudul dan catatan penilai di halaman belakang. (Asal sekolah dan predikat tetap tercetak di halaman belakang PDF sebagai "School" dan "Rating".) Bila di kemudian hari editor dan PDF ingin identik sepenuhnya, halaman depan PDF perlu ditambah baris untuk teks-teks tersebut.
+- Per 2026-09-28, label hijau "PRAKTIK KERJA LAPANGAN" di atas judul sertifikat dihapus (di PDF maupun editor), dan jabatan penanda tangan kiri di halaman depan PDF kini bawaannya **"Head of Department"** (sebelumnya "Pembimbing Lapangan") — keduanya tetap bisa diubah lewat editor.
+- Per 2026-09-28, tampilan pembimbing/mentor menggabungkan tugas yang sama menjadi satu kotak. Untuk itu setiap tugas yang dikirim sekaligus kini diberi penanda kelompok di database; server online perlu menjalankan pembaruan struktur database (*migrate*) satu kali saat kode terbaru dipasang.
 
 ---
 
@@ -226,6 +257,6 @@ Sertifikat PKL + form penilaian (PDF) bisa diunduh peserta
 
 - [ ] Nama resmi sistem untuk dokumen (kalau berbeda dari "Portal Internship Syifa Global Group")
 - [ ] Tanggal/versi dokumentasi & nama penyusun
-- [ ] Jabatan penanda tangan di sertifikat (saat ini tertulis "Head of Department") sudah sesuai atau belum
+- [ ] Jabatan penanda tangan di sertifikat (saat ini bawaannya "Head of Department", bisa diubah per sertifikat lewat Editor Sertifikat) sudah sesuai atau belum
 - [ ] Screenshot alur (opsional, untuk mempercantik dokumen presentasi)
 - [ ] Target pembaca dokumen (tim internal / laporan magang / SOP resmi) — akan memengaruhi tingkat formalitas bahasa yang dipakai

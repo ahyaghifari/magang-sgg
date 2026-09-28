@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Intern;
+use App\Support\CertificateAccess;
+use App\Support\CertificateContent;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,27 +47,43 @@ class InternCertificateController extends Controller
         return 'Sertifikat-PKL-' . Str::slug($intern->nama) . '.pdf';
     }
 
-    protected function buildPdf(Intern $intern): string
+    /**
+     * Editor sertifikat di browser: pratinjau 2 halaman A4 landscape yang tiap teksnya bisa
+     * diedit langsung (contenteditable), lalu diunduh jadi PDF (html2canvas + jsPDF di sisi
+     * browser) atau di-print. Editan TIDAK disimpan — refresh = kembali ke data database.
+     * Aturan lihat sama dengan PDF; yang boleh mengedit hanya CertificateAccess::canEdit(),
+     * selain itu (mis. intern pemilik) tampil baca-saja.
+     */
+    public function editor(Intern $intern): View
     {
         $user = auth()->user();
-        $isOwner = $intern->user_id === $user->id;
-        $isSupervisor = $user->visibleInterns()->whereKey($intern->id)->exists();
 
-        // Admin boleh lihat/unduh sertifikat siapa saja; Pembimbing/Mentor boleh untuk
-        // intern yang memang ditugaskan ke mereka (lihat User::visibleInterns()).
-        abort_unless($user->isSuperAdmin() || $isOwner || $isSupervisor, 403);
+        CertificateAccess::authorizeView($user, $intern);
 
-        // Intern cuma boleh unduh sertifikat sendiri kalau magangnya sudah benar-benar
-        // selesai (tanggal_selesai sudah lewat/hari ini) — admin & pembimbing/mentor
-        // yang mengelola tetap boleh kapan pun untuk keperluan pratinjau/cetak manual.
-        if ($isOwner && ! $user->isSuperAdmin() && ! $isSupervisor) {
-            abort_unless(
-                $intern->tanggal_selesai && $intern->tanggal_selesai->lte(now()),
-                403,
-                'Sertifikat baru bisa diakses setelah tanggal selesai magang.',
-            );
-        }
+        return view('certificates.editor', [
+            ...$this->certificateData($intern),
+            // Teks sertifikat = data asli digabung editan tersimpan (tabel sertifikat_overrides).
+            'content' => CertificateContent::for($intern),
+            'canEdit' => CertificateAccess::canEdit($user, $intern),
+            'filename' => 'sertifikat-pkl-' . Str::slug($intern->nama) . '.pdf',
+        ]);
+    }
 
+    protected function buildPdf(Intern $intern): string
+    {
+        CertificateAccess::authorizeView(auth()->user(), $intern);
+
+        return Pdf::loadView('certificates.pkl', [
+            ...$this->certificateData($intern),
+            // Sama dengan editor: data asli digabung editan tersimpan (sertifikat_overrides),
+            // jadi PDF yang diunduh intern/pembimbing/admin ikut berubah setelah disimpan.
+            'content' => CertificateContent::for($intern),
+        ])->output();
+    }
+
+    /** Data bersama untuk PDF DomPDF dan editor sertifikat. */
+    protected function certificateData(Intern $intern): array
+    {
         $intern->loadMissing(['institusi', 'unit.company', 'pembimbing', 'mentor']);
 
         $logoPath = collect(['png', 'jpg', 'jpeg', 'webp'])
@@ -75,15 +94,11 @@ class InternCertificateController extends Controller
             ? 'data:image/' . pathinfo($logoPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(file_get_contents($logoPath))
             : null;
 
-        $nomor = sprintf('%03d/SGG-INT/%s', $intern->id, now()->format('Y'));
-
-        $tanggalTerbit = Carbon::now()->translatedFormat('d F Y');
-
-        return Pdf::loadView('certificates.pkl', [
+        return [
             'intern' => $intern,
             'logoDataUri' => $logoDataUri,
-            'nomor' => $nomor,
-            'tanggalTerbit' => $tanggalTerbit,
-        ])->output();
+            'nomor' => sprintf('%03d/SGG-INT/%s', $intern->id, now()->format('Y')),
+            'tanggalTerbit' => Carbon::now()->translatedFormat('d F Y'),
+        ];
     }
 }

@@ -64,7 +64,7 @@
          tidak masuk karena izin/sakit yang disetujui tidak terlihat "hilang begitu saja". ===== --}}
     @if ($leaves->isNotEmpty())
         <div style="margin-bottom:1.1rem;">
-            <p class="text-sm" style="font-weight:700; color:var(--text-muted); margin-bottom:0.5rem; letter-spacing:0.03em;">IZIN / SAKIT</p>
+            <p class="text-sm" style="font-weight:700; color:var(--text-muted); margin-bottom:0.5rem; letter-spacing:0.03em;">IZIN / SAKIT{{ $dateFrom === '' && $dateTo === '' ? ' HARI INI' : '' }}</p>
             <div class="flex" style="flex-direction:column; gap:0.6rem;">
                 @foreach ($leaves as $leave)
                     <article class="surface-card flex items-center justify-between"

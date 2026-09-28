@@ -121,6 +121,12 @@ class InternsTable
                     ->color('gray')
                     ->url(fn ($record): string => route('interns.certificate', $record))
                     ->openUrlInNewTab(),
+                Action::make('certificateEditor')
+                    ->label('Buka Editor')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('gray')
+                    ->url(fn ($record): string => route('interns.certificate.editor', $record))
+                    ->openUrlInNewTab(),
                 EditAction::make(),
             ])
             ->toolbarActions([

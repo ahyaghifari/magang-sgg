@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Intern extends Model
 {
@@ -231,6 +232,15 @@ class Intern extends Model
     public function penilai(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dinilai_oleh');
+    }
+
+    /**
+     * Editan teks sertifikat PKL (editor sertifikat) — hanya untuk tampilan sertifikat,
+     * tidak mengubah kolom penilaian di tabel ini. Lihat App\Support\CertificateContent.
+     */
+    public function sertifikatOverride(): HasOne
+    {
+        return $this->hasOne(SertifikatOverride::class);
     }
 
     /**

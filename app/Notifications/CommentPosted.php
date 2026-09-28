@@ -55,10 +55,9 @@ class CommentPosted extends Notification
         };
 
         return $this->pushMessage(
-            title: "💬 {$author} berkomentar",
+            title: "{$author} berkomentar di {$where}",
             lines: [
-                ($isTask ? '📋 Di ' : '📖 Di ') . $where,
-                '"' . Str::limit($this->comment->body, 140) . '"',
+                Str::limit($this->comment->body, 140),
             ],
             url: $url,
             actionLabel: 'Balas',
