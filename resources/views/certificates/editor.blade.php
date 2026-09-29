@@ -1,23 +1,42 @@
 @php
     use App\Models\Intern;
+    use App\Support\CertificateContent;
 
-    // Semua teks diambil dari $content = data asli digabung editan tersimpan
-    // (App\Support\CertificateContent::for). Tiap elemen yang bisa diedit punya data-key =
-    // nama field-nya, dipakai tombol Simpan untuk mengumpulkan teks.
-    // $ed(key) → atribut data-key (+ contenteditable kalau user boleh mengedit).
+    // Semua isi diambil dari $content = data asli digabung editan tersimpan
+    // (App\Support\CertificateContent::for).
+    //
+    // Halaman BELAKANG: $ed(key) → atribut data-key (+ contenteditable kalau boleh mengedit).
+    // Halaman DEPAN: tiap elemen [data-front] punya posisi & gaya sendiri ($content['styles']),
+    // bisa dipilih (klik), digeser (drag), diatur gayanya (panel), dan diketik (klik ganda /
+    // tombol "Edit teks"). Posisi & gaya yang sama dipakai PDF DomPDF (certificates/pkl.blade.php).
     $ed = fn (string $key) => 'data-key="' . e($key) . '"' . ($canEdit ? ' contenteditable="true" spellcheck="false"' : '');
-
-    $colorFor = fn (?string $rating) => match (trim((string) $rating)) {
-        'Excellent' => '#1c8a4d',
-        'Good' => '#0b47a1',
-        'Fair' => '#b45309',
-        'Below Average' => '#c2410c',
-        default => '#b91c1c',
-    };
 
     $isOverridden = fn (string $key) => in_array($key, $content['overridden'], true);
     $company = $intern->unit->company->name ?? 'Syifa Global Group';
     $meta = $content['meta'];
+
+    $front = function (string $key) use ($content) {
+        $style = $content['styles'][$key];
+        $default = CertificateContent::defaultStyle($key, $content);
+        $pick = fn ($s) => collect($s)->only(CertificateContent::STYLE_PROPS)->all();
+
+        return 'data-key="' . e($key) . '" data-front'
+            . ' data-style="' . e(json_encode($pick($style))) . '"'
+            . ' data-default="' . e(json_encode($pick($default))) . '"'
+            . ' data-width="' . $style['width'] . '"'
+            . ' style="' . e(CertificateContent::styleCss($style)) . '"';
+    };
+    $decoClass = fn (string $key) => 'el' . (isset(CertificateContent::FRONT_LAYOUT[$key]['deco']) ? ' deco-' . CertificateContent::FRONT_LAYOUT[$key]['deco'] : '');
+    $prefix = fn (string $key) => CertificateContent::FRONT_LAYOUT[$key]['prefix'] ?? null;
+
+    // Nama elemen yang tampil di panel gaya.
+    $labels = [
+        'judul' => 'Judul', 'pengantar' => 'Kalimat pengantar', 'nama' => 'Nama peserta',
+        'sekolah' => 'Asal sekolah', 'kegiatan' => 'Kalimat kegiatan', 'periode' => 'Periode',
+        'predikat' => 'Predikat', 'tanggal' => 'Tempat & tanggal', 'ttd_nama' => 'Nama TTD kiri',
+        'ttd_jabatan' => 'Jabatan TTD kiri', 'ttd2_nama' => 'Nama TTD kanan', 'ttd2_jabatan' => 'Jabatan TTD kanan',
+        'no' => 'Nomor sertifikat',
+    ];
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -29,13 +48,14 @@
 <link rel="icon" href="{{ \App\Support\Brand::faviconUrl() }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+{{-- Semua font yang bisa dipilih di panel gaya (daftar sama dengan CertificateContent::FONTS). --}}
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,400;1,700&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 <style>
     /*
      * Editor sertifikat — murni untuk browser (bukan DomPDF), jadi bebas pakai flex dsb.
-     * Kanvas tiap halaman 1123x794 px (= A4 landscape pada 96 dpi). Semua teks sertifikat
-     * diposisikan absolut di atas kanvas, masing-masing elemen terpisah & bisa diedit.
-     * Toolbar dan sorotan hover/fokus tidak ikut ke PDF (kelas .exporting) maupun print.
+     * Kanvas tiap halaman 1123x794 px (= A4 landscape pada 96 dpi). Elemen halaman depan
+     * diposisikan absolut dengan top/left px — koordinat yang sama dipakai PDF DomPDF.
+     * Toolbar, panel gaya, garis bantu, dan sorotan tidak ikut ke PDF (.exporting) maupun print.
      */
     :root {
         --navy: #042c6c;
@@ -49,6 +69,7 @@
         --bar-text: #0f172a;
         --bar-muted: #64748b;
         --bar-border: #cbd5e1;
+        --field-bg: #ffffff;
     }
     @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
@@ -57,6 +78,7 @@
             --bar-text: #e2e8f0;
             --bar-muted: #94a3b8;
             --bar-border: #1e293b;
+            --field-bg: #111c33;
         }
     }
     :root[data-theme="dark"] {
@@ -65,19 +87,16 @@
         --bar-text: #e2e8f0;
         --bar-muted: #94a3b8;
         --bar-border: #1e293b;
+        --field-bg: #111c33;
     }
 
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body { background: var(--app-bg); font-family: 'Plus Jakarta Sans', sans-serif; color: #111827; }
 
-    /* ===== Toolbar (tidak ikut PDF/print) ===== */
-    .toolbar {
-        position: sticky; top: 0; z-index: 10;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-        padding: 10px 16px; background: var(--bar-bg); border-bottom: 1px solid var(--bar-border);
-        box-shadow: 0 2px 10px rgba(2, 6, 23, 0.06);
-    }
+    /* ===== Toolbar + panel gaya (tidak ikut PDF/print) ===== */
+    .topbar { position: sticky; top: 0; z-index: 20; background: var(--bar-bg); border-bottom: 1px solid var(--bar-border); box-shadow: 0 2px 10px rgba(2, 6, 23, 0.06); }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 16px; }
     .toolbar-title { font-weight: 700; font-size: 15px; color: var(--bar-text); }
     .toolbar-hint { font-size: 13px; color: var(--bar-muted); margin-top: 2px; }
     .toolbar-meta { font-size: 12px; color: var(--bar-muted); margin-top: 3px; }
@@ -98,6 +117,18 @@
     .btn-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
     .btn-primary:hover { background: var(--blue); border-color: var(--blue); }
     .btn[disabled] { opacity: 0.6; cursor: progress; }
+    .btn-sm { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
+    .btn-toggle[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+    .stylebar { display: none; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 16px 10px; border-top: 1px dashed var(--bar-border); }
+    .stylebar.show { display: flex; }
+    .stylebar-label { font-size: 13px; font-weight: 700; color: var(--bar-text); margin-right: 4px; }
+    .stylebar-label span { font-weight: 500; color: var(--bar-muted); }
+    .field { font: inherit; font-size: 13px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--bar-border); background: var(--field-bg); color: var(--bar-text); }
+    .size-group { display: inline-flex; align-items: center; gap: 4px; }
+    .size-group .field { width: 58px; text-align: center; }
+    .color-field { width: 38px; height: 32px; padding: 2px; border-radius: 8px; border: 1px solid var(--bar-border); background: var(--field-bg); cursor: pointer; }
+    .stylebar-sep { width: 1px; height: 24px; background: var(--bar-border); }
 
     /* ===== Area halaman ===== */
     .pages { padding: 24px 16px 48px; overflow-x: auto; }
@@ -106,20 +137,18 @@
         background: #ffffff; overflow: hidden; box-shadow: 0 8px 30px rgba(2, 6, 23, 0.18);
     }
 
-    /* Sorotan teks yang bisa diedit — hanya di layar, dimatikan saat ekspor & print. */
+    /* Sorotan teks yang bisa diedit (halaman belakang) — hanya di layar. */
     [contenteditable="true"] { outline: none; border-radius: 3px; transition: background-color .12s, box-shadow .12s; cursor: text; }
     [contenteditable="true"]:hover { box-shadow: 0 0 0 1px rgba(11, 71, 161, 0.45); }
     [contenteditable="true"]:focus { box-shadow: 0 0 0 2px #0b47a1; background-color: rgba(11, 71, 161, 0.06); }
     [contenteditable="true"]:empty::before { content: attr(data-placeholder); color: #94a3b8; font-style: italic; }
-    .exporting [contenteditable="true"] { box-shadow: none !important; background-color: transparent !important; }
-    .exporting [contenteditable="true"]:empty::before { content: none; }
 
-    /* ===== Halaman 1: Sertifikat (ornamen dibuat ulang dari certificates/pkl.blade.php) ===== */
+    /* ===== Halaman 1: Sertifikat — ornamen (sama dengan PDF) ===== */
     .stripe { position: absolute; left: 0; right: 0; top: 0; height: 11px; background: var(--navy); }
     .stripe-green { position: absolute; left: 61.6%; right: 22%; top: 0; height: 11px; background: var(--green); }
     .stripe-magenta { position: absolute; left: 78%; right: 0; top: 0; height: 11px; background: var(--magenta); }
-    .frame-outer { position: absolute; inset: 19px; border: 4px solid var(--navy); border-radius: 10px; }
-    .frame-inner { position: absolute; inset: 25px; border: 1.5px solid var(--magenta); border-radius: 7px; }
+    .frame-outer { position: absolute; top: 19px; left: 19px; right: 19px; bottom: 19px; border: 4px solid var(--navy); border-radius: 10px; }
+    .frame-inner { position: absolute; top: 25px; left: 25px; right: 25px; bottom: 25px; border: 1.5px solid var(--magenta); border-radius: 7px; }
     .arc { position: absolute; border-radius: 50%; }
     .arc-1 { width: 550px; height: 550px; left: -275px; top: -275px; border: 53px solid var(--navy); opacity: .22; }
     .arc-2 { width: 445px; height: 445px; left: -212px; top: -212px; border: 42px solid var(--green); opacity: .26; }
@@ -133,33 +162,28 @@
     .brand-text { margin-top: 4px; font-size: 11px; letter-spacing: 1px; color: var(--muted); font-weight: 700; }
     .brand-text b { display: block; font-size: 13px; color: var(--navy); }
 
-    .f-title { position: absolute; top: 186px; left: 150px; right: 150px; text-align: center; font-size: 38px; font-weight: 800; color: var(--navy); letter-spacing: .5px; }
-    .f-given { position: absolute; top: 246px; left: 200px; right: 200px; text-align: center; font-size: 14px; color: var(--body); }
-    .f-name {
-        position: absolute; top: 272px; left: 170px; right: 170px; text-align: center;
-        font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700; font-size: 44px; color: var(--blue);
-        border-bottom: 2px solid var(--magenta); padding-bottom: 10px;
-    }
-    .f-school { position: absolute; top: 352px; left: 200px; right: 200px; text-align: center; font-size: 15px; font-weight: 600; color: var(--navy); }
-    .f-activity { position: absolute; top: 388px; left: 175px; right: 175px; text-align: center; font-size: 14px; line-height: 1.7; color: var(--body); }
-    .f-activity b { color: var(--navy); }
-    .f-period { position: absolute; top: 486px; left: 250px; right: 250px; text-align: center; font-size: 13.5px; font-weight: 700; color: var(--navy); }
-    .f-predikat {
-        position: absolute; top: 518px; left: 50%; transform: translateX(-50%); white-space: nowrap;
-        font-size: 14px; font-weight: 700; padding: 6px 20px; border-radius: 999px; border: 1.5px solid;
-    }
-    .f-predikat [data-key], .f-period [data-key] { display: inline-block; min-width: 1ch; }
+    /* ===== Elemen teks halaman depan (posisi & gaya dari inline style) ===== */
+    .el { position: absolute; white-space: pre-line; border-radius: 3px; }
+    .el b { color: var(--navy); }
+    .deco-underline { border-bottom: 2px solid var(--magenta); padding-bottom: 10px; }
+    .deco-signline { border-top: 1.3px solid #94a3b8; padding-top: 7px; }
+    .deco-pill .pill { display: inline-block; border: 1.5px solid currentColor; border-radius: 999px; padding: 6px 20px; }
+    .el .prefix-no { color: var(--muted); letter-spacing: 1.2px; margin-right: 8px; }
 
-    .f-sign { position: absolute; bottom: 72px; width: 270px; text-align: center; }
-    .f-sign.left { left: 95px; }
-    .f-sign.right { right: 95px; }
-    .f-sign .line { border-top: 1.3px solid #94a3b8; padding-top: 7px; }
-    .f-sign .who { font-weight: 700; color: var(--navy); font-size: 14px; }
-    .f-sign .role { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-    .f-date { position: absolute; bottom: 150px; left: 95px; width: 270px; text-align: center; font-size: 12px; color: var(--body); }
-    .f-no { position: absolute; bottom: 40px; left: 95px; font-size: 10.5px; display: flex; gap: 8px; }
-    .f-no .label { color: var(--muted); letter-spacing: 1.2px; font-weight: 700; }
-    .f-no .value { color: var(--navy); font-weight: 700; letter-spacing: .4px; }
+    .can-edit .el { cursor: grab; }
+    .can-edit .el:hover { box-shadow: 0 0 0 1px rgba(11, 71, 161, 0.35); }
+    .can-edit .el.selected { outline: 1.5px dashed #0b47a1; outline-offset: 3px; box-shadow: none; touch-action: none; }
+    .can-edit .el.dragging { cursor: grabbing; opacity: .9; }
+    .can-edit .el.editing { cursor: text; outline: 2px solid #0b47a1; outline-offset: 3px; background: rgba(11, 71, 161, 0.05); }
+    .el .txt[contenteditable="true"] { box-shadow: none; background: transparent; }
+
+    /* Garis bantu tengah halaman saat elemen sejajar tengah */
+    .guide-v { position: absolute; top: 0; bottom: 0; left: 561.5px; width: 0; border-left: 1px dashed #c74ba0; display: none; pointer-events: none; z-index: 5; }
+    .guide-v.show { display: block; }
+
+    .exporting .el, .exporting [contenteditable="true"] { box-shadow: none !important; outline: none !important; background-color: transparent !important; }
+    .exporting [contenteditable="true"]:empty::before { content: none; }
+    .exporting .guide-v { display: none !important; }
 
     /* ===== Halaman 2: Form penilaian ===== */
     .b-title { position: absolute; top: 34px; left: 53px; right: 53px; text-align: center; font-size: 19px; font-weight: 800; letter-spacing: .6px; color: #111827; }
@@ -206,45 +230,71 @@
     @page { size: A4 landscape; margin: 0; }
     @media print {
         html, body { background: #ffffff; }
-        .toolbar { display: none !important; }
+        .topbar, .guide-v { display: none !important; }
         .pages { padding: 0; overflow: visible; }
         .page { margin: 0; box-shadow: none; page-break-after: always; break-after: page; }
         .page:last-child { page-break-after: auto; break-after: auto; }
-        [contenteditable="true"] { box-shadow: none !important; background: transparent !important; }
+        .el, [contenteditable="true"] { box-shadow: none !important; outline: none !important; background: transparent !important; }
         [contenteditable="true"]:empty::before { content: none; }
     }
 </style>
 </head>
-<body>
-    <div class="toolbar">
-        <div>
-            <div class="toolbar-title">Editor Sertifikat &middot; {{ $intern->nama }}</div>
-            <div class="toolbar-hint">
+<body class="{{ $canEdit ? 'can-edit' : '' }}">
+    <div class="topbar">
+        <div class="toolbar">
+            <div>
+                <div class="toolbar-title">Editor Sertifikat &middot; {{ $intern->nama }}</div>
+                <div class="toolbar-hint">
+                    @if ($canEdit)
+                        Halaman depan: <b>klik</b> teks untuk memilih lalu geser/atur gaya, <b>klik ganda</b> untuk mengetik.
+                        Tekan <b>Simpan</b> (Ctrl+S). Mengubah angka di sertifikat <b>tidak</b> mengubah data penilaian aslinya.
+                    @else
+                        Versi final (baca-saja).
+                    @endif
+                </div>
+                <div class="toolbar-meta" id="edit-meta"
+                     data-empty="Belum pernah diedit — menampilkan data asli.">
+                    @if ($meta['updated_at'])
+                        Terakhir diedit oleh <b>{{ $meta['updated_by'] ?? 'pengguna dihapus' }}</b> &middot; {{ $meta['updated_at']->translatedFormat('d M Y, H:i') }}
+                    @else
+                        Belum pernah diedit — menampilkan data asli.
+                    @endif
+                </div>
+            </div>
+            <div class="toolbar-actions">
                 @if ($canEdit)
-                    Klik teks untuk diedit, lalu tekan <b>Simpan</b> (atau Ctrl+S). Mengubah angka di sertifikat
-                    <b>tidak</b> mengubah data penilaian aslinya.
-                @else
-                    Versi final (baca-saja).
+                    <span class="save-status" id="save-status" aria-live="polite"></span>
+                    <button type="button" class="btn" id="btn-reset">Reset ke Data Asli</button>
+                    <button type="button" class="btn btn-save" id="btn-save">Simpan</button>
                 @endif
-            </div>
-            <div class="toolbar-meta" id="edit-meta"
-                 data-empty="Belum pernah diedit — menampilkan data asli.">
-                @if ($meta['updated_at'])
-                    Terakhir diedit oleh <b>{{ $meta['updated_by'] ?? 'pengguna dihapus' }}</b> &middot; {{ $meta['updated_at']->translatedFormat('d M Y, H:i') }}
-                @else
-                    Belum pernah diedit — menampilkan data asli.
-                @endif
+                <button type="button" class="btn" id="btn-print">Print</button>
+                <button type="button" class="btn btn-primary" id="btn-pdf">Unduh PDF</button>
             </div>
         </div>
-        <div class="toolbar-actions">
-            @if ($canEdit)
-                <span class="save-status" id="save-status" aria-live="polite"></span>
-                <button type="button" class="btn" id="btn-reset">Reset ke Data Asli</button>
-                <button type="button" class="btn btn-save" id="btn-save">Simpan</button>
-            @endif
-            <button type="button" class="btn" id="btn-print">Print</button>
-            <button type="button" class="btn btn-primary" id="btn-pdf">Unduh PDF</button>
-        </div>
+
+        @if ($canEdit)
+            {{-- Panel gaya: muncul saat satu elemen halaman depan dipilih. --}}
+            <div class="stylebar" id="stylebar" role="toolbar" aria-label="Gaya teks">
+                <span class="stylebar-label">Elemen: <span id="sb-name">-</span></span>
+                <select class="field" id="sb-font" aria-label="Font">
+                    @foreach (CertificateContent::FONTS as $fontKey => $font)
+                        <option value="{{ $fontKey }}" style="font-family: '{{ $font['family'] }}', {{ $font['fallback'] }};">{{ $font['label'] }}</option>
+                    @endforeach
+                </select>
+                <span class="size-group">
+                    <button type="button" class="btn btn-sm" id="sb-size-down" aria-label="Perkecil">−</button>
+                    <input type="number" class="field" id="sb-size" min="{{ CertificateContent::SIZE_MIN }}" max="{{ CertificateContent::SIZE_MAX }}" step="0.5" aria-label="Ukuran (px)">
+                    <button type="button" class="btn btn-sm" id="sb-size-up" aria-label="Perbesar">+</button>
+                </span>
+                <button type="button" class="btn btn-sm btn-toggle" id="sb-bold" aria-pressed="false" title="Tebal"><b>B</b></button>
+                <button type="button" class="btn btn-sm btn-toggle" id="sb-italic" aria-pressed="false" title="Miring"><i>I</i></button>
+                <input type="color" class="color-field" id="sb-color" aria-label="Warna teks">
+                <span class="stylebar-sep"></span>
+                <button type="button" class="btn btn-sm" id="sb-edit">Edit teks</button>
+                <button type="button" class="btn btn-sm" id="sb-reset">Reset gaya elemen ini</button>
+                <button type="button" class="btn btn-sm" id="sb-done">Selesai</button>
+            </div>
+        @endif
     </div>
 
     <div class="pages" id="pages">
@@ -261,6 +311,7 @@
             <div class="arc arc-6"></div>
             <div class="frame-outer"></div>
             <div class="frame-inner"></div>
+            <div class="guide-v" id="guide-v"></div>
 
             <div class="brand">
                 @if ($logoDataUri)
@@ -269,34 +320,20 @@
                 <div class="brand-text"><b>SYIFA GLOBAL GROUP</b>INTERNSHIP</div>
             </div>
 
-            <div class="f-title" {!! $ed('judul') !!}>{{ $content['judul'] }}</div>
-            <div class="f-given" {!! $ed('pengantar') !!}>{{ $content['pengantar'] }}</div>
-            <div class="f-name" {!! $ed('nama') !!}>{{ $content['nama'] }}</div>
-            <div class="f-school" {!! $ed('sekolah') !!}>{{ $content['sekolah'] }}</div>
-            {{-- Kalimat kegiatan: selama belum diedit, tampil dengan penebalan seperti PDF (teks
-                 polosnya identik dengan data asli, jadi tidak ikut tersimpan sebagai editan). --}}
-            <div class="f-activity" {!! $ed('kegiatan') !!}>@if ($isOverridden('kegiatan')){{ $content['kegiatan'] }}@else Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.@endif</div>
-            <div class="f-period">Periode: <span {!! $ed('periode') !!}>{{ $content['periode'] }}</span></div>
-            <div class="f-predikat" id="front-predikat" style="color: {{ $colorFor($content['predikat']) }}; border-color: {{ $colorFor($content['predikat']) }};">Predikat: <span id="front-predikat-value" {!! $ed('predikat') !!}>{{ $content['predikat'] }}</span></div>
-
-            <div class="f-date" {!! $ed('tanggal') !!}>{{ $content['tanggal'] }}</div>
-            <div class="f-sign left">
-                <div class="line">
-                    <div class="who" {!! $ed('ttd_nama') !!}>{{ $content['ttd_nama'] }}</div>
-                    <div class="role" {!! $ed('ttd_jabatan') !!}>{{ $content['ttd_jabatan'] }}</div>
+            @foreach (array_keys(CertificateContent::FRONT_LAYOUT) as $key)
+                <div class="{{ $decoClass($key) }}" {!! $front($key) !!} data-label="{{ $labels[$key] ?? $key }}">
+                    @if ($key === 'predikat')
+                        <span class="pill">{{ $prefix($key) }}<span class="txt" id="front-predikat-value">{{ $content['predikat'] }}</span></span>
+                    @elseif ($key === 'no')
+                        <span class="prefix-no">NO. SERTIFIKAT</span><span class="txt">{{ $content['no'] }}</span>
+                    @elseif ($key === 'kegiatan' && ! $isOverridden('kegiatan'))
+                        {{-- Belum diedit: tampil dengan penebalan (teks polosnya identik dengan data asli). --}}
+                        <span class="txt">Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.</span>
+                    @else
+                        {{ $prefix($key) }}<span class="txt">{{ $content[$key] }}</span>
+                    @endif
                 </div>
-            </div>
-            <div class="f-sign right">
-                <div class="line">
-                    <div class="who" {!! $ed('ttd2_nama') !!}>{{ $content['ttd2_nama'] }}</div>
-                    <div class="role" {!! $ed('ttd2_jabatan') !!}>{{ $content['ttd2_jabatan'] }}</div>
-                </div>
-            </div>
-
-            <div class="f-no">
-                <span class="label">NO. SERTIFIKAT</span>
-                <span class="value" {!! $ed('no') !!}>{{ $content['no'] }}</span>
-            </div>
+            @endforeach
         </section>
 
         {{-- ===== Halaman 2: Form penilaian (10 kriteria) ===== --}}
@@ -351,7 +388,7 @@
 
             <table class="b-summary">
                 <tr><td class="label">Total Score</td><td class="colon">:</td><td class="value" id="total-score" {!! $ed('nilai_akhir') !!}>{{ $content['nilai_akhir'] }}</td></tr>
-                <tr><td class="label">Rating</td><td class="colon">:</td><td class="value" id="rating" style="color: {{ $colorFor($content['rating']) }};" {!! $ed('rating') !!}>{{ $content['rating'] }}</td></tr>
+                <tr><td class="label">Rating</td><td class="colon">:</td><td class="value" id="rating" style="color: {{ CertificateContent::ratingColor($content['rating']) }};" {!! $ed('rating') !!}>{{ $content['rating'] }}</td></tr>
             </table>
 
             <div class="b-sign">
@@ -369,7 +406,13 @@
     <script>
         (function () {
             const filename = @js($filename);
+            const canEdit = @js($canEdit);
             const pages = Array.from(document.querySelectorAll('.page'));
+            const PAGE_W = {{ CertificateContent::PAGE_WIDTH }};
+            const PAGE_H = {{ CertificateContent::PAGE_HEIGHT }};
+            const FONTS = @js(collect(CertificateContent::FONTS)->map(fn ($f) => "'{$f['family']}', {$f['fallback']}"));
+            const SIZE_MIN = {{ CertificateContent::SIZE_MIN }};
+            const SIZE_MAX = {{ CertificateContent::SIZE_MAX }};
 
             // Tempel selalu sebagai teks polos, supaya format dari Word/WhatsApp tidak ikut masuk.
             document.addEventListener('paste', function (e) {
@@ -379,8 +422,29 @@
                 document.execCommand('insertText', false, text);
             });
 
-            // Nilai per kriteria diubah → hitung ulang Total Score (rata-rata 10 kriteria) & Rating,
-            // memakai batas predikat yang sama dengan sistem (Intern::predikat()).
+            // ===== Status elemen halaman depan (posisi & gaya) =====
+            const frontEls = Array.from(document.querySelectorAll('[data-front]'));
+            const state = new Map();
+            frontEls.forEach(function (el) {
+                state.set(el, {
+                    style: JSON.parse(el.dataset.style),
+                    def: JSON.parse(el.dataset.default),
+                    width: parseFloat(el.dataset.width),
+                });
+            });
+
+            function applyStyle(el) {
+                const s = state.get(el).style;
+                el.style.top = s.top + 'px';
+                el.style.left = s.left + 'px';
+                el.style.fontFamily = FONTS[s.font] || FONTS.jakarta;
+                el.style.fontSize = s.size + 'px';
+                el.style.fontWeight = s.bold ? 'bold' : 'normal';
+                el.style.fontStyle = s.italic ? 'italic' : 'normal';
+                el.style.color = s.color;
+            }
+
+            // ===== Nilai per kriteria → hitung ulang Total Score, Rating & Predikat depan =====
             const colors = { 'Excellent': '#1c8a4d', 'Good': '#0b47a1', 'Fair': '#b45309', 'Below Average': '#c2410c', 'Poor': '#b91c1c' };
             function ratingFor(v) {
                 if (v >= 4.5) return 'Excellent';
@@ -401,17 +465,22 @@
                     ratingEl.textContent = rating;
                     ratingEl.style.color = colors[rating];
                     document.getElementById('front-predikat-value').textContent = rating;
-                    const front = document.getElementById('front-predikat');
-                    front.style.color = colors[rating];
-                    front.style.borderColor = colors[rating];
+                    // Warna predikat depan ikut rating, kecuali warnanya sudah diubah manual.
+                    const predikatEl = document.querySelector('[data-front][data-key="predikat"]');
+                    const st = state.get(predikatEl);
+                    const auto = st.style.color.toLowerCase() === st.def.color.toLowerCase();
+                    st.def.color = colors[rating];
+                    if (auto) { st.style.color = colors[rating]; applyStyle(predikatEl); }
                 });
             });
 
+            // ===== Unduh PDF (browser) & Print =====
             const btnPdf = document.getElementById('btn-pdf');
             btnPdf.addEventListener('click', async function () {
                 const label = btnPdf.textContent;
                 btnPdf.disabled = true;
                 btnPdf.textContent = 'Membuat PDF…';
+                if (window.deselect) window.deselect();
                 document.body.classList.add('exporting');
                 if (document.activeElement) document.activeElement.blur();
 
@@ -423,9 +492,9 @@
                             scale: 2,
                             useCORS: true,
                             backgroundColor: '#ffffff',
-                            width: 1123,
-                            height: 794,
-                            windowWidth: 1123,
+                            width: PAGE_W,
+                            height: PAGE_H,
+                            windowWidth: PAGE_W,
                         });
                         if (i > 0) pdf.addPage('a4', 'landscape');
                         pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 297, 210);
@@ -442,21 +511,214 @@
             });
 
             document.getElementById('btn-print').addEventListener('click', function () {
+                if (window.deselect) window.deselect();
                 if (document.activeElement) document.activeElement.blur();
                 window.print();
             });
 
-            // ===== Simpan / Reset (hanya untuk yang boleh mengedit) =====
+            if (!canEdit) return;
+
+            // ===== Pilih / geser / ketik elemen halaman depan =====
+            const stylebar = document.getElementById('stylebar');
+            const sb = {
+                name: document.getElementById('sb-name'),
+                font: document.getElementById('sb-font'),
+                size: document.getElementById('sb-size'),
+                sizeDown: document.getElementById('sb-size-down'),
+                sizeUp: document.getElementById('sb-size-up'),
+                bold: document.getElementById('sb-bold'),
+                italic: document.getElementById('sb-italic'),
+                color: document.getElementById('sb-color'),
+                edit: document.getElementById('sb-edit'),
+                reset: document.getElementById('sb-reset'),
+                done: document.getElementById('sb-done'),
+            };
+            const guide = document.getElementById('guide-v');
+            let selected = null;
+            let editing = null;
+            let dirty = false;
+
+            function markDirty() {
+                dirty = true;
+                setStatus('Belum disimpan', 'dirty');
+            }
+
+            function syncPanel() {
+                if (!selected) return;
+                const s = state.get(selected).style;
+                sb.name.textContent = selected.dataset.label;
+                sb.font.value = s.font;
+                sb.size.value = s.size;
+                sb.bold.setAttribute('aria-pressed', s.bold ? 'true' : 'false');
+                sb.italic.setAttribute('aria-pressed', s.italic ? 'true' : 'false');
+                sb.color.value = s.color;
+            }
+
+            function select(el) {
+                if (selected === el) return;
+                if (editing) exitEdit();
+                if (selected) selected.classList.remove('selected');
+                selected = el;
+                el.classList.add('selected');
+                stylebar.classList.add('show');
+                syncPanel();
+            }
+
+            window.deselect = function () {
+                if (editing) exitEdit();
+                if (selected) selected.classList.remove('selected');
+                selected = null;
+                stylebar.classList.remove('show');
+                guide.classList.remove('show');
+            };
+            const deselect = window.deselect;
+
+            function enterEdit(el) {
+                select(el);
+                const txt = el.querySelector('.txt');
+                if (!txt) return;
+                editing = el;
+                el.classList.add('editing');
+                txt.setAttribute('contenteditable', 'true');
+                txt.setAttribute('spellcheck', 'false');
+                txt.focus();
+                // Kursor di akhir teks.
+                const range = document.createRange();
+                range.selectNodeContents(txt);
+                range.collapse(false);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+
+            function exitEdit() {
+                if (!editing) return;
+                const txt = editing.querySelector('.txt');
+                txt.removeAttribute('contenteditable');
+                editing.classList.remove('editing');
+                editing = null;
+            }
+
+            function update(prop, value) {
+                if (!selected) return;
+                state.get(selected).style[prop] = value;
+                applyStyle(selected);
+                syncPanel();
+                markDirty();
+            }
+
+            // Panel gaya
+            sb.font.addEventListener('change', function () { update('font', sb.font.value); });
+            function setSize(v) {
+                v = Math.round(Math.max(SIZE_MIN, Math.min(SIZE_MAX, v)) * 2) / 2;
+                if (!isNaN(v)) update('size', v);
+            }
+            sb.size.addEventListener('change', function () { setSize(parseFloat(sb.size.value)); });
+            sb.sizeDown.addEventListener('click', function () { setSize(state.get(selected).style.size - 1); });
+            sb.sizeUp.addEventListener('click', function () { setSize(state.get(selected).style.size + 1); });
+            sb.bold.addEventListener('click', function () { update('bold', !state.get(selected).style.bold); });
+            sb.italic.addEventListener('click', function () { update('italic', !state.get(selected).style.italic); });
+            sb.color.addEventListener('input', function () { update('color', sb.color.value); });
+            sb.edit.addEventListener('click', function () { if (selected) enterEdit(selected); });
+            sb.done.addEventListener('click', deselect);
+            sb.reset.addEventListener('click', function () {
+                if (!selected) return;
+                const st = state.get(selected);
+                st.style = Object.assign({}, st.def);
+                applyStyle(selected);
+                syncPanel();
+                markDirty();
+            });
+
+            // Klik sekali = pilih + bisa langsung digeser; klik ganda = mode ketik.
+            let drag = null;
+            frontEls.forEach(function (el) {
+                el.addEventListener('pointerdown', function (e) {
+                    if (editing === el) return; // sedang mengetik → biarkan seleksi teks normal
+                    const wasSelected = selected === el;
+                    select(el);
+                    // Sentuhan pertama di elemen yang belum terpilih cuma memilih (supaya halaman
+                    // tetap bisa di-scroll di HP); geser mulai dari sentuhan berikutnya.
+                    if (e.pointerType === 'touch' && !wasSelected) return;
+                    e.preventDefault();
+                    const s = state.get(el).style;
+                    drag = { el: el, id: e.pointerId, x: e.clientX, y: e.clientY, top: s.top, left: s.left, moved: false };
+                    el.setPointerCapture(e.pointerId);
+                });
+                el.addEventListener('pointermove', function (e) {
+                    if (!drag || drag.el !== el || drag.id !== e.pointerId) return;
+                    const dx = e.clientX - drag.x;
+                    const dy = e.clientY - drag.y;
+                    if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 3) return;
+                    drag.moved = true;
+                    el.classList.add('dragging');
+                    const st = state.get(el);
+                    let left = Math.max(0, Math.min(PAGE_W - st.width, drag.left + dx));
+                    const top = Math.max(0, Math.min(PAGE_H - el.offsetHeight, drag.top + dy));
+                    // Snap ke tengah horizontal halaman.
+                    const center = left + st.width / 2;
+                    const snapped = Math.abs(center - PAGE_W / 2) < 6;
+                    if (snapped) left = PAGE_W / 2 - st.width / 2;
+                    guide.classList.toggle('show', snapped);
+                    st.style.left = Math.round(left * 10) / 10;
+                    st.style.top = Math.round(top * 10) / 10;
+                    applyStyle(el);
+                });
+                function endDrag(e) {
+                    if (!drag || drag.el !== el) return;
+                    if (drag.moved) markDirty();
+                    el.classList.remove('dragging');
+                    guide.classList.remove('show');
+                    try { el.releasePointerCapture(e.pointerId); } catch (_) {}
+                    drag = null;
+                }
+                el.addEventListener('pointerup', endDrag);
+                el.addEventListener('pointercancel', endDrag);
+                el.addEventListener('dblclick', function () { enterEdit(el); });
+                el.addEventListener('input', markDirty);
+                el.addEventListener('keydown', function (e) {
+                    if (editing !== el) return;
+                    // Enter selesai mengetik (kecuali kalimat kegiatan: Enter = baris baru).
+                    if (e.key === 'Escape' || (e.key === 'Enter' && !e.shiftKey && el.dataset.key !== 'kegiatan')) {
+                        e.preventDefault();
+                        exitEdit();
+                    }
+                });
+                el.addEventListener('focusout', function () {
+                    if (editing === el) setTimeout(function () { if (editing === el && !el.contains(document.activeElement)) exitEdit(); }, 0);
+                });
+            });
+
+            // Panah keyboard = geser halus (Shift = 10px) saat elemen terpilih dan tidak sedang mengetik.
+            document.addEventListener('keydown', function (e) {
+                if (!selected || editing || !e.key.startsWith('Arrow')) return;
+                if (e.target.closest && e.target.closest('input, select, textarea, [contenteditable="true"]')) return;
+                e.preventDefault();
+                const step = e.shiftKey ? 10 : 1;
+                const st = state.get(selected);
+                if (e.key === 'ArrowLeft') st.style.left = Math.max(0, st.style.left - step);
+                if (e.key === 'ArrowRight') st.style.left = Math.min(PAGE_W - st.width, st.style.left + step);
+                if (e.key === 'ArrowUp') st.style.top = Math.max(0, st.style.top - step);
+                if (e.key === 'ArrowDown') st.style.top = Math.min(PAGE_H - selected.offsetHeight, st.style.top + step);
+                applyStyle(selected);
+                markDirty();
+            });
+
+            // Klik di luar elemen & panel = batal pilih.
+            document.addEventListener('pointerdown', function (e) {
+                if (!selected) return;
+                if (e.target.closest('[data-front]') || e.target.closest('#stylebar')) return;
+                deselect();
+            });
+
+            // ===== Simpan / Reset =====
             const btnSave = document.getElementById('btn-save');
             const btnReset = document.getElementById('btn-reset');
-            if (!btnSave) return;
-
             const saveUrl = @js(route('interns.certificate.override.save', $intern));
             const resetUrl = @js(route('interns.certificate.override.reset', $intern));
             const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             const statusEl = document.getElementById('save-status');
             const metaEl = document.getElementById('edit-meta');
-            let dirty = false;
 
             function setStatus(text, kind) {
                 statusEl.textContent = text;
@@ -475,18 +737,22 @@
                 }
             }
 
+            // Halaman belakang: input teks biasa.
             document.addEventListener('input', function (e) {
-                if (e.target.closest && e.target.closest('[data-key][contenteditable="true"]')) {
-                    dirty = true;
-                    setStatus('Belum disimpan', 'dirty');
-                }
+                if (e.target.closest && e.target.closest('#page-back [data-key][contenteditable="true"]')) markDirty();
             });
 
-            // Kumpulkan teks semua elemen ber-data-key (innerText, bukan innerHTML). Key berbentuk
-            // "kriteria.<field>.<sub>" dijadikan objek bertingkat.
+            // Kumpulkan isi: halaman depan = objek {text + posisi + gaya}, halaman belakang = teks
+            // (innerText, bukan innerHTML). Key "kriteria.<field>.<sub>" dijadikan objek bertingkat.
             function collect() {
                 const payload = {};
-                document.querySelectorAll('[data-key][contenteditable="true"]').forEach(function (el) {
+                frontEls.forEach(function (el) {
+                    payload[el.dataset.key] = Object.assign(
+                        { text: el.querySelector('.txt').innerText.trim() },
+                        state.get(el).style
+                    );
+                });
+                document.querySelectorAll('#page-back [data-key][contenteditable="true"]').forEach(function (el) {
                     const parts = el.dataset.key.split('.');
                     let target = payload;
                     for (let i = 0; i < parts.length - 1; i++) {
@@ -519,6 +785,7 @@
             }
 
             async function save() {
+                if (editing) exitEdit();
                 if (document.activeElement) document.activeElement.blur();
                 btnSave.disabled = true;
                 setStatus('Menyimpan…');
@@ -545,7 +812,7 @@
             });
 
             btnReset.addEventListener('click', async function () {
-                if (!confirm('Semua editan tersimpan akan dihapus dan sertifikat kembali ke data asli. Lanjutkan?')) return;
+                if (!confirm('Semua editan tersimpan (teks, posisi, dan gaya) akan dihapus dan sertifikat kembali ke data asli. Lanjutkan?')) return;
                 btnReset.disabled = true;
                 setStatus('Mereset…');
                 try {

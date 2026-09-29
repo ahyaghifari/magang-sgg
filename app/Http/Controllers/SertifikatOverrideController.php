@@ -23,7 +23,21 @@ class SertifikatOverrideController extends Controller
 
         $rules = ['kriteria' => ['nullable', 'array']];
         foreach (CertificateContent::FIELDS as $key => $max) {
-            $rules[$key] = ['nullable', 'string', 'max:' . ($max * 2)];
+            if (isset(CertificateContent::FRONT_LAYOUT[$key])) {
+                // Halaman depan: objek {text, top, left, font, size, bold, italic, color}
+                // (string polos versi lama juga masih diterima → dianggap teks saja).
+                $rules[$key] = ['nullable'];
+                $rules["{$key}.text"] = ['nullable', 'string', 'max:' . ($max * 2)];
+                $rules["{$key}.top"] = ['nullable', 'numeric'];
+                $rules["{$key}.left"] = ['nullable', 'numeric'];
+                $rules["{$key}.size"] = ['nullable', 'numeric'];
+                $rules["{$key}.font"] = ['nullable', 'string', 'max:30'];
+                $rules["{$key}.color"] = ['nullable', 'string', 'max:7'];
+                $rules["{$key}.bold"] = ['nullable', 'boolean'];
+                $rules["{$key}.italic"] = ['nullable', 'boolean'];
+            } else {
+                $rules[$key] = ['nullable', 'string', 'max:' . ($max * 2)];
+            }
         }
         foreach (array_keys(Intern::CRITERIA) as $field) {
             $rules["kriteria.{$field}"] = ['nullable', 'array'];

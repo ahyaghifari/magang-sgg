@@ -46,7 +46,10 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="site h-full">
+{{-- data-push-user: id user yang login (kosong untuk tamu) — dibaca resources/js/push-notifications.js
+     supaya langganan notifikasi disinkron ulang otomatis setelah login / ganti akun, tanpa perlu
+     menekan "Aktifkan Notifikasi" lagi. <body> ikut diganti saat wire:navigate, jadi nilainya selalu terbaru. --}}
+<body class="site h-full" data-push-user="{{ auth()->id() }}">
     @auth
         @php
             $portalUser = auth()->user();

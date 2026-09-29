@@ -26,12 +26,23 @@ class AccessLogReader
      *   max_synced_at: ?string
      * }
      */
+    /**
+     * Berapa menit ke belakang dari watermark yang SELALU dibaca ulang tiap sync.
+     * Mesin sidik jari sering mengirim tap ke HRIS terlambat / per paket (mis. jaringan mesin
+     * putus sebentar), jadi tap dengan access_datetime LEBIH LAMA dari watermark bisa baru
+     * muncul belakangan. Tanpa jendela ini tap seperti itu terlewat selamanya (jam masuk/pulang
+     * kosong). Aman dibaca ulang: log tap di-upsert per (employee_id, scanned_at) dan
+     * AttendanceRecordWriter menggabungkan waktu tap, jadi tidak ada data dobel.
+     */
+    public const LOOKBACK_MINUTES = 120;
+
     public function readIncremental(?string $sinceDatetime): array
     {
         $query = $this->accessLogs();
 
         if ($sinceDatetime) {
-            $query->where('access_datetime', '>', $sinceDatetime);
+            $since = \Illuminate\Support\Carbon::parse($sinceDatetime)->subMinutes(self::LOOKBACK_MINUTES);
+            $query->where('access_datetime', '>=', $since->toDateTimeString());
         }
 
         return $this->build($query->orderBy('access_datetime')->get());

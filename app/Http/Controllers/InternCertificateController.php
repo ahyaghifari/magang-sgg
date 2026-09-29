@@ -7,6 +7,7 @@ use App\Support\CertificateAccess;
 use App\Support\CertificateContent;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
@@ -73,12 +74,19 @@ class InternCertificateController extends Controller
     {
         CertificateAccess::authorizeView(auth()->user(), $intern);
 
+        // Folder cache font DomPDF (font TTF dari resources/fonts diproses ke sini sekali).
+        File::ensureDirectoryExists(storage_path('fonts'));
+
         return Pdf::loadView('certificates.pkl', [
             ...$this->certificateData($intern),
             // Sama dengan editor: data asli digabung editan tersimpan (sertifikat_overrides),
             // jadi PDF yang diunduh intern/pembimbing/admin ikut berubah setelah disimpan.
             'content' => CertificateContent::for($intern),
-        ])->output();
+        ])
+            ->setPaper('a4', 'landscape')
+            // Hanya huruf yang dipakai yang disematkan — font TTF (resources/fonts) bisa ratusan KB.
+            ->setOption('isFontSubsettingEnabled', true)
+            ->output();
     }
 
     /** Data bersama untuk PDF DomPDF dan editor sertifikat. */
