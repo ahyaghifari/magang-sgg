@@ -57,9 +57,15 @@
     @if ($canScope)
         <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;" role="group" aria-label="Tampilkan tugas">
             @php
+                // Teks tombol menyesuaikan peran: Pembimbing → "Bimbingan saya", Mentor (pendamping) → "Dampingan saya".
+                $mineLabel = match (true) {
+                    auth()->user()->isPembimbing() => 'Bimbingan saya',
+                    auth()->user()->isMentor() => 'Dampingan saya',
+                    default => 'Bimbingan/dampingan saya',
+                };
                 $scopeOptions = [
                     ['value' => '', 'label' => 'Semua intern', 'icon' => 'fa-users', 'count' => $scopeCounts['all']],
-                    ['value' => 'mine', 'label' => 'Bimbingan/mentee saya', 'icon' => 'fa-user-check', 'count' => $scopeCounts['mine']],
+                    ['value' => 'mine', 'label' => $mineLabel, 'icon' => 'fa-user-check', 'count' => $scopeCounts['mine']],
                 ];
             @endphp
             @foreach ($scopeOptions as $opt)
