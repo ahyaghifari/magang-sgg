@@ -47,16 +47,34 @@ function sameServerKey(subscription, key) {
     return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
-async function sendSubscriptionToServer(subscription) {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+/** Id user yang sedang login (dari <body data-push-user>), '' kalau tamu. */
+function currentUserId() {
+    return document.body?.dataset.pushUser || '';
+}
 
+/**
+ * Header CSRF yang selalu segar. Token sesi berganti saat login, sedangkan <meta csrf-token>
+ * di <head> bisa masih versi lama setelah wire:navigate — jadi utamakan cookie XSRF-TOKEN
+ * (selalu diperbarui Laravel), baru fallback ke meta.
+ */
+function csrfHeaders() {
+    const cookie = document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='));
+    if (cookie) {
+        return { 'X-XSRF-TOKEN': decodeURIComponent(cookie.split('=').slice(1).join('=')) };
+    }
+    const meta = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    return { 'X-CSRF-TOKEN': meta || '' };
+}
+
+async function sendSubscriptionToServer(subscription) {
     const response = await fetch('/push/subscribe', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken || '',
             Accept: 'application/json',
+            ...csrfHeaders(),
         },
+        credentials: 'same-origin',
         body: JSON.stringify({
             ...subscription.toJSON(),
             contentEncoding: (PushManager.supportedContentEncodings || ['aes128gcm'])[0],
@@ -87,10 +105,13 @@ async function getValidSubscription(registration, key) {
     return subscription;
 }
 
-/** Sinkron ulang diam-diam — hanya kalau izin sudah diberikan (tidak pernah memunculkan prompt). */
+/**
+ * Sinkron ulang diam-diam — hanya kalau sudah login dan izin sudah diberikan (tidak pernah
+ * memunculkan prompt). Menautkan langganan browser ini ke user yang sedang login.
+ */
 async function syncPushSubscription() {
     const key = vapidPublicKey();
-    if (!pushSupported() || Notification.permission !== 'granted' || !key) {
+    if (!currentUserId() || !pushSupported() || Notification.permission !== 'granted' || !key) {
         return false;
     }
 
@@ -106,12 +127,30 @@ async function syncPushSubscription() {
     }
 }
 
-let syncPromise = null;
+// Hasil sinkron di-cache PER USER dan hanya kalau BERHASIL. Dulu hasil "gagal" dari halaman
+// login (belum login → server menolak) ikut tersimpan, lalu setelah login lewat wire:navigate
+// (tanpa muat ulang) tombol "Aktifkan Notifikasi" muncul lagi dan harus ditekan ulang.
+let syncState = { userId: null, promise: null };
 
 /** Dipakai tombol "Aktifkan Notifikasi" untuk menyembunyikan diri kalau notifikasi sudah aktif. */
 window.pushNotificationsActive = function () {
-    syncPromise ??= syncPushSubscription();
-    return syncPromise;
+    const userId = currentUserId();
+    if (!userId) {
+        return Promise.resolve(false);
+    }
+
+    if (syncState.userId !== userId || !syncState.promise) {
+        const promise = syncPushSubscription().then((ok) => {
+            // Gagal → jangan di-cache, supaya dicoba lagi di halaman berikutnya.
+            if (!ok && syncState.promise === promise) {
+                syncState.promise = null;
+            }
+            return ok;
+        });
+        syncState = { userId, promise };
+    }
+
+    return syncState.promise;
 };
 
 window.enablePushNotifications = async function () {
@@ -147,7 +186,7 @@ window.enablePushNotifications = async function () {
         const subscription = await getValidSubscription(registration, key);
         await sendSubscriptionToServer(subscription);
 
-        syncPromise = Promise.resolve(true);
+        syncState = { userId: currentUserId(), promise: Promise.resolve(true) };
 
         return true;
     } catch (e) {
@@ -158,8 +197,13 @@ window.enablePushNotifications = async function () {
 };
 
 // Registrasi service worker lebih awal (tanpa minta izin), lalu sinkron ulang subscription
-// kalau izin sudah pernah diberikan.
+// kalau izin sudah pernah diberikan. Diulang setiap pindah halaman lewat wire:navigate
+// (mis. tepat setelah login / ganti akun) — cukup sekali tekan "Aktifkan Notifikasi" seumur
+// perangkat, selanjutnya langganan selalu ditautkan otomatis ke akun yang sedang login.
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(function () {});
     window.pushNotificationsActive();
+    document.addEventListener('livewire:navigated', function () {
+        window.pushNotificationsActive();
+    });
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\InternCertificateController;
+use App\Http\Controllers\SertifikatOverrideController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Livewire\Attendance\Index as AttendanceIndex;
 use App\Livewire\Auth\Login;
@@ -57,6 +58,16 @@ Route::middleware('auth')->group(function () {
         ->name('interns.certificate');
     Route::get('/interns/{intern}/sertifikat/lihat', [InternCertificateController::class, 'view'])
         ->name('interns.certificate.view');
+    // Editor sertifikat (edit teks langsung di browser → unduh PDF/print). Aturan akses sama
+    // dengan PDF di atas (App\Support\CertificateAccess); editan tidak disimpan ke database.
+    Route::get('/interns/{intern}/sertifikat/editor', [InternCertificateController::class, 'editor'])
+        ->name('interns.certificate.editor');
+    // Simpan / reset editan teks sertifikat (tabel sertifikat_overrides) — hanya yang boleh
+    // mengedit (CertificateAccess::canEdit); nilai penilaian asli tidak ikut berubah.
+    Route::post('/sertifikat/{intern}/override', [SertifikatOverrideController::class, 'store'])
+        ->name('interns.certificate.override.save');
+    Route::delete('/sertifikat/{intern}/override', [SertifikatOverrideController::class, 'destroy'])
+        ->name('interns.certificate.override.reset');
 
     // Toggle "lihat sebagai intern" untuk admin/pembimbing yang juga punya data Intern
     // sendiri — dipakai lewat tombol di sidebar portal (components/layouts/app.blade.php).

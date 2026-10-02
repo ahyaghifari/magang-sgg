@@ -19,6 +19,7 @@ class Task extends Model
     protected $fillable = [
         'intern_id',
         'assigned_by',
+        'batch_id',
         'title',
         'description',
         'source',
@@ -32,6 +33,31 @@ class Task extends Model
         'due_date' => 'datetime',
         'completed_at' => 'datetime',
     ];
+
+    /**
+     * Kunci pengelompokan "tugas yang sama" untuk tampilan pembimbing/mentor. Pakai batch_id
+     * kalau ada (tugas diberikan sekaligus ke beberapa intern dari satu form). Tugas web lama
+     * (sebelum ada batch_id) dikenali dari isi yang identik: pemberi, judul, keterangan,
+     * tenggat, dan menit pembuatan yang sama. Tugas lisan (dicatat intern sendiri) tidak digabung.
+     */
+    public function groupKey(): string
+    {
+        if ($this->batch_id) {
+            return 'batch:' . $this->batch_id;
+        }
+
+        if ($this->source !== 'web') {
+            return 'task:' . $this->id;
+        }
+
+        return 'legacy:' . md5(implode('|', [
+            $this->assigned_by,
+            $this->title,
+            $this->description,
+            $this->due_date?->format('Y-m-d H:i'),
+            $this->created_at?->format('Y-m-d H:i'),
+        ]));
+    }
 
     /**
      * Tugas dimiliki oleh satu Intern.

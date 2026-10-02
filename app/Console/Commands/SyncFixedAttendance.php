@@ -65,6 +65,11 @@ class SyncFixedAttendance extends Command
 
             if ($calc === null) {
                 $skipped++; // hari libur / tidak ada jadwal
+                // Catat kalau dilewati karena data intern belum lengkap (bukan libur biasa),
+                // supaya "tap ada tapi rekap kosong" bisa dilacak dari log.
+                if (blank($entry['company_id'])) {
+                    Log::warning("attendance:sync — NIP {$entry['nip']} tap {$entry['date']} dilewati: intern belum punya unit/perusahaan.");
+                }
                 continue;
             }
 
@@ -77,7 +82,13 @@ class SyncFixedAttendance extends Command
         }
 
         if (! $isRange) {
-            AttendanceSyncState::singleton()->update(['last_synced_at' => $result['max_synced_at']]);
+            // Watermark tidak boleh mundur: dengan jendela baca-ulang (LOOKBACK), batch bisa
+            // hanya berisi tap lama yang max-nya lebih kecil dari watermark sekarang.
+            $state = AttendanceSyncState::singleton();
+            $current = $state->last_synced_at?->toDateTimeString();
+            if ($current === null || $result['max_synced_at'] > $current) {
+                $state->update(['last_synced_at' => $result['max_synced_at']]);
+            }
         }
 
         $this->info("Selesai: {$saved} disimpan, {$skipped} dilewati, "

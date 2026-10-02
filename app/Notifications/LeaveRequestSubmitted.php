@@ -40,10 +40,10 @@ class LeaveRequestSubmitted extends Notification
         $end = $this->leaveRequest->end_date ? Carbon::parse($this->leaveRequest->end_date) : null;
 
         return $this->pushMessage(
-            title: ($type === 'Sakit' ? '🤒' : '📝') . " Pengajuan {$type} dari {$internName}",
+            title: "Pengajuan {$type} dari {$internName}",
             lines: [
-                $start ? '📅 ' . $start->translatedFormat('d M Y') . ($end && ! $end->isSameDay($start) ? ' – ' . $end->translatedFormat('d M Y') : '') : null,
-                '💬 "' . $this->leaveRequest->reason . '"',
+                $start ? 'Tanggal: ' . $start->translatedFormat('d M Y') . ($end && ! $end->isSameDay($start) ? ' – ' . $end->translatedFormat('d M Y') : '') : null,
+                'Alasan: ' . $this->leaveRequest->reason,
             ],
             url: route('pembimbing.leaves'),
             actionLabel: 'Tinjau',

@@ -34,10 +34,10 @@ class TaskRejected extends Notification
         $internName = $this->task->intern?->nama ?? 'Peserta magang';
 
         return $this->pushMessage(
-            title: '⏸️ ' . $internName . ' menunda tugas',
+            title: $internName . ' menunda tugas',
             lines: [
-                '📋 ' . $this->task->title,
-                $this->task->rejection_reason ? '💬 "' . $this->task->rejection_reason . '"' : null,
+                'Tugas: ' . $this->task->title,
+                $this->task->rejection_reason ? 'Alasan: ' . $this->task->rejection_reason : null,
             ],
             url: route('pembimbing.tasks'),
             actionLabel: 'Lihat Tugas',

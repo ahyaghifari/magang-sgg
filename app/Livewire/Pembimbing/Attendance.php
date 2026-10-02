@@ -93,12 +93,18 @@ class Attendance extends Component
         // Izin/sakit yang disetujui, ditampilkan terpisah dari rekap presensi mesin sidik
         // jari — supaya hari intern tidak masuk karena izin/sakit tidak terlihat begitu
         // saja "hilang" dari daftar, dibedakan jelas dari yang benar-benar alfa.
+        // Izin HANYA tampil di hari berlakunya: tanpa filter tanggal = yang berlaku hari ini
+        // saja (bukan semua izin yang pernah ada); dengan filter = yang beririsan rentangnya.
+        $today = Carbon::now('Asia/Makassar')->toDateString();
+        $leavesFrom = $this->dateFrom !== '' ? $this->dateFrom : ($this->dateTo !== '' ? null : $today);
+        $leavesTo = $this->dateTo !== '' ? $this->dateTo : ($this->dateFrom !== '' ? null : $today);
+
         $leaves = LeaveRequest::query()
             ->whereIn('intern_id', $this->visibleInterns()->pluck('id'))
             ->where('status', 'approved')
             ->when($this->internId !== '', fn ($q) => $q->where('intern_id', $this->internId))
-            ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('end_date', '>=', $this->dateFrom))
-            ->when($this->dateTo !== '', fn ($q) => $q->whereDate('start_date', '<=', $this->dateTo))
+            ->when($leavesFrom, fn ($q) => $q->whereDate('end_date', '>=', $leavesFrom))
+            ->when($leavesTo, fn ($q) => $q->whereDate('start_date', '<=', $leavesTo))
             ->with('intern.unit')
             ->orderByDesc('start_date')
             ->get();

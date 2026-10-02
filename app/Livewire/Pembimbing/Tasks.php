@@ -7,6 +7,9 @@ use App\Models\Intern;
 use App\Models\Task;
 use App\Notifications\TaskAssigned;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -27,6 +30,13 @@ class Tasks extends Component
 
     public string $status = '';
 
+    /**
+     * Filter cakupan (tombol cepat): '' = semua intern yang terlihat, 'mine' = hanya intern yang
+     * langsung ditugaskan ke user ini sebagai pembimbing/mentor (assignedInternIds()).
+     */
+    #[Url]
+    public string $scope = '';
+
     #[Url]
     public string $dateFrom = '';
 
@@ -43,12 +53,22 @@ class Tasks extends Component
 
     public string $description = '';
 
+    /**
+     * Bagian opsional "Tugas berbeda untuk tiap peserta": catatan khusus per peserta,
+     * [intern_id => teks]. Kosong = peserta itu memakai Keterangan umum saja. Hanya dipakai
+     * kalau peserta terpilih >= 2 (lihat descriptionFor()).
+     */
+    public array $perInternNotes = [];
+
     public string $dueDate = '';
 
     public string $dueTime = '';
 
     // ===== Form edit tugas =====
     public ?int $editingTaskId = null;
+
+    /** Semua tugas dalam satu kotak (batch) yang ikut diubah saat Edit — lihat openEditTask(). */
+    public array $editingTaskIds = [];
 
     public string $editTitle = '';
 
@@ -67,7 +87,18 @@ class Tasks extends Component
 
     public function updated($property): void
     {
-        if (in_array($property, ['internId', 'status', 'dateFrom', 'dateTo'], true)) {
+        // Mis. tombol "Hapus pilihan" ($set formInternIds = []) → catatan khusus ikut dibuang.
+        if ($property === 'formInternIds') {
+            $this->pruneInternNotes();
+        }
+
+        // Ganti cakupan ke "bimbingan saya" → pilihan peserta yang bukan bimbingan dikosongkan.
+        if ($property === 'scope' && $this->scope === 'mine' && $this->internId !== ''
+            && ! in_array((int) $this->internId, $this->assignedInternIds(), true)) {
+            $this->internId = '';
+        }
+
+        if (in_array($property, ['internId', 'status', 'scope', 'dateFrom', 'dateTo'], true)) {
             $this->resetPage();
         }
     }
@@ -135,7 +166,7 @@ class Tasks extends Component
 
     public function openForm(): void
     {
-        $this->reset(['formInternIds', 'title', 'description', 'dueDate', 'dueTime']);
+        $this->reset(['formInternIds', 'title', 'description', 'perInternNotes', 'dueDate', 'dueTime']);
         $this->resetValidation();
         $this->showForm = true;
     }
@@ -163,6 +194,73 @@ class Tasks extends Component
         $this->formInternIds = in_array($internId, $ids, true)
             ? array_values(array_diff($ids, [$internId]))
             : [...$ids, $internId];
+
+        $this->pruneInternNotes();
+    }
+
+    /**
+     * Buang catatan khusus milik peserta yang sudah tidak dipilih (peserta dibatalkan → isi
+     * kotaknya dibuang). Catatan peserta lain yang masih dipilih tidak disentuh.
+     */
+    protected function pruneInternNotes(): void
+    {
+        $selected = array_map('intval', $this->formInternIds);
+
+        $this->perInternNotes = array_filter(
+            $this->perInternNotes,
+            fn ($note, $internId) => in_array((int) $internId, $selected, true),
+            ARRAY_FILTER_USE_BOTH,
+        );
+    }
+
+    /** "Salin keterangan umum ke semua kotak" — isi kotak semua peserta terpilih dengan Keterangan umum. */
+    public function copyGeneralToAll(): void
+    {
+        foreach (array_map('intval', $this->formInternIds) as $internId) {
+            $this->perInternNotes[$internId] = $this->description;
+        }
+    }
+
+    /**
+     * Keterangan akhir untuk satu peserta:
+     * - kotak khusus kosong (atau peserta terpilih < 2) → Keterangan umum (perilaku lama);
+     * - kotak terisi + Keterangan umum terisi → Keterangan umum, baris kosong, lalu isi kotak;
+     * - kotak terisi saja → isi kotak.
+     * Catatan khusus sengaja diabaikan kalau tinggal 1 peserta, karena bagiannya tersembunyi di form
+     * (supaya tidak ada teks yang ikut terkirim tanpa terlihat).
+     */
+    /**
+     * Judul tugas boleh dikosongkan di form. Karena kolom tasks.title wajib terisi (struktur
+     * database sengaja tidak diubah), judul kosong diisi otomatis: baris pertama keterangan
+     * (maks. 80 karakter), atau "Tugas dari {nama pemberi}" kalau keterangan juga kosong.
+     */
+    protected function titleFor(?string $title, ?string $description): string
+    {
+        $title = trim((string) $title);
+
+        if ($title !== '') {
+            return $title;
+        }
+
+        $firstLine = trim(strtok(trim((string) $description), "\n") ?: '');
+
+        return $firstLine !== ''
+            ? Str::limit($firstLine, 80)
+            : 'Tugas dari ' . (auth()->user()?->name ?? 'pembimbing');
+    }
+
+    protected function descriptionFor(int $internId): ?string
+    {
+        $general = trim($this->description);
+        $note = count($this->formInternIds) >= 2 ? trim((string) ($this->perInternNotes[$internId] ?? '')) : '';
+
+        $text = match (true) {
+            $note === '' => $general,
+            $general === '' => $note,
+            default => $general . "\n\n" . $note,
+        };
+
+        return $text !== '' ? $text : null;
     }
 
     /** Tambahkan semua bimbingan/mentee sendiri ke pilihan, tanpa membuang peserta lain yang sudah dipilih. */
@@ -181,8 +279,11 @@ class Tasks extends Component
             // pembimbing, ke intern siapa pun di sistem (lihat allInterns() di render()).
             'formInternIds' => ['required', 'array', 'min:1'],
             'formInternIds.*' => ['integer', 'distinct', Rule::exists('interns', 'id')],
-            'title' => ['required', 'string', 'min:3', 'max:255'],
+            'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
+            // Catatan khusus per peserta — opsional, tidak wajib diisi.
+            'perInternNotes' => ['array'],
+            'perInternNotes.*' => ['nullable', 'string', 'max:2000'],
             'dueDate' => ['nullable', 'date'],
             'dueTime' => ['nullable', 'date_format:H:i'],
         ];
@@ -195,6 +296,7 @@ class Tasks extends Component
             'formInternIds.*' => 'peserta',
             'title' => 'judul tugas',
             'description' => 'keterangan',
+            'perInternNotes.*' => 'tugas khusus',
             'dueDate' => 'tanggal tenggat',
             'dueTime' => 'jam tenggat',
         ];
@@ -252,12 +354,17 @@ class Tasks extends Component
 
         $interns = Intern::with('user')->whereIn('id', $this->formInternIds)->get();
 
+        // Satu batch per pengiriman form — dipakai untuk menampilkan tugas yang sama jadi satu kotak.
+        $batchId = (string) Str::uuid();
+
         foreach ($interns as $intern) {
             $task = Task::create([
                 'intern_id' => $intern->id,
                 'assigned_by' => auth()->id(),
-                'title' => $this->title,
-                'description' => $this->description !== '' ? $this->description : null,
+                'batch_id' => $batchId,
+                'title' => $this->titleFor($this->title, $this->descriptionFor($intern->id)),
+                // Keterangan umum, ditambah catatan khusus peserta ini kalau diisi (bagian opsional).
+                'description' => $this->descriptionFor($intern->id),
                 'source' => 'web',
                 'status' => 'pending',
                 'due_date' => $this->combineDueDateTime($this->dueDate, $this->dueTime),
@@ -270,8 +377,13 @@ class Tasks extends Component
         $this->dispatch('task-assigned', count: $interns->count());
     }
 
-    /** Buka modal edit tugas — dipakai a.l. saat intern menolak tugas dan pembimbing mau menyesuaikannya. */
-    public function openEditTask(int $taskId): void
+    /**
+     * Buka modal edit — dipakai a.l. saat intern menunda tugas dan pembimbing mau menyesuaikannya.
+     * $groupIds = semua tugas dalam satu kotak (tugas yang sama untuk beberapa
+     * intern) — perubahan judul/keterangan/tenggat diterapkan ke semuanya sekaligus, tapi
+     * hanya yang memang boleh dikelola user ini (manageableTasksQuery()).
+     */
+    public function openEditTask(int $taskId, array $groupIds = []): void
     {
         if (! $this->allowed()) {
             return;
@@ -284,6 +396,10 @@ class Tasks extends Component
         }
 
         $this->editingTaskId = $taskId;
+        $this->editingTaskIds = $this->manageableTasksQuery()
+            ->whereKey(array_map('intval', $groupIds ?: [$taskId]))
+            ->pluck('id')
+            ->all();
         $this->editTitle = $task->title;
         $this->editDescription = $task->description ?? '';
         $this->editDueDate = $task->due_date?->format('Y-m-d') ?? '';
@@ -293,7 +409,7 @@ class Tasks extends Component
 
     public function closeEditTask(): void
     {
-        $this->reset(['editingTaskId', 'editTitle', 'editDescription', 'editDueDate', 'editDueTime']);
+        $this->reset(['editingTaskId', 'editingTaskIds', 'editTitle', 'editDescription', 'editDueDate', 'editDueTime']);
         $this->resetValidation();
     }
 
@@ -310,7 +426,7 @@ class Tasks extends Component
         }
 
         $this->validate([
-            'editTitle' => ['required', 'string', 'min:3', 'max:255'],
+            'editTitle' => ['nullable', 'string', 'max:255'],
             'editDescription' => ['nullable', 'string', 'max:2000'],
             'editDueDate' => ['nullable', 'date'],
             'editDueTime' => ['nullable', 'date_format:H:i'],
@@ -321,11 +437,13 @@ class Tasks extends Component
             'editDueTime' => 'jam tenggat',
         ]);
 
-        $task->update([
-            'title' => $this->editTitle,
-            'description' => $this->editDescription !== '' ? $this->editDescription : null,
-            'due_date' => $this->combineDueDateTime($this->editDueDate, $this->editDueTime),
-        ]);
+        $this->manageableTasksQuery()
+            ->whereKey($this->editingTaskIds ?: [$task->id])
+            ->update([
+                'title' => $this->titleFor($this->editTitle, $this->editDescription),
+                'description' => $this->editDescription !== '' ? $this->editDescription : null,
+                'due_date' => $this->combineDueDateTime($this->editDueDate, $this->editDueTime),
+            ]);
 
         $this->closeEditTask();
     }
@@ -359,9 +477,84 @@ class Tasks extends Component
         $this->manageableTasksQuery()->whereKey($taskId)->delete();
     }
 
+    /** Hapus satu kotak tugas sekaligus (tugas yang sama untuk beberapa intern). */
+    public function deleteGroup(array $taskIds): void
+    {
+        if (! $this->allowed()) {
+            return;
+        }
+
+        $this->manageableTasksQuery()->whereKey(array_map('intval', $taskIds))->delete();
+    }
+
+    /**
+     * Tugas yang sama untuk beberapa intern ditampilkan jadi SATU kotak (lihat Task::groupKey()),
+     * jadi paginasinya per kotak, bukan per tugas — supaya satu kotak tidak terpotong ke dua
+     * halaman. Urutan: kotak yang masih ada tugas ditunda/belum/dikerjakan dulu, lalu terbaru.
+     * Setiap item: ['key' => string, 'tasks' => Collection<Task> (urut nama intern)].
+     */
+    protected function paginateTaskGroups(\Illuminate\Database\Eloquent\Builder $base, int $perPage = 10): LengthAwarePaginator
+    {
+        $priority = ['rejected' => 0, 'pending' => 1, 'in_progress' => 2, 'done' => 3];
+
+        $groups = (clone $base)
+            ->get(['id', 'batch_id', 'assigned_by', 'source', 'title', 'description', 'due_date', 'created_at', 'status'])
+            ->groupBy(fn (Task $task) => $task->groupKey())
+            ->sortBy([
+                fn ($a, $b) => $a->min(fn ($t) => $priority[$t->status] ?? 1) <=> $b->min(fn ($t) => $priority[$t->status] ?? 1),
+                fn ($a, $b) => $b->max('created_at') <=> $a->max('created_at'),
+            ])
+            ->values();
+
+        $page = $this->getPage();
+        $pageGroups = $groups->forPage($page, $perPage);
+
+        $tasks = Task::query()
+            ->with(['intern.unit', 'assignedBy', 'comments.author.intern', 'completionPhotos'])
+            ->whereKey($pageGroups->flatten()->pluck('id'))
+            ->get()
+            ->keyBy('id');
+
+        $items = $pageGroups->map(fn ($group) => [
+            'key' => $group->first()->groupKey(),
+            'tasks' => $group->map(fn ($t) => $tasks->get($t->id))->filter()
+                ->sortBy(fn ($t) => $t->intern?->nama)->values(),
+        ])->values();
+
+        return new LengthAwarePaginator($items, $groups->count(), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => 'page',
+        ]);
+    }
+
+    /**
+     * Intern yang LANGSUNG ditugaskan ke user ini (tercatat sebagai pembimbing_id atau mentor_id)
+     * — dipakai tombol "Bimbingan/mentee saya". Beda dari manageableInterns() yang untuk admin
+     * berarti semua intern.
+     */
+    protected function assignedInternIds(): array
+    {
+        $myId = auth()->id();
+
+        return Intern::query()
+            ->where(fn ($q) => $q->where('pembimbing_id', $myId)->orWhere('mentor_id', $myId))
+            ->pluck('id')
+            ->all();
+    }
+
     public function render()
     {
-        $internIds = $this->visibleInternIds();
+        $visibleIds = $this->visibleInternIds();
+        $manageableInternIds = $this->manageableInternIds();
+        $assignedIds = $this->assignedInternIds();
+
+        // Tombol cepat "Semua intern / Bimbingan/mentee saya" tampil untuk siapa pun yang punya
+        // intern yang langsung ditugaskan kepadanya (Pembimbing, Mentor, maupun Admin yang juga
+        // ditugaskan sebagai pembimbing/mentor).
+        $canScope = $assignedIds !== [];
+        $internIds = $canScope && $this->scope === 'mine'
+            ? array_values(array_intersect($visibleIds, $assignedIds))
+            : $visibleIds;
 
         $base = Task::query()
             ->whereIn('intern_id', $internIds)
@@ -370,20 +563,19 @@ class Tasks extends Component
             ->when($this->dateFrom !== '', fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
             ->when($this->dateTo !== '', fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo));
 
-        $tasks = (clone $base)
-            ->with(['intern.unit', 'assignedBy', 'comments.author.intern', 'completionPhotos'])
-            ->orderByRaw("field(status, 'pending', 'in_progress', 'done')")
-            ->orderByDesc('created_at')
-            ->paginate(10);
-
-        $manageableInternIds = $this->manageableInternIds();
-
         return view('livewire.pembimbing.tasks', [
-            'tasks' => $tasks,
+            'taskGroups' => $this->paginateTaskGroups($base),
+            'canScope' => $canScope,
+            // Jumlah peserta di tiap tombol cepat "Semua intern" / "Bimbingan/mentee saya".
+            'scopeCounts' => [
+                'all' => count($visibleIds),
+                'mine' => count(array_intersect($visibleIds, $assignedIds)),
+            ],
             'interns' => Intern::whereIn('id', $internIds)->orderBy('nama')->get(['id', 'nama']),
             // Pilihan peserta di form "Beri Tugas" — SEMUA intern di sistem, lintas pembimbing
             // (bukan cuma mentee sendiri).
-            'allInterns' => Intern::with('unit')->orderBy('nama')->get(['id', 'nama', 'unit_id']),
+            // avatar_path ikut diambil untuk foto di kotak "Tugas berbeda untuk tiap peserta".
+            'allInterns' => Intern::with('unit')->orderBy('nama')->get(['id', 'nama', 'unit_id', 'avatar_path']),
             // Dipakai buat sembunyikan tombol kelola (tandai selesai/edit/hapus) di
             // tugas milik intern yang cuma boleh DILIHAT (Mentor) bukan mentee sendiri — kecuali
             // tugas itu memang dia sendiri yang berikan (lihat manageableTasksQuery()).

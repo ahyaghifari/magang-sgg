@@ -44,6 +44,11 @@
                         <a href="{{ route('interns.certificate', $intern) }}" class="btn-ghost" style="padding:0.5rem 0.85rem;">
                             <i class="fa-solid fa-download"></i> Download
                         </a>
+                        {{-- Editor: semua yang boleh melihat bisa membuka; teks hanya bisa diedit untuk
+                             intern yang boleh dikelola (lihat App\Support\CertificateAccess). --}}
+                        <a href="{{ route('interns.certificate.editor', $intern) }}" target="_blank" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                            <i class="fa-solid fa-pen-ruler"></i> Buka Editor
+                        </a>
                         @if (in_array($intern->id, $manageableInternIds, true))
                             <button type="button" @click="showNilai = !showNilai" class="btn-ghost" style="padding:0.5rem 0.85rem;">
                                 <i class="fa-solid fa-pen"></i> <span x-text="showNilai ? 'Tutup Penilaian' : 'Edit Penilaian'"></span>
@@ -67,29 +72,43 @@
                                     @php($currentStars = $intern->{$field} !== null ? (float) $intern->{$field} : null)
                                     <div wire:key="crit-{{ $intern->id }}-{{ $field }}"
                                          style="border:1px solid var(--border); border-radius:10px; padding:0.6rem 0.75rem; background:var(--surface-alt);">
-                                        <p class="text-sm" style="color:var(--text-muted); margin-bottom:0.3rem;" title="{{ $c['description'] }}">{{ $c['title'] }}</p>
-                                        <div class="flex items-center" style="gap:0.25rem;">
-                                            @for ($i = 1; $i <= 5; $i++)
-                                                @php($fillPercent = $currentStars === null ? 0 : ($currentStars >= $i ? 100 : ($currentStars >= $i - 0.5 ? 50 : 0)))
-                                                <span style="position:relative; display:inline-block; width:1.1rem; height:1.1rem; font-size:1.1rem; line-height:1;">
-                                                    <i class="fa-regular fa-star" style="position:absolute; inset:0; color:var(--text-faint);"></i>
-                                                    <span style="position:absolute; inset:0; overflow:hidden; width:{{ $fillPercent }}%; pointer-events:none;">
-                                                        <i class="fa-solid fa-star" style="color:#f59e0b;"></i>
+                                        <p class="text-sm" style="font-weight:600; color:var(--text-heading); margin-bottom:0.1rem;">{{ $c['title'] }}</p>
+                                        <p style="font-size:0.72rem; line-height:1.35; color:var(--text-muted); margin-bottom:0.45rem;">{{ $c['description'] }}</p>
+                                        <div class="flex items-center justify-between" style="gap:0.5rem;">
+                                            {{-- Tiap bintang: garis abu-abu (bagian kosong) + isian kuning yang dipotong
+                                                 per persen, ditumpuk di kotak selebar glyph Font Awesome (1.125em) supaya
+                                                 keduanya pas menumpuk. Klik kiri = setengah, klik kanan = penuh. --}}
+                                            <div class="flex items-center" style="gap:0.2rem;">
+                                                @for ($i = 1; $i <= 5; $i++)
+                                                    @php($fillPercent = $currentStars === null ? 0 : ($currentStars >= $i ? 100 : ($currentStars >= $i - 0.5 ? 50 : 0)))
+                                                    <span style="position:relative; display:inline-block; width:1.125em; height:1em; font-size:1.25rem; line-height:1;">
+                                                        @if ($fillPercent < 100)
+                                                            <i class="fa-regular fa-star" style="position:absolute; left:0; top:0; width:1.125em; text-align:left; color:#cbd5e1;"></i>
+                                                        @endif
+                                                        @if ($fillPercent > 0)
+                                                            <span style="position:absolute; left:0; top:0; height:100%; width:{{ $fillPercent }}%; overflow:hidden; pointer-events:none;">
+                                                                <i class="fa-solid fa-star" style="position:absolute; left:0; top:0; width:1.125em; text-align:left; color:#f59e0b;"></i>
+                                                            </span>
+                                                        @endif
+                                                        <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i - 0.5 }})"
+                                                                aria-label="{{ number_format($i - 0.5, 1) }} bintang"
+                                                                style="position:absolute; left:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
+                                                        <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i }})"
+                                                                aria-label="{{ $i }} bintang"
+                                                                style="position:absolute; right:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
                                                     </span>
-                                                    <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i - 0.5 }})"
-                                                            aria-label="{{ number_format($i - 0.5, 1) }} bintang"
-                                                            style="position:absolute; left:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
-                                                    <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i }})"
-                                                            aria-label="{{ $i }} bintang"
-                                                            style="position:absolute; right:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
-                                                </span>
-                                            @endfor
+                                                @endfor
+                                            </div>
                                             @if ($currentStars)
-                                                <span class="text-sm" style="color:var(--text-muted); margin-left:0.3rem;">{{ number_format($currentStars, 1) }}</span>
-                                                <button type="button" wire:click="clearRating({{ $intern->id }}, '{{ $field }}')" class="text-sm"
-                                                        style="color:var(--text-muted); margin-left:0.3rem; text-decoration:underline;">
-                                                    hapus
-                                                </button>
+                                                <div class="flex items-center" style="gap:0.5rem; flex-shrink:0;">
+                                                    <span style="font-size:0.85rem; font-weight:700; color:var(--text-heading); font-variant-numeric:tabular-nums;">{{ number_format($currentStars, 1) }}</span>
+                                                    <button type="button" wire:click="clearRating({{ $intern->id }}, '{{ $field }}')"
+                                                            style="font-size:0.75rem; color:var(--text-muted); text-decoration:underline;">
+                                                        hapus
+                                                    </button>
+                                                </div>
+                                            @else
+                                                <span style="font-size:0.75rem; color:var(--text-faint);">belum dinilai</span>
                                             @endif
                                         </div>
                                     </div>

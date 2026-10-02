@@ -25,8 +25,9 @@ self.addEventListener('push', function (event) {
     const title = payload.title || 'Portal Magang';
     const options = {
         body: payload.body || '',
-        // icon = gambar besar (foto profil pengirim / logo); badge = siluet putih kecil di status bar Android.
-        icon: payload.icon || '/images/app-icon-192.png',
+        // icon = gambar besar di kanan, hanya kalau ada foto profil pengirim (logo sudah tampil
+        // sebagai ikon aplikasi); badge = siluet putih kecil di status bar Android.
+        icon: payload.icon || undefined,
         badge: payload.badge || '/images/notif-badge.png',
         // WebPushMessage::data() dikirim sebagai payload.data — url ada di dalamnya.
         data: { url: (payload.data && payload.data.url) || payload.url || '/' },
