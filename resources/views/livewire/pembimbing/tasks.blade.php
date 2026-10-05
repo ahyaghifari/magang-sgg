@@ -151,8 +151,10 @@
                 $uniform = $sameTitle && $sameDesc && $sameDue;
             @endphp
             <article wire:key="task-group-{{ md5($group['key']) }}" class="surface-card" style="padding:1.1rem 1.15rem;">
-                <div class="flex items-start justify-between" style="gap:0.75rem; flex-wrap:wrap;">
-                    <div style="min-width:0; flex:1;">
+                {{-- Kolom judul punya lebar dasar 16rem: di HP tenggat otomatis turun ke baris sendiri
+                     (dulu tenggat tidak boleh menyusut, jadi judul & label terjepit jadi sempit). --}}
+                <div class="flex items-start justify-between" style="gap:0.5rem 0.75rem; flex-wrap:wrap;">
+                    <div style="min-width:0; flex:1 1 16rem;">
                         {{-- Isi berbeda per peserta → judul kotak "Tugas berbeda untuk tiap peserta";
                              judul tugas aslinya (kalau semua masih sama) tampil kecil di bawahnya. --}}
                         <p style="font-weight:700; font-size:1rem; color:var(--text-heading);">
@@ -187,7 +189,7 @@
                         </div>
                     </div>
                     @if ($sameDue && $first->due_date)
-                        <span class="text-sm" style="color:var(--text-muted); flex-shrink:0;">
+                        <span class="text-sm" style="color:var(--text-muted); flex:0 1 auto;">
                             <i class="fa-regular fa-calendar"></i> Tenggat {{ $first->due_date->translatedFormat('d F Y') }}
                             <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $first->due_date->format('H:i') }}
                         </span>

@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\Interns\Tables;
 
 use App\Models\Intern;
+use App\Models\Shift;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class InternsTable
 {
@@ -52,6 +55,17 @@ class InternsTable
                     ->badge()
                     ->placeholder('Belum ditempatkan')
                     ->sortable(),
+                // Shift tempat intern terdaftar (dipilih di menu Shift). Kosong = jam kerja biasa.
+                TextColumn::make('shifts.code')
+                    ->label('Shift')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'Pagi' => 'warning',
+                        'Siang' => 'info',
+                        default => 'gray',
+                    })
+                    ->placeholder('Tidak memakai shift')
+                    ->toggleable(),
                 TextColumn::make('pembimbing.name')
                     ->label('Pembimbing')
                     ->placeholder('Belum ditugaskan')
@@ -106,7 +120,14 @@ class InternsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                SelectFilter::make('shift')
+                    ->label('Shift')
+                    ->options(array_combine(Shift::TYPES, Shift::TYPES) + ['none' => 'Tidak memakai shift'])
+                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
+                        null, '' => $query,
+                        'none' => $query->whereDoesntHave('shifts'),
+                        default => $query->whereHas('shifts', fn (Builder $q) => $q->where('code', $data['value'])),
+                    }),
             ])
             ->recordActions([
                 Action::make('viewCertificate')

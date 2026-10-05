@@ -18,7 +18,8 @@ class RebuildAttendanceFromScanLog extends Command
 {
     protected $signature = 'attendance:rebuild
         {--from= : tanggal mulai (Y-m-d), default: semua}
-        {--to=   : tanggal akhir (Y-m-d), default: semua}';
+        {--to=   : tanggal akhir (Y-m-d), default: semua}
+        {--nip=  : batasi 1 NIP (mis. setelah jadwal shift intern dikoreksi)}';
 
     protected $description = 'Hitung ulang attendance_records dari access_scan_logs (tanpa HRIS)';
 
@@ -26,9 +27,11 @@ class RebuildAttendanceFromScanLog extends Command
     {
         $from = $this->option('from');
         $to = $this->option('to');
+        $nip = $this->option('nip');
 
         $scans = AccessScanLog::query()
             ->where('matched', true)
+            ->when($nip, fn ($q) => $q->where('nip', $nip))
             ->when($from, fn ($q) => $q->whereDate('scan_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('scan_date', '<=', $to))
             ->orderBy('scanned_at')
@@ -49,6 +52,7 @@ class RebuildAttendanceFromScanLog extends Command
 
         // Bersihkan rekap lama di rentang ini supaya benar-benar dihitung dari nol.
         AttendanceRecord::query()
+            ->when($nip, fn ($q) => $q->where('nip', $nip))
             ->when($from, fn ($q) => $q->whereDate('date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('date', '<=', $to))
             ->delete();

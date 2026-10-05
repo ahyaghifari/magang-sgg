@@ -126,6 +126,11 @@
                             <i class="fa-solid fa-fingerprint"></i>
                             <span>Presensi</span>
                         </a>
+                        <a href="{{ route('pembimbing.shifts') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.shifts') ? 'active' : '' }}">
+                            <i class="fa-solid fa-calendar-days"></i>
+                            <span>Jadwal Shift</span>
+                        </a>
                         @if ($portalUser->canReviewLeaveRequests())
                             <a href="{{ route('pembimbing.leaves') }}" wire:navigate @click="nav = false"
                                class="portal-nav-link {{ request()->routeIs('pembimbing.leaves') ? 'active' : '' }}">
@@ -167,6 +172,16 @@
                             <i class="fa-solid fa-calendar-xmark"></i>
                             <span>Izin</span>
                         </a>
+                        {{-- Jadwal Shift: hanya untuk intern yang memakai shift (terdaftar di master shift
+                             atau sudah punya isian jadwal) — intern unit non-shift tidak melihat menu ini. --}}
+                        @php($portalIntern = $portalUser->intern)
+                        @if ($portalIntern && ($portalIntern->shifts()->exists() || $portalIntern->shiftAssignments()->exists()))
+                            <a href="{{ route('shifts.index') }}" wire:navigate @click="nav = false"
+                               class="portal-nav-link {{ request()->routeIs('shifts.*') ? 'active' : '' }}">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <span>Jadwal Shift</span>
+                            </a>
+                        @endif
                     @endif
                 </nav>
 

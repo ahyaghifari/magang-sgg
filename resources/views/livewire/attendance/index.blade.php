@@ -75,6 +75,8 @@
             <p class="text-sm" style="color:var(--text-muted); margin-top:0.25rem;">
                 @if ($libur)
                     Hari ini libur.
+                @elseif ($scheduleLabel)
+                    Shift {{ $scheduleLabel }}
                 @else
                     Jadwal {{ $fmtTime($schedule->start_time) }}–{{ $fmtTime($schedule->end_time) }}
                 @endif
@@ -140,6 +142,7 @@
                         </p>
                     </div>
                     <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap;">
+                        @include('livewire.shifts.partials.badge', ['shiftLabel' => $shiftLabels[$row->nip . '|' . Carbon::parse($row->date)->toDateString()] ?? null])
                         @if ($row->late_minutes > 0)
                             <span class="badge" style="background:#fef3c7; color:#92400e;">Telat {{ $row->late_minutes }}m</span>
                         @elseif ($row->check_in_time)

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -224,6 +225,24 @@ class Intern extends Model
     public function leaveRequests(): HasMany
     {
         return $this->hasMany(LeaveRequest::class);
+    }
+
+    /**
+     * Jadwal shift harian intern ini (1 entri per tanggal: shift atau Libur).
+     * Lihat App\Services\Shift\ShiftAssignmentService.
+     */
+    public function shiftAssignments(): HasMany
+    {
+        return $this->hasMany(InternShiftAssignment::class);
+    }
+
+    /**
+     * Master shift tempat intern ini terdaftar (dipilih admin di form Master Shift) —
+     * hanya shift ini yang bisa dia pilih saat mengisi Jadwal Shift.
+     */
+    public function shifts(): BelongsToMany
+    {
+        return $this->belongsToMany(Shift::class, 'intern_shift')->withTimestamps();
     }
 
     /**

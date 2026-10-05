@@ -2,30 +2,42 @@
 
 namespace App\Services\Attendance;
 
-use App\Models\CompanyFixedSchedule;
+use App\Models\Intern;
+use App\Services\Shift\ScheduleResolver;
 use Carbon\Carbon;
 
 /**
- * Hitung telat / pulang cepat / menit kerja / status dari satu entri harian,
- * memakai jadwal fixed perusahaan untuk hari tersebut.
+ * Hitung telat / pulang cepat / menit kerja / status dari satu entri harian, memakai
+ * JADWAL EFEKTIF intern pada tanggal itu (ScheduleResolver): jam shift kalau intern mengisi
+ * jadwal shift; Libur → tidak dihitung; belum diisi → jadwal kerja tetap perusahaan (perilaku
+ * lama, tidak berubah untuk intern tanpa shift). Shift malam/lintas hari tidak didukung, jadi
+ * pengelompokan tap per tanggal kalender (AccessLogReader) tetap berlaku.
  */
 class FixedScheduleCalculator
 {
-    /** cache jadwal per (company_id, day_of_week) selama 1 proses. */
-    private array $cache = [];
+    /** cache intern per NIP selama 1 proses. */
+    private array $internCache = [];
+
+    private ScheduleResolver $resolver;
+
+    public function __construct(?ScheduleResolver $resolver = null)
+    {
+        $this->resolver = $resolver ?? new ScheduleResolver;
+    }
 
     /**
      * @param  array{nip:string, company_id:mixed, date:string, check_in:?string, check_out:?string, single_scan?:bool}  $entry
-     * @return array|null  null = hari libur / jadwal tidak ada / scan diabaikan
+     * @return array|null  null = hari libur (perusahaan / Libur di jadwal shift) / jadwal tidak ada / scan diabaikan
      */
     public function calculate(array $entry): ?array
     {
-        $cfg = $this->schedule($entry['company_id'], $entry['date']);
+        $cfg = $this->resolver->resolve($this->intern($entry['nip']), $entry['company_id'], $entry['date']);
 
-        if (! $cfg || $cfg->is_off_day || ! $cfg->start_time || ! $cfg->end_time) {
-            return null; // tidak ada jadwal kerja -> tidak menghasilkan rekap
+        if (! $cfg || $cfg['source'] === 'off') {
+            return null; // tidak ada jadwal kerja / Libur -> tidak menghasilkan rekap
         }
 
+        $cfg = (object) $cfg;
         $start = Carbon::createFromFormat('H:i:s', $cfg->start_time);
         $end = Carbon::createFromFormat('H:i:s', $cfg->end_time);
 
@@ -89,14 +101,16 @@ class FixedScheduleCalculator
         ];
     }
 
-    private function schedule(mixed $companyId, string $date): ?CompanyFixedSchedule
+    private function intern(?string $nip): ?Intern
     {
-        $dow = Carbon::parse($date)->dayOfWeek; // 0..6
-        $key = $companyId.'|'.$dow;
+        if (! $nip) {
+            return null;
+        }
 
-        return $this->cache[$key] ??= CompanyFixedSchedule::query()
-            ->where('company_id', $companyId)
-            ->where('day_of_week', $dow)
-            ->first() ?: null;
+        if (! array_key_exists($nip, $this->internCache)) {
+            $this->internCache[$nip] = Intern::where('nip', $nip)->first();
+        }
+
+        return $this->internCache[$nip];
     }
 }
