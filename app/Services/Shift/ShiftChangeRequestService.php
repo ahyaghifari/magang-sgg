@@ -36,7 +36,9 @@ class ShiftChangeRequestService
     }
 
     /**
-     * @param  array<int, array{date: string, shift: string}>  $entries  shift: pagi|siang|malam|libur
+     * @param  array<int, array{date: string, shift: string, reason?: ?string}>  $entries  shift: pagi|siang|malam|libur;
+     *         reason (opsional) = alasan khusus tanggal itu — kosong berarti memakai $reason (alasan umum).
+     * @param  ?string  $reason  alasan umum; wajib bila ada tanggal tanpa alasan khusus
      * @return array{requested: array<int, string>, skipped: array<int, string>, locked: array<int, string>, pending: array<int, string>, unchanged: array<int, string>}
      *         skipped = gabungan locked + pending + unchanged.
      *
@@ -45,6 +47,7 @@ class ShiftChangeRequestService
     public function submitEntries(User $actor, Intern $intern, array $entries, ?string $reason): array
     {
         $map = ShiftAssignmentService::normalizeEntries($entries);
+        $reasons = $this->reasonsPerDate($entries, $reason);
 
         if ((int) $intern->user_id !== (int) $actor->id) {
             throw ValidationException::withMessages(['entries' => 'Kamu hanya bisa mengajukan perubahan jadwalmu sendiri.']);
@@ -59,14 +62,6 @@ class ShiftChangeRequestService
         $companyId = $this->assignments->companyId($intern);
         if (! $companyId) {
             throw ValidationException::withMessages(['entries' => 'Data unit kamu belum lengkap, silakan hubungi admin.']);
-        }
-
-        $reason = trim((string) $reason);
-        if ($reason === '') {
-            throw ValidationException::withMessages(['reason' => 'Tulis alasan pengajuan perubahan shift.']);
-        }
-        if (mb_strlen($reason) > 500) {
-            throw ValidationException::withMessages(['reason' => 'Alasan maksimal 500 karakter.']);
         }
 
         $dates = array_keys($map);
@@ -106,7 +101,7 @@ class ShiftChangeRequestService
 
         $created = collect();
 
-        DB::transaction(function () use ($intern, $plan, $masterIds, $reason, &$created, &$result) {
+        DB::transaction(function () use ($intern, $plan, $masterIds, $reasons, &$created, &$result) {
             foreach ($plan as $date => [$row, $wantOff, $value]) {
                 $created->push(ShiftChangeRequest::create([
                     'intern_id' => $intern->id,
@@ -117,7 +112,7 @@ class ShiftChangeRequestService
                     'requested_shift_id' => $wantOff ? null : $masterIds->get($value),
                     'requested_shift_code' => $wantOff ? null : $value,
                     'requested_off_day' => $wantOff,
-                    'reason' => $reason,
+                    'reason' => $reasons[$date],
                     'status' => ShiftChangeRequest::STATUS_PENDING,
                 ]));
                 $result['requested'][] = $date;
@@ -133,6 +128,46 @@ class ShiftChangeRequestService
         }
 
         return $result;
+    }
+
+    /**
+     * Alasan efektif per tanggal: alasan khusus entri bila diisi, selain itu alasan umum.
+     * Tanggal tanpa keduanya → seluruh batch ditolak (alasan wajib). Maks. 500 karakter.
+     *
+     * @return array<string, string>  [Y-m-d => alasan]
+     *
+     * @throws ValidationException
+     */
+    private function reasonsPerDate(array $entries, ?string $shared): array
+    {
+        $shared = trim((string) $shared);
+        if (mb_strlen($shared) > 500) {
+            throw ValidationException::withMessages(['reason' => 'Alasan maksimal 500 karakter.']);
+        }
+
+        $reasons = [];
+        foreach ($entries as $entry) {
+            $own = $entry['reason'] ?? null;
+            if ($own !== null && ! is_string($own)) {
+                throw ValidationException::withMessages(['reason' => 'Ada alasan yang tidak valid.']);
+            }
+
+            $own = trim((string) $own);
+            if (mb_strlen($own) > 500) {
+                throw ValidationException::withMessages(['reason' => 'Alasan maksimal 500 karakter.']);
+            }
+
+            $effective = $own !== '' ? $own : $shared;
+            if ($effective === '') {
+                throw ValidationException::withMessages(['reason' => $shared === '' && count($entries) === 1
+                    ? 'Tulis alasan pengajuan perubahan shift.'
+                    : 'Tulis alasan umum, atau isi alasan untuk setiap tanggal.']);
+            }
+
+            $reasons[$entry['date']] = $effective;
+        }
+
+        return $reasons;
     }
 
     /**

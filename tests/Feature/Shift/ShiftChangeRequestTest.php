@@ -160,6 +160,47 @@ class ShiftChangeRequestTest extends TestCase
         Notification::assertNothingSent();
     }
 
+    public function test_alasan_per_tanggal_dan_alasan_umum_sebagai_cadangan(): void
+    {
+        $this->requests()->submitEntries($this->intern->user, $this->intern, [
+            ['date' => '2026-10-06', 'shift' => 'siang', 'reason' => 'Kontrol ke dokter'],
+            ['date' => '2026-10-07', 'shift' => 'libur', 'reason' => '  '],          // kosong → alasan umum
+            ['date' => '2026-10-08', 'shift' => 'malam'],                             // tanpa → alasan umum
+        ], 'Urusan keluarga');
+
+        $this->assertSame(
+            ['2026-10-06' => 'Kontrol ke dokter', '2026-10-07' => 'Urusan keluarga', '2026-10-08' => 'Urusan keluarga'],
+            ShiftChangeRequest::orderBy('date')->get()->mapWithKeys(fn ($r) => [$r->date->toDateString() => $r->reason])->all(),
+        );
+
+        // Alasan berbeda → tiap baris notifikasi membawa alasannya sendiri, tanpa baris "Alasan:" umum.
+        Notification::assertSentTo($this->mentor, ShiftChangeRequested::class, function (ShiftChangeRequested $n) {
+            $body = explode("\n", $n->toWebPush($this->mentor, $n)->toArray()['body']);
+
+            return count($body) === 3
+                && str_ends_with($body[0], 'Kosong → Siang — Kontrol ke dokter')
+                && str_ends_with($body[1], 'Kosong → Libur — Urusan keluarga');
+        });
+    }
+
+    public function test_tanpa_alasan_umum_semua_tanggal_wajib_punya_alasan_sendiri(): void
+    {
+        // Semua tanggal punya alasan sendiri → boleh tanpa alasan umum.
+        $result = $this->requests()->submitEntries($this->intern->user, $this->intern, [
+            ['date' => '2026-10-06', 'shift' => 'siang', 'reason' => 'Kuliah pagi'],
+            ['date' => '2026-10-07', 'shift' => 'libur', 'reason' => 'Acara keluarga'],
+        ], '');
+        $this->assertSame(['2026-10-06', '2026-10-07'], $result['requested']);
+
+        // Satu tanggal tanpa alasan & tanpa alasan umum → seluruh batch ditolak.
+        $errors = $this->errorOf(fn () => $this->requests()->submitEntries($this->intern->user, $this->intern, [
+            ['date' => '2026-10-08', 'shift' => 'siang', 'reason' => 'Kuliah pagi'],
+            ['date' => '2026-10-09', 'shift' => 'libur'],
+        ], ''));
+        $this->assertArrayHasKey('reason', $errors);
+        $this->assertSame(2, ShiftChangeRequest::count());
+    }
+
     public function test_tanggal_dengan_pengajuan_menunggu_dan_pilihan_yang_sama_dilewati(): void
     {
         $this->mentorSets('2026-10-07');                    // Pagi

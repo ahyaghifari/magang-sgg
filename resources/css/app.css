@@ -1335,6 +1335,12 @@ html.dark .shift-cell.is-today .shift-cell-day { color: #0f172a; }
     background: var(--brand); color: #fff; border: 1px solid var(--brand);
 }
 .shift-pd-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.shift-pd-reason-row { flex-basis: 100%; width: 100%; font-size: 0.85rem; }
+.shift-pd-switch {
+    display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 0.6rem; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600; color: var(--text-body); min-height: 32px;
+}
+.shift-pd-switch input { width: 1.05rem; height: 1.05rem; accent-color: var(--brand); }
 html.dark .shift-pd-submit { color: #0b1a33; }
 @media (max-width: 639px) {
     .shift-pd-row { padding: 0.5rem; }

@@ -7,7 +7,8 @@
     Props:
       options  ShiftTone::entryOptions(...)
       mode     'save'    → $wire.saveBulkShiftSchedule(entries)            (Mentor)
-               'request' → $wire.submitBulkShiftRequests(entries, reason)   (intern, alasan wajib)
+               'request' → $wire.submitBulkShiftRequests(entries, reason)   (intern; alasan umum, atau
+                           alasan per tanggal bila "Alasan berbeda per tanggal" dinyalakan — entries[].reason)
       presets  true = tampilkan preset rotasi (khusus Mentor)
     Isian saat ini dibaca dari elemen #shift-current-map (data-map JSON) yang dirender di luar
     komponen ini, supaya tetap segar setelah tiap update Livewire. Event window 'shift-bulk-saved'
@@ -28,11 +29,14 @@
         tones: @js($tones),
         choices: {},
         reason: '',
+        perDateReason: false,
+        reasons: {},
         sending: false,
         get dates() { return [...($wire.selected || [])].sort() },
         get chosen() { return this.dates.filter(d => this.choices[d]) },
         get count() { return this.chosen.length },
-        get canSend() { return this.count > 0 && ! this.sending && (this.mode !== 'request' || this.reason.trim() !== '') },
+        hasReason(d) { return (this.perDateReason && (this.reasons[d] || '').trim() !== '') || this.reason.trim() !== '' },
+        get canSend() { return this.count > 0 && ! this.sending && (this.mode !== 'request' || this.chosen.every(d => this.hasReason(d))) },
         current() {
             try { return JSON.parse(document.getElementById('shift-current-map')?.dataset.map || '{}') } catch (e) { return {} }
         },
@@ -47,14 +51,16 @@
         async send() {
             if (! this.canSend) return;
             this.sending = true;
-            const entries = this.chosen.map(d => ({ date: d, shift: this.choices[d] }));
+            const entries = this.chosen.map(d => this.perDateReason && (this.reasons[d] || '').trim() !== ''
+                ? { date: d, shift: this.choices[d], reason: this.reasons[d] }
+                : { date: d, shift: this.choices[d] });
             try {
                 if (this.mode === 'request') await $wire.submitBulkShiftRequests(entries, this.reason);
                 else await $wire.saveBulkShiftSchedule(entries);
             } finally { this.sending = false }
         },
      }"
-     x-on:shift-bulk-saved.window="choices = {}; reason = ''">
+     x-on:shift-bulk-saved.window="choices = {}; reason = ''; reasons = {}; perDateReason = false">
 
     {{-- Tombol bantu --}}
     <div class="shift-pd-tools">
@@ -97,18 +103,33 @@
                         </button>
                     @endforeach
                 </div>
+                @if ($mode === 'request')
+                    <input type="text" x-show="perDateReason" x-model="reasons[d]" maxlength="500"
+                           class="form-input shift-pd-reason-row"
+                           :aria-label="'Alasan untuk ' + dayLabel(d)"
+                           :placeholder="reason.trim() !== '' ? 'Alasan tanggal ini (kosong = pakai alasan umum)' : 'Alasan untuk tanggal ini'">
+                @endif
             </div>
         </template>
     </div>
 
     @if ($mode === 'request')
-        <label for="shift-pd-reason" class="text-sm" style="display:block; font-weight:600; color:var(--text-body); margin:0.6rem 0 0.3rem;">
-            Alasan <span style="color:#dc2626;">*</span>
-            <span style="font-weight:400; color:var(--text-muted);">(satu alasan untuk semua tanggal)</span>
+        <label class="shift-pd-switch">
+            <input type="checkbox" x-model="perDateReason">
+            <span>Alasan berbeda per tanggal</span>
+        </label>
+        <label for="shift-pd-reason" class="text-sm" style="display:block; font-weight:600; color:var(--text-body); margin:0.45rem 0 0.3rem;">
+            <span x-text="perDateReason ? 'Alasan umum' : 'Alasan'"></span>
+            <span x-show="! perDateReason" style="color:#dc2626;">*</span>
+            <span style="font-weight:400; color:var(--text-muted);"
+                  x-text="perDateReason ? '(dipakai untuk tanggal yang alasannya dikosongkan)' : '(satu alasan untuk semua tanggal)'"></span>
         </label>
         <textarea id="shift-pd-reason" x-model="reason" rows="2" maxlength="500" class="form-input"
                   style="width:100%; resize:vertical;"
                   placeholder="Mis. mohon izin tukar shift karena ada urusan keluarga"></textarea>
+        <p class="text-sm" x-show="count > 0 && ! chosen.every(d => hasReason(d))" style="color:#b45309; margin-top:0.3rem;">
+            <span x-text="chosen.filter(d => ! hasReason(d)).length"></span> tanggal belum punya alasan.
+        </p>
     @endif
 
     <div class="flex items-center" style="gap:0.6rem; margin-top:0.6rem; flex-wrap:wrap;">

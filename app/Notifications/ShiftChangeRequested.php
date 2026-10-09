@@ -44,6 +44,9 @@ class ShiftChangeRequested extends Notification
 
         // Satu tanggal: "Tanggal: Sen, 06 Okt 2026" + "Shift: Pagi → Siang".
         // Beberapa tanggal: tiap baris "Sen, 06 Okt: Pagi → Siang" (maks. 3), lalu "+N lainnya".
+        // Alasan sama semua → satu baris "Alasan: …" di akhir; berbeda per tanggal → ikut di tiap baris.
+        $sameReason = $requests->pluck('reason')->unique()->count() === 1;
+
         if ($count === 1) {
             $lines = [
                 'Tanggal: ' . $first->date->locale('id')->translatedFormat('D, d M Y'),
@@ -51,13 +54,16 @@ class ShiftChangeRequested extends Notification
             ];
         } else {
             $lines = $requests->take(3)
-                ->map(fn ($r) => $r->date->locale('id')->translatedFormat('D, d M') . ': ' . $r->changeLabel())
+                ->map(fn ($r) => $r->date->locale('id')->translatedFormat('D, d M') . ': ' . $r->changeLabel()
+                    . ($sameReason ? '' : ' — ' . $r->reason))
                 ->all();
             if ($count > 3) {
                 $lines[] = '+' . ($count - 3) . ' lainnya';
             }
         }
-        $lines[] = 'Alasan: ' . $first->reason;
+        if ($sameReason) {
+            $lines[] = 'Alasan: ' . $first->reason;
+        }
 
         return $this->pushMessage(
             title: $count === 1 ? 'Pengajuan perubahan shift dari ' . $name : "{$count} pengajuan perubahan shift dari {$name}",
