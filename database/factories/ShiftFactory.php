@@ -34,4 +34,10 @@ class ShiftFactory extends Factory
     {
         return $this->state(fn () => ['code' => 'Siang', 'start_time' => '12:00:00', 'end_time' => '21:00:00']);
     }
+
+    /** Shift Malam 20:00–08:00 (pulang keesokan hari). */
+    public function malam(): static
+    {
+        return $this->state(fn () => ['code' => 'Malam', 'start_time' => '20:00:00', 'end_time' => '08:00:00', 'break_minutes' => 0]);
+    }
 }

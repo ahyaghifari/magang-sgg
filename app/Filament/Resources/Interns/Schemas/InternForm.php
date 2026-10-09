@@ -8,6 +8,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -58,6 +59,13 @@ class InternForm
                     ->preload()
                     ->placeholder('Belum ditugaskan')
                     ->helperText('Mentor yang mendampingi intern ini secara khusus — satu mentor bisa memegang lebih dari satu intern.'),
+                ToggleButtons::make('uses_shift')
+                    ->label('Memakai jadwal shift?')
+                    ->boolean(trueLabel: 'Ya', falseLabel: 'Tidak')
+                    ->default(false)
+                    ->inline()
+                    ->required()
+                    ->helperText('Ya = jadwal intern ini diisi Mentor per tanggal (Pagi/Siang/Malam/Libur) dan menu "Jadwal Shift" muncul di portalnya. Tidak = mengikuti jam kerja biasa perusahaan.'),
                 TextInput::make('nama')
                     ->label('Nama')
                     ->required()

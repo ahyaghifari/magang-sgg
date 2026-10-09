@@ -124,7 +124,7 @@ class ShiftAttendanceTest extends TestCase
     public function test_tanggal_shift_yang_belum_diisi_kembali_ke_jadwal_tetap(): void
     {
         $intern = $this->makeIntern();
-        $intern->shifts()->attach($this->pagi->id);       // terdaftar shift, tapi tanggal ini belum diisi
+        $intern->update(['uses_shift' => true]); // admin: memakai jadwal shift = Ya
         $this->assign($intern, '2026-10-02', $this->pagi); // hanya tanggal lain yang diisi
 
         $this->syncTaps($intern, '2026-10-01', ['08:05:00', '16:00:00']);
@@ -134,14 +134,14 @@ class ShiftAttendanceTest extends TestCase
 
     public function test_mengisi_jadwal_tidak_mengubah_presensi_yang_sudah_ada(): void
     {
-        $pembimbing = $this->makeUser(\App\Enums\UserRole::Pembimbing);
-        $intern = $this->makeIntern(['pembimbing_id' => $pembimbing->id]);
+        $mentor = $this->makeUser(\App\Enums\UserRole::Mentor);
+        $intern = $this->makeIntern(['mentor_id' => $mentor->id]);
         $this->syncTaps($intern, '2026-10-01', ['08:05:00', '15:50:00']);
         $before = $this->record($intern, '2026-10-01')->only(['check_in_time', 'check_out_time', 'late_minutes', 'early_leave_minutes', 'working_minutes', 'status']);
 
-        // Pembimbing mengisi jadwal untuk tanggal ke depan → presensi lama tidak tersentuh.
+        // Mentor mengisi jadwal untuk tanggal ke depan → presensi lama tidak tersentuh.
         app(\App\Services\Shift\ShiftAssignmentService::class)
-            ->apply($pembimbing, $intern, ['2026-10-06', '2026-10-07'], 'off');
+            ->apply($mentor, $intern, ['2026-10-06', '2026-10-07'], 'off');
 
         $this->assertSame($before, $this->record($intern, '2026-10-01')->only(array_keys($before)));
     }

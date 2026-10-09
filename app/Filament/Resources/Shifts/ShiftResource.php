@@ -15,8 +15,8 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
 /**
- * Menu "Shift" — daftar shift per perusahaan (jenis Pagi/Siang beserta jam & toleransi) dan intern
- * yang terdaftar di tiap shift. Jadwal harian diisi Pembimbing/Mentor di portal. Hanya super admin
+ * Menu "Shift" — daftar shift per perusahaan (jenis Pagi/Siang/Malam beserta jam & toleransi). Intern yang
+ * memakai shift dipilih di form Intern (uses_shift). Jadwal harian diisi Mentor di portal. Hanya super admin
  * (lihat ShiftPolicy).
  */
 class ShiftResource extends Resource

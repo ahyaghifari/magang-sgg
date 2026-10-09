@@ -1,26 +1,43 @@
 {{--
-    Action bar jadwal shift — menempel di bawah layar, muncul (dengan transisi) begitu minimal
-    satu tanggal dipilih. Hanya dirender untuk peran yang boleh mengubah.
-    Props: shifts. Memanggil apply('shift', id) / apply('off') / apply('clear') dan clearSelection()
-    di komponen Livewire induk (yang punya properti $selected).
+    Action bar jadwal shift milik MENTOR — menempel di bawah layar, muncul (dengan transisi) begitu
+    minimal satu tanggal dipilih. Hanya dirender untuk yang boleh mengubah (Mentor dampingan).
+    Dua mode:
+      - "Satu Shift untuk Semua" (bawaan): apply('shift', id) / apply('off') / apply('clear');
+      - "Atur Per Tanggal": tiap tanggal pilihan sendiri → saveBulkShiftSchedule(entries)
+        (lihat x-shift-per-date).
+    Props: shifts (pickableShifts), entries (isian bulan ini, untuk badge "saat ini").
+    Mode aktif diumumkan lewat event window 'shift-bar-mode' (dipakai spacer di halaman).
 --}}
-@props(['shifts' => collect()])
+@props(['shifts' => collect(), 'entries' => collect()])
 
 @php($tone = \App\Support\ShiftTone::class)
 
-<div x-data x-show="$wire.selected.length > 0" style="display:none;" x-transition.opacity.duration.200ms wire:ignore.self
+<div x-data="{ mode: 'all' }" x-init="$watch('mode', m => $dispatch('shift-bar-mode', { mode: m }))"
+     x-show="$wire.selected.length > 0" style="display:none;" x-transition.opacity.duration.200ms wire:ignore.self
      class="shift-actionbar" role="region" aria-label="Terapkan jadwal ke tanggal yang dipilih">
+    {{-- Isian saat ini (dibaca x-shift-per-date) — di luar wire:ignore supaya selalu segar. --}}
+    <div id="shift-current-map" hidden data-map="{{ json_encode($tone::currentMap($entries)) }}"></div>
+
     <div style="max-width:56rem; margin:0 auto;">
-        <div class="flex items-center justify-between" style="gap:0.5rem; margin-bottom:0.6rem;">
+        <div class="flex items-center justify-between" style="gap:0.5rem; margin-bottom:0.6rem; flex-wrap:wrap;">
             <span style="font-size:0.9rem; font-weight:700; color:var(--text-heading);" aria-live="polite">
                 <i class="fa-solid fa-calendar-check" style="color:var(--brand);" aria-hidden="true"></i>
                 <span x-text="$wire.selected.length"></span> tanggal dipilih
             </span>
-            <button type="button" wire:click="clearSelection" class="shift-btn-sm" aria-label="Batalkan pilihan tanggal">
-                <i class="fa-solid fa-xmark" aria-hidden="true"></i> Batal
-            </button>
+            <div class="flex items-center" style="gap:0.4rem;">
+                <div class="shift-seg" role="tablist" aria-label="Cara mengisi">
+                    <button type="button" role="tab" class="shift-seg-btn" :class="mode === 'all' && 'is-on'"
+                            :aria-selected="mode === 'all'" @click="mode = 'all'">Satu Shift untuk Semua</button>
+                    <button type="button" role="tab" class="shift-seg-btn" :class="mode === 'perDate' && 'is-on'"
+                            :aria-selected="mode === 'perDate'" @click="mode = 'perDate'">Atur Per Tanggal</button>
+                </div>
+                <button type="button" wire:click="clearSelection" class="shift-btn-sm" aria-label="Batalkan pilihan tanggal">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i> Batal
+                </button>
+            </div>
         </div>
-        <div class="flex" style="gap:0.45rem; flex-wrap:wrap;">
+
+        <div x-show="mode === 'all'" class="flex" style="gap:0.45rem; flex-wrap:wrap;">
             @foreach ($shifts as $shift)
                 @php($t = $tone::for($shift->code))
                 <button type="button" wire:click="apply('shift', @js($shift->id ?? $shift->code))" wire:loading.attr="disabled" wire:target="apply"
@@ -39,6 +56,10 @@
                     class="shift-action-btn is-neutral" aria-label="Kosongkan isian tanggal yang dipilih">
                 <i class="fa-solid fa-eraser" aria-hidden="true"></i> Kosongkan
             </button>
+        </div>
+
+        <div x-show="mode === 'perDate'" x-cloak>
+            <x-shift-per-date :options="$tone::entryOptions($shifts)" mode="save" presets />
         </div>
     </div>
 </div>

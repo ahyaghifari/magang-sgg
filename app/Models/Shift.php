@@ -5,30 +5,30 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Master shift per perusahaan — jenis shift (Pagi / Siang) + jamnya, mis. Pagi 08:30–16:30,
- * Siang 12:00–21:00. Dikelola super admin di panel Filament, beserta daftar intern yang
- * memakai shift itu (interns()). Intern hanya bisa memilih shift tempat dia terdaftar saat
- * mengisi jadwal shift hariannya.
+ * Master shift per perusahaan — jenis shift (Pagi / Siang / Malam) + jamnya, mis. Pagi 08:00–14:00,
+ * Siang 14:00–20:00, Malam 20:00–08:00. Dikelola super admin di panel Filament. Intern mana
+ * yang memakai jadwal shift dipilih per intern (Intern::uses_shift), bukan per master shift.
  *
  * Kolom `code` menyimpan jenis shift (salah satu TYPES, unik per perusahaan); `name` selalu
- * diisi sama dengan jenisnya. Shift malam / lintas hari sengaja TIDAK didukung: jam pulang
- * wajib setelah jam masuk di hari yang sama, dan kolom is_overnight selalu false.
+ * diisi sama dengan jenisnya. Shift LINTAS HARI (jam pulang <= jam masuk, mis. Malam 20:00–08:00)
+ * otomatis ditandai is_overnight: jam pulangnya jatuh keesokan hari, dan tap pulang esok pagi
+ * dihitung ke tanggal shift itu dimulai (lihat ScheduleResolver::workDate).
  */
 class Shift extends Model
 {
     use HasFactory;
 
-    /** Pilihan jenis shift (nama lengkap, tidak disingkat). Shift malam sengaja tidak ada. */
-    public const TYPES = ['Pagi', 'Siang'];
+    /** Pilihan jenis shift (nama lengkap, tidak disingkat). */
+    public const TYPES = ['Pagi', 'Siang', 'Malam'];
 
     /** Jam bawaan per jenis — otomatis terisi di form Master Shift saat jenis dipilih (masih bisa diubah). */
     public const DEFAULT_TIMES = [
-        'Pagi' => ['start' => '08:30', 'end' => '16:30'],
-        'Siang' => ['start' => '12:00', 'end' => '21:00'],
+        'Pagi' => ['start' => '08:00', 'end' => '14:00'],
+        'Siang' => ['start' => '14:00', 'end' => '20:00'],
+        'Malam' => ['start' => '20:00', 'end' => '08:00'], // pulang keesokan hari
     ];
 
     protected $fillable = [
@@ -51,7 +51,9 @@ class Shift extends Model
         static::saving(function (self $shift): void {
             $shift->code = trim((string) $shift->code);
             $shift->name = $shift->code;
-            $shift->is_overnight = false;
+            // Jam pulang <= jam masuk → pulang keesokan hari.
+            $shift->is_overnight = $shift->start_time !== null && $shift->end_time !== null
+                && substr((string) $shift->end_time, 0, 5) <= substr((string) $shift->start_time, 0, 5);
         });
     }
 
@@ -64,12 +66,6 @@ class Shift extends Model
     public function assignments(): HasMany
     {
         return $this->hasMany(InternShiftAssignment::class);
-    }
-
-    /** Intern yang terdaftar di shift ini (boleh memilihnya di Jadwal Shift). */
-    public function interns(): BelongsToMany
-    {
-        return $this->belongsToMany(Intern::class, 'intern_shift')->withTimestamps();
     }
 
     /** Label untuk pilihan & tampilan, mis. "Pagi (08:30–16:30)". */
@@ -89,6 +85,11 @@ class Shift extends Model
         [$sh, $sm] = array_map('intval', explode(':', substr((string) $this->start_time, 0, 5)));
         [$eh, $em] = array_map('intval', explode(':', substr((string) $this->end_time, 0, 5)));
 
-        return max(0, ($eh * 60 + $em) - ($sh * 60 + $sm) - (int) $this->break_minutes);
+        $minutes = ($eh * 60 + $em) - ($sh * 60 + $sm);
+        if ($minutes <= 0) {
+            $minutes += 24 * 60; // lintas hari, mis. 20:00–08:00 = 12 jam
+        }
+
+        return max(0, $minutes - (int) $this->break_minutes);
     }
 }

@@ -31,31 +31,46 @@ class AttendanceRecalculator
         $calculator = new FixedScheduleCalculator(new ScheduleResolver);
         $writer = new AttendanceRecordWriter($calculator);
         $companyId = $intern->loadMissing('unit')->unit?->company_id;
+        $resolver = $calculator->resolver();
+        $today = Carbon::today()->toDateString();
         $done = 0;
 
-        foreach (array_unique($dates) as $date) {
-            $date = Carbon::parse($date)->toDateString();
+        // Tanggal yang diubah + keesokan harinya: bila tanggal itu jadi/berhenti jadi shift Malam,
+        // tap pagi esoknya pindah kepemilikan, jadi rekap esok hari juga perlu dihitung ulang.
+        $dates = collect($dates)
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->flatMap(fn ($d) => [$d, Carbon::parse($d)->addDay()->toDateString()])
+            ->filter(fn ($d) => $d <= $today)
+            ->unique()
+            ->sort()
+            ->values();
 
-            $times = AccessScanLog::query()
+        foreach ($dates as $date) {
+            $next = Carbon::parse($date)->addDay()->toDateString();
+
+            $scans = AccessScanLog::query()
                 ->where('nip', $intern->nip)
                 ->where('matched', true)
-                ->whereDate('scan_date', $date)
-                ->pluck('scan_time')
-                ->map(fn ($t) => substr((string) $t, 0, 8))
-                ->filter()
-                ->unique()
-                ->sort()
-                ->values();
+                ->whereBetween('scan_date', [$date, $next])
+                ->get(['scan_date', 'scan_time']);
+
+            // Hanya tap yang tanggal KERJA-nya tanggal ini (tap pagi setelah Malam milik hari sebelumnya).
+            $mine = $scans->filter(fn ($s) => $resolver->workDate($intern, $s->scan_date, (string) $s->scan_time) === $date);
+            $times = $calculator->orderTimes($intern->nip, $companyId, $date, $mine->pluck('scan_time'));
+            $hasRawTapsOnDate = $scans->contains(fn ($s) => $s->scan_date->toDateString() === $date);
 
             $existing = AttendanceRecord::where('nip', $intern->nip)->whereDate('date', $date)->first();
 
+            if ($times->isEmpty() && $existing && $hasRawTapsOnDate) {
+                // Semua tap di tanggal ini ternyata tap pulang shift Malam hari sebelumnya → rekap ini usang.
+                $existing->delete();
+                $done++;
+                continue;
+            }
+
             if ($times->isEmpty() && $existing) {
-                $times = collect([$existing->check_in_time, $existing->check_out_time])
-                    ->map(fn ($t) => $t ? substr((string) $t, 0, 8) : null)
-                    ->filter()
-                    ->unique()
-                    ->sort()
-                    ->values();
+                $times = $calculator->orderTimes($intern->nip, $existing->company_id ?? $companyId, $date,
+                    [$existing->check_in_time, $existing->check_out_time]);
             }
 
             if ($times->isEmpty()) {

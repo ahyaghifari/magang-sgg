@@ -2,14 +2,12 @@
 
 namespace App\Filament\Resources\Shifts\Schemas;
 
-use App\Models\Intern;
 use App\Models\Shift;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rules\Unique;
 
 class ShiftForm
@@ -28,14 +26,12 @@ class ShiftForm
                             ->searchable()
                             ->preload()
                             ->live()
-                            // Ganti perusahaan → pilihan intern dikosongkan (intern harus dari perusahaan itu).
-                            ->afterStateUpdated(fn ($set) => $set('interns', []))
                             ->required(),
                         Select::make('code')
                             ->label('Jenis shift')
                             ->options(array_combine(Shift::TYPES, Shift::TYPES))
                             ->native(false)
-                            ->helperText('Jam masuk & pulang terisi otomatis sesuai jenis (Pagi 08:30–16:30, Siang 12:00–21:00), masih bisa diubah. Satu perusahaan hanya punya satu shift per jenis.')
+                            ->helperText('Jam masuk & pulang terisi otomatis sesuai jenis (Pagi 08:00–14:00, Siang 14:00–20:00, Malam 20:00–08:00), masih bisa diubah. Satu perusahaan hanya punya satu shift per jenis.')
                             ->live()
                             ->afterStateUpdated(function ($state, $set) {
                                 if ($times = Shift::DEFAULT_TIMES[$state] ?? null) {
@@ -51,29 +47,6 @@ class ShiftForm
                             ->validationMessages([
                                 'unique' => 'Perusahaan ini sudah punya shift dengan jenis yang sama. Silakan ubah shift yang sudah ada.',
                             ]),
-                        Select::make('interns')
-                            ->label('Intern yang memakai shift ini')
-                            ->helperText('Daftar intern mengikuti perusahaan yang dipilih. Intern yang sudah terdaftar di shift lain tidak ditampilkan — lepaskan dulu dari shift itu bila ingin memindahkannya.')
-                            ->relationship(
-                                'interns',
-                                'nama',
-                                modifyQueryUsing: fn (Builder $query, $get, ?Shift $record) => $query
-                                    ->with('unit')
-                                    ->whereHas('unit', fn (Builder $q) => $q->where('company_id', $get('company_id')))
-                                    // Intern yang sudah terdaftar di shift LAIN disembunyikan — tiap intern
-                                    // cukup satu shift terdaftar. Intern milik shift ini sendiri tetap tampil.
-                                    ->where(fn (Builder $q) => $q
-                                        ->whereDoesntHave('shifts', fn (Builder $s) => $s->where('shifts.id', '!=', $record?->id ?? 0))
-                                        ->when($record, fn (Builder $q) => $q->orWhereHas('shifts', fn (Builder $s) => $s->whereKey($record->id))))
-                                    ->orderBy('nama'),
-                            )
-                            ->getOptionLabelFromRecordUsing(fn (Intern $record) => $record->nama . ($record->unit ? ' — ' . $record->unit->name : ''))
-                            ->multiple()
-                            ->searchable()
-                            ->preload()
-                            ->disabled(fn ($get) => blank($get('company_id')))
-                            ->placeholder(fn ($get) => blank($get('company_id')) ? 'Pilih perusahaan dulu' : 'Pilih intern...')
-                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Jam Kerja')
@@ -84,13 +57,14 @@ class ShiftForm
                             ->label('Jam masuk')
                             ->seconds(false)
                             ->required(),
-                        // Shift malam/lintas hari tidak didukung → jam pulang wajib setelah jam masuk.
+                        // Jam pulang lebih awal dari jam masuk = pulang keesokan hari (shift malam).
                         TimePicker::make('end_time')
                             ->label('Jam pulang')
                             ->seconds(false)
-                            ->after('start_time')
+                            ->different('start_time')
+                            ->helperText('Bila lebih awal dari jam masuk (mis. Malam 20:00–08:00), dianggap pulang keesokan hari.')
                             ->validationMessages([
-                                'after' => 'Jam pulang harus setelah jam masuk (shift malam tidak didukung).',
+                                'different' => 'Jam pulang tidak boleh sama dengan jam masuk.',
                             ])
                             ->required(),
                         TextInput::make('break_minutes')

@@ -50,10 +50,20 @@
      supaya langganan notifikasi disinkron ulang otomatis setelah login / ganti akun, tanpa perlu
      menekan "Aktifkan Notifikasi" lagi. <body> ikut diganti saat wire:navigate, jadi nilainya selalu terbaru. --}}
 <body class="site h-full" data-push-user="{{ auth()->id() }}">
-    @auth
+       @auth
         @php
             $portalUser = auth()->user();
+            $bgRole = $portalUser->isPimpinan()
+                ? 'pimpinan'
+                : ($portalUser->isPortalMentor()
+                    ? ($portalUser->canReviewLeaveRequests() ? 'pembimbing' : 'mentor')
+                    : 'intern');
         @endphp
+
+        @persist('animated-bg')
+            <x-animated-bg :role="$bgRole" />
+        @endpersist
+
         <div class="portal-shell"
              x-data="{
                 nav: false,
@@ -172,10 +182,10 @@
                             <i class="fa-solid fa-calendar-xmark"></i>
                             <span>Izin</span>
                         </a>
-                        {{-- Jadwal Shift: hanya untuk intern yang memakai shift (terdaftar di master shift
-                             atau sudah punya isian jadwal) — intern unit non-shift tidak melihat menu ini. --}}
+                        {{-- Jadwal Shift: hanya untuk intern yang memakai shift (dipilih admin di form Intern:
+                             "Memakai jadwal shift: Ya") — intern non-shift tidak melihat menu ini. --}}
                         @php($portalIntern = $portalUser->intern)
-                        @if ($portalIntern && ($portalIntern->shifts()->exists() || $portalIntern->shiftAssignments()->exists()))
+                        @if ($portalIntern && $portalIntern->usesShifts())
                             <a href="{{ route('shifts.index') }}" wire:navigate @click="nav = false"
                                class="portal-nav-link {{ request()->routeIs('shifts.*') ? 'active' : '' }}">
                                 <i class="fa-solid fa-calendar-days"></i>

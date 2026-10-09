@@ -985,9 +985,12 @@ html.dark .portal-logout:hover {
     align-items: center;
     gap: 1rem;
     padding: 0.7rem 1.15rem;
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
 }
+
 .portal-topbar-actions {
     display: flex;
     align-items: center;
@@ -1060,10 +1063,12 @@ html.dark .portal-logout:hover {
    ========================================================================= */
 .shift-tone-pagi  { --st-bg: #fef3c7; --st-fg: #92400e; --st-bd: #fcd34d; }
 .shift-tone-siang { --st-bg: #e0f2fe; --st-fg: #075985; --st-bd: #7dd3fc; }
+.shift-tone-malam { --st-bg: #e0e7ff; --st-fg: #3730a3; --st-bd: #a5b4fc; }
 .shift-tone-libur { --st-bg: #ffe4e6; --st-fg: #be123c; --st-bd: #fda4af; }
 .shift-tone-lain  { --st-bg: var(--surface-alt); --st-fg: var(--text-body); --st-bd: var(--border); }
 html.dark .shift-tone-pagi  { --st-bg: rgba(245, 158, 11, 0.16); --st-fg: #fcd34d; --st-bd: rgba(245, 158, 11, 0.45); }
 html.dark .shift-tone-siang { --st-bg: rgba(14, 165, 233, 0.16); --st-fg: #7dd3fc; --st-bd: rgba(14, 165, 233, 0.45); }
+html.dark .shift-tone-malam { --st-bg: rgba(99, 102, 241, 0.18); --st-fg: #a5b4fc; --st-bd: rgba(99, 102, 241, 0.45); }
 html.dark .shift-tone-libur { --st-bg: rgba(244, 63, 94, 0.16); --st-fg: #fda4af; --st-bd: rgba(244, 63, 94, 0.45); }
 
 /* Badge shift di rekap presensi */
@@ -1130,6 +1135,26 @@ html.dark .shift-tone-libur { --st-bg: rgba(244, 63, 94, 0.16); --st-fg: #fda4af
 }
 .shift-cal-dow.is-weekend { color: #be123c; }
 html.dark .shift-cal-dow.is-weekend { color: #fda4af; }
+
+/* Pilih cepat: kolom kecil di kiri untuk "pilih satu minggu", nama hari bisa diketuk. */
+.shift-cal-grid.has-week { grid-template-columns: 1.6rem repeat(7, minmax(0, 1fr)); }
+.shift-cal-dow.is-pick, .shift-cal-week {
+    font-family: inherit; cursor: pointer; border-radius: 9999px;
+    background: transparent; border: 1px solid transparent;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.shift-cal-week {
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    color: var(--text-faint); font-size: 0.7rem; border-radius: 8px;
+}
+.shift-cal-dow.is-pick:hover:not(:disabled), .shift-cal-week:hover:not(:disabled) {
+    background: var(--surface-alt); border-color: var(--border); color: var(--brand);
+}
+.shift-cal-dow.is-pick.is-active, .shift-cal-week.is-active {
+    background: color-mix(in srgb, var(--brand) 14%, transparent); border-color: var(--brand); color: var(--brand);
+}
+.shift-cal-dow.is-pick:disabled, .shift-cal-week:disabled { cursor: default; opacity: 0.35; }
+.shift-cal-dow.is-pick:focus-visible, .shift-cal-week:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 .shift-cell {
     position: relative; width: 100%; min-height: 5rem;
     display: flex; flex-direction: column; justify-content: space-between; gap: 0.3rem;
@@ -1167,6 +1192,7 @@ html.dark .shift-cell.is-today .shift-cell-day { color: #0f172a; }
 @media (max-width: 639px) {
     .shift-cal { padding: 0.45rem; }
     .shift-cal-grid { gap: 0.25rem; }
+    .shift-cal-grid.has-week { grid-template-columns: 1.15rem repeat(7, minmax(0, 1fr)); }
     .shift-cell {
         min-height: 3.5rem; padding: 0.25rem 0.15rem; border-radius: 10px;
         align-items: center; justify-content: center; text-align: center;
@@ -1255,3 +1281,179 @@ html.dark .shift-cell.is-today .shift-cell-day { color: #0f172a; }
     background: var(--surface-alt); color: var(--text-muted); white-space: normal; overflow-wrap: anywhere;
 }
 .shift-lastchange b { color: var(--text-heading); }
+
+/* ---- Mode "Atur Per Tanggal" (panel bawah Mentor & pengajuan intern) ---- */
+.shift-actionbar { max-height: 88vh; overflow-y: auto; overscroll-behavior: contain; }
+.shift-seg {
+    display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px;
+    background: var(--surface-alt); border: 1px solid var(--border);
+}
+.shift-seg-btn {
+    font: inherit; font-size: 0.78rem; font-weight: 700; padding: 0.4rem 0.7rem; border-radius: 8px;
+    border: 0; background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap;
+}
+.shift-seg-btn.is-on { background: var(--surface); color: var(--brand); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
+.shift-seg-btn:focus-visible, .shift-pd-chip:focus-visible, .shift-pd-opt:focus-visible, .shift-pd-submit:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 2px;
+}
+.shift-pd-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-bottom: 0.45rem; }
+.shift-pd-tools-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-right: 0.15rem; }
+.shift-pd-chip {
+    font: inherit; font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.65rem; border-radius: 9999px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.3rem; min-height: 34px;
+    background: var(--st-bg, transparent); color: var(--st-fg, var(--text-body)); border: 1px solid var(--st-bd, var(--border));
+}
+.shift-pd-chip.is-neutral { --st-bg: transparent; --st-fg: var(--text-body); --st-bd: var(--border); font-weight: 600; }
+.shift-pd-list {
+    display: flex; flex-direction: column; gap: 0.45rem; max-height: 45vh; overflow-y: auto;
+    padding: 0.15rem 0.1rem; overscroll-behavior: contain;
+}
+.shift-pd-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 0.65rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+}
+.shift-pd-date { display: flex; flex-direction: column; gap: 0.2rem; min-width: 6.5rem; flex: 0 0 auto; }
+.shift-pd-day { font-weight: 800; font-size: 0.9rem; color: var(--text-heading); }
+.shift-pd-now {
+    align-self: flex-start; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 9999px;
+    background: var(--st-bg, var(--surface-alt)); color: var(--st-fg, var(--text-muted)); border: 1px solid var(--st-bd, var(--border));
+}
+.shift-pd-now.is-empty { --st-bg: var(--surface-alt); --st-fg: var(--text-muted); --st-bd: var(--border); }
+.shift-pd-opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; flex: 1 1 16rem; }
+.shift-pd-opt {
+    font: inherit; cursor: pointer; min-height: 44px; padding: 0.3rem 0.2rem; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.05rem;
+    background: transparent; color: var(--text-body); border: 1px solid var(--border);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.shift-pd-opt.is-on { background: var(--st-bg); color: var(--st-fg); border-color: var(--st-fg); box-shadow: inset 0 0 0 1px var(--st-fg); }
+.shift-pd-opt-label { font-size: 0.8rem; font-weight: 800; line-height: 1.1; }
+.shift-pd-opt-time { font-size: 0.64rem; font-weight: 600; opacity: 0.75; white-space: nowrap; }
+.shift-pd-submit {
+    font: inherit; font-size: 0.875rem; font-weight: 700; min-height: 44px; padding: 0.55rem 1rem; border-radius: 12px;
+    display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+    background: var(--brand); color: #fff; border: 1px solid var(--brand);
+}
+.shift-pd-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+html.dark .shift-pd-submit { color: #0b1a33; }
+@media (max-width: 639px) {
+    .shift-pd-row { padding: 0.5rem; }
+    .shift-pd-date { flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
+    .shift-pd-opts { flex-basis: 100%; }
+    .shift-pd-opt-time { font-size: 0.6rem; }
+}
+
+/* ---- Pengajuan perubahan shift (intern → mentor) ---- */
+.shift-cell-corner.is-pending .fa-hourglass-half { color: #d97706; font-size: 0.7rem; }
+.shift-req-list { display: flex; flex-direction: column; gap: 0.55rem; }
+.shift-req {
+    display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.6rem;
+    padding: 0.75rem 0.85rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+}
+.shift-req-main { min-width: 0; flex: 1 1 14rem; }
+.shift-req-title { font-weight: 700; color: var(--text-heading); font-size: 0.9rem; }
+.shift-req-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+.shift-req-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.shift-req-status {
+    display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 700;
+    padding: 0.2rem 0.55rem; border-radius: 9999px; border: 1px solid var(--border);
+    background: var(--surface-alt); color: var(--text-muted);
+}
+.shift-req-status.is-pending { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.shift-req-status.is-approved { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.shift-req-status.is-rejected { background: #ffe4e6; color: #be123c; border-color: #fecdd3; }
+html.dark .shift-req-status.is-pending { background: rgba(217, 119, 6, 0.18); color: #fcd34d; border-color: rgba(217, 119, 6, 0.35); }
+html.dark .shift-req-status.is-approved { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.35); }
+html.dark .shift-req-status.is-rejected { background: rgba(225, 29, 72, 0.18); color: #fda4af; border-color: rgba(225, 29, 72, 0.35); }
+/* =========================================================================
+   Animated background (portal) — icon bertema jurnal magang, warna per peran,
+   dipasang lewat <x-animated-bg> di components/layouts/app.blade.php
+   ========================================================================= */
+.animated-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    --c1: 16 185 129;   /* intern: hijau */
+    --c2: 59 130 246;
+    --c3: 168 85 247;
+}
+.animated-bg[data-role="mentor"]     { --c1: 245 158 11; --c2: 239 68 68;  --c3: 236 72 153; }
+.animated-bg[data-role="pembimbing"] { --c1: 59 130 246; --c2: 99 102 241; --c3: 14 165 233; }
+.animated-bg[data-role="pimpinan"]   { --c1: 124 58 237; --c2: 217 119 6;  --c3: 30 41 59; }
+
+.animated-bg .shape {
+    position: absolute;
+    line-height: 1;
+    will-change: transform;
+}
+
+/* Buku */
+.animated-bg .ic-book {
+    font-size: clamp(44px, 4.6vmax, 76px); top: 12%; left: 6%;
+    color: rgb(var(--c1) / 0.5);
+    animation: bg-drift-a 20s ease-in-out infinite alternate;
+}
+/* Laptop */
+.animated-bg .ic-laptop {
+    font-size: clamp(50px, 5.2vmax, 84px); bottom: 14%; right: 8%;
+    color: rgb(var(--c2) / 0.5);
+    animation: bg-drift-b 24s ease-in-out infinite alternate;
+}
+/* HP */
+.animated-bg .ic-phone {
+    font-size: clamp(38px, 4vmax, 64px); top: 10%; right: 12%;
+    color: rgb(var(--c3) / 0.5);
+    animation: bg-sway 13s ease-in-out infinite alternate;
+}
+/* Pena */
+.animated-bg .ic-pen {
+    font-size: clamp(36px, 3.8vmax, 60px); bottom: 10%; left: 10%;
+    color: rgb(var(--c1) / 0.55);
+    animation: bg-sway 12s ease-in-out infinite alternate;
+}
+/* Clipboard tugas */
+.animated-bg .ic-clip {
+    font-size: clamp(34px, 3.6vmax, 56px); top: 58%; left: 44%;
+    color: rgb(var(--c2) / 0.5);
+    animation: bg-drift-c 16s ease-in-out infinite alternate;
+}
+/* Kalender */
+.animated-bg .ic-cal {
+    font-size: clamp(32px, 3.4vmax, 52px); top: 30%; left: 28%;
+    color: rgb(var(--c3) / 0.5);
+    animation: bg-sway 15s ease-in-out infinite alternate;
+}
+/* Sidik jari (presensi) — satu-satunya yang berputar */
+.animated-bg .ic-finger {
+    font-size: clamp(34px, 3.6vmax, 56px); top: 64%; right: 24%;
+    color: rgb(var(--c1) / 0.5);
+    animation: bg-spin 40s linear infinite;
+}
+/* Topi wisuda */
+.animated-bg .ic-cap {
+    font-size: clamp(40px, 4.2vmax, 68px); top: 8%; left: 44%;
+    color: rgb(var(--c2) / 0.5);
+    animation: bg-drift-a 22s ease-in-out infinite alternate;
+}
+
+@keyframes bg-drift-a  { to { transform: translate(14vw, 16vh) scale(1.1); } }
+@keyframes bg-drift-b  { to { transform: translate(-14vw, -14vh) scale(1.08); } }
+@keyframes bg-drift-c  { to { transform: translate(-10vw, 14vh) rotate(20deg); } }
+@keyframes bg-spin     { to { transform: rotate(360deg); } }
+@keyframes bg-sway     { from { transform: translate(0, 0) rotate(-12deg); }
+                         to   { transform: translate(5vw, -8vh) rotate(12deg); } }
+
+html.dark .animated-bg .shape { opacity: 0.85; }
+
+/* HP: sembunyikan sebagian icon biar tidak ramai */
+@media (max-width: 640px) {
+    .animated-bg .ic-clip,
+    .animated-bg .ic-cal,
+    .animated-bg .ic-cap { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animated-bg .shape { animation: none; }
+}

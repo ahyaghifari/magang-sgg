@@ -33,7 +33,8 @@ class RebuildAttendanceFromScanLog extends Command
             ->where('matched', true)
             ->when($nip, fn ($q) => $q->where('nip', $nip))
             ->when($from, fn ($q) => $q->whereDate('scan_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('scan_date', '<=', $to))
+            // +1 hari: tap pulang shift Malam di tanggal terakhir jatuh keesokan paginya.
+            ->when($to, fn ($q) => $q->whereDate('scan_date', '<=', \Illuminate\Support\Carbon::parse($to)->addDay()->toDateString()))
             ->orderBy('scanned_at')
             ->get(['nip', 'scan_date', 'scan_time', 'scanned_at']);
 
@@ -57,7 +58,11 @@ class RebuildAttendanceFromScanLog extends Command
             ->when($to, fn ($q) => $q->whereDate('date', '<=', $to))
             ->delete();
 
-        $groups = $scans->groupBy(fn ($s) => $s->nip.'|'.$s->scan_date->toDateString());
+        // Per (nip, tanggal KERJA): tap pagi setelah shift lintas hari (Malam) ikut tanggal shift dimulai.
+        $resolver = $calculator->resolver();
+        $groups = $scans->groupBy(fn ($s) => $s->nip.'|'.$resolver->workDate(
+            $calculator->internByNip($s->nip), $s->scan_date, (string) $s->scan_time,
+        ));
 
         $built = 0;
         $skipped = 0;
@@ -65,7 +70,11 @@ class RebuildAttendanceFromScanLog extends Command
         foreach ($groups as $key => $dayScans) {
             [$nip, $date] = explode('|', $key, 2);
 
-            $times = $dayScans->map(fn ($s) => substr((string) $s->scan_time, 0, 8))->filter()->unique()->sort()->values();
+            if (($to && $date > $to) || ($from && $date < $from)) {
+                continue; // tanggal kerja di luar rentang (mis. tap pulang Malam milik hari sebelum rentang)
+            }
+
+            $times = $calculator->orderTimes($nip, $companyByNip->get($nip), $date, $dayScans->pluck('scan_time'));
 
             $entry = [
                 'nip' => $nip,

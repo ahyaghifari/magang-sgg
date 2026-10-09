@@ -14,9 +14,9 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Satu-satunya jalur untuk mengubah jadwal shift intern (dipakai halaman Jadwal Shift Intern
- * milik Pembimbing/Mentor), supaya aturan selalu sama:
- * - hak akses: InternShiftAssignmentPolicy::manageDate() — hanya Pembimbing (binaannya) dan
- *   Mentor (dampingannya); tanggal yang tidak boleh diubah DILEWATI, dilaporkan sebagai 'locked';
+ * milik Mentor, dan saat Mentor menyetujui pengajuan intern), supaya aturan selalu sama:
+ * - hak akses: InternShiftAssignmentPolicy::manageDate() — hanya Mentor (dampingannya);
+ *   tanggal yang tidak boleh diubah DILEWATI, dilaporkan sebagai 'locked';
  * - shift harus milik perusahaan intern (intern → unit → company);
  * - Libur = off_day true tanpa shift; "kosongkan" = hapus entri (kembali "belum diisi");
  * - created_by diisi saat entri dibuat, updated_by setiap kali diubah.
@@ -38,9 +38,9 @@ class ShiftAssignmentService
      * Terapkan shift / Libur / kosongkan ke beberapa tanggal sekaligus.
      *
      * @param  array<int, string>  $dates  tanggal Y-m-d
-     * @param  int|string|null  $shiftId  id master shift, atau jenis baku ('Pagi'/'Siang') — jenis yang
+     * @param  int|string|null  $shiftId  id master shift, atau jenis baku ('Pagi'/'Siang'/'Malam') — jenis yang
      *         belum punya master shift di perusahaan peserta dibuat otomatis dengan jam bawaan
-     *         (hanya oleh Pembimbing/Mentor yang berhak).
+     *         (hanya oleh Mentor yang berhak).
      * @return array{saved: array<int, string>, cleared: array<int, string>, locked: array<int, string>, past_changed: array<int, string>}
      *         past_changed = tanggal hari ini/lampau yang benar-benar berubah (perlu hitung ulang presensi).
      *
@@ -135,11 +135,115 @@ class ShiftAssignmentService
         return $result;
     }
 
+    /** Nilai pilihan per tanggal (mode "Atur Per Tanggal") → jenis shift baku, atau Libur. */
+    public const ENTRY_VALUES = ['pagi' => 'Pagi', 'siang' => 'Siang', 'malam' => 'Malam', 'libur' => self::ACTION_OFF];
+
     /**
-     * Shift yang boleh dipilih untuk intern ini, urut jam masuk:
-     * - intern sendiri → hanya shift perusahaannya tempat dia TERDAFTAR (dipilih admin di Master Shift);
-     * - Admin/Pembimbing/Mentor yang mengoreksi → semua shift perusahaan intern (bisa mengoreksi
-     *   walau daftar intern di master shift belum diperbarui).
+     * Validasi daftar entri per tanggal [['date' => 'Y-m-d', 'shift' => 'pagi|siang|malam|libur'], ...].
+     * Satu saja yang tidak valid (format tanggal, nilai di luar 4 pilihan, tanggal dobel, > MAX_DATES)
+     * → seluruh batch ditolak.
+     *
+     * @return array<string, string>  [Y-m-d => 'Pagi'|'Siang'|'Malam'|'off'], urut tanggal
+     *
+     * @throws ValidationException
+     */
+    public static function normalizeEntries(array $entries): array
+    {
+        if ($entries === []) {
+            throw ValidationException::withMessages(['entries' => 'Silakan pilih shift untuk minimal satu tanggal.']);
+        }
+        if (count($entries) > self::MAX_DATES) {
+            throw ValidationException::withMessages(['entries' => 'Maksimal ' . self::MAX_DATES . ' tanggal sekali simpan.']);
+        }
+
+        $map = [];
+        foreach ($entries as $entry) {
+            $date = is_array($entry) ? ($entry['date'] ?? null) : null;
+            $value = is_array($entry) ? ($entry['shift'] ?? null) : null;
+
+            if (! is_string($date) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)
+                || Carbon::createFromFormat('!Y-m-d', $date)?->toDateString() !== $date) {
+                throw ValidationException::withMessages(['entries' => 'Ada tanggal yang tidak valid.']);
+            }
+            if (! is_string($value) || ! array_key_exists($value, self::ENTRY_VALUES)) {
+                throw ValidationException::withMessages(['entries' => 'Pilihan shift harus Pagi, Siang, Malam, atau Libur.']);
+            }
+            if (array_key_exists($date, $map)) {
+                throw ValidationException::withMessages(['entries' => 'Ada tanggal yang dipilih lebih dari sekali.']);
+            }
+
+            $map[$date] = self::ENTRY_VALUES[$value];
+        }
+
+        ksort($map);
+
+        return $map;
+    }
+
+    /**
+     * Mode "Atur Per Tanggal" milik Mentor: tiap tanggal diberi shift / Libur yang BERBEDA lalu
+     * disimpan sekaligus dalam satu transaksi. Memakai ulang apply() per kelompok pilihan, jadi
+     * aturan akses, master shift otomatis, catatan pengubah, dan hitung ulang presensi sama persis.
+     * Aktor yang tidak berhak (bukan Mentor peserta ini) → seluruh batch ditolak.
+     *
+     * @param  array<int, array{date: string, shift: string}>  $entries
+     * @return array{saved: array<int, string>, skipped: array<int, string>, past_changed: array<int, string>}
+     *         skipped = pilihannya sama dengan jadwal saat ini.
+     *
+     * @throws ValidationException
+     */
+    public function applyEntries(User $actor, Intern $intern, array $entries): array
+    {
+        $map = self::normalizeEntries($entries);
+
+        if (! Gate::forUser($actor)->allows('correctAnyDate', [InternShiftAssignment::class, $intern])) {
+            throw ValidationException::withMessages(['entries' => 'Kamu tidak punya akses untuk mengubah jadwal peserta ini.']);
+        }
+
+        $existing = InternShiftAssignment::with('shift')
+            ->where('intern_id', $intern->id)
+            ->whereIn('date', array_keys($map))
+            ->get()
+            ->keyBy(fn ($a) => $a->date->toDateString());
+
+        $result = ['saved' => [], 'skipped' => [], 'past_changed' => []];
+        $groups = [];
+        foreach ($map as $date => $value) {
+            $row = $existing->get($date);
+            $same = $row && ($value === self::ACTION_OFF ? $row->off_day : (! $row->off_day && $row->shift?->code === $value));
+
+            if ($same) {
+                $result['skipped'][] = $date;
+            } else {
+                $groups[$value][] = $date;
+            }
+        }
+
+        DB::transaction(function () use ($actor, $intern, $groups, &$result) {
+            foreach ($groups as $value => $dates) {
+                $applied = $value === self::ACTION_OFF
+                    ? $this->apply($actor, $intern, $dates, self::ACTION_OFF)
+                    : $this->apply($actor, $intern, $dates, self::ACTION_SHIFT, $value);
+
+                if ($applied['locked'] !== []) {
+                    // Tidak terjadi untuk Mentor yang berhak (aksesnya tidak bergantung tanggal) — jaga-jaga.
+                    throw ValidationException::withMessages(['entries' => 'Kamu tidak punya akses untuk mengubah jadwal peserta ini.']);
+                }
+
+                array_push($result['saved'], ...$applied['saved']);
+                array_push($result['past_changed'], ...$applied['past_changed']);
+            }
+        });
+
+        sort($result['saved']);
+
+        return $result;
+    }
+
+    /**
+     * Master shift perusahaan intern ini, urut jam masuk (kosong bila data unit belum lengkap).
+     * Intern mana yang memakai shift dipilih per intern (Intern::uses_shift), bukan per master shift.
+     * $actor tidak lagi memengaruhi hasil (dipertahankan supaya pemanggil lama tetap jalan).
      */
     public function availableShifts(Intern $intern, ?User $actor = null)
     {
@@ -151,15 +255,11 @@ class ShiftAssignmentService
 
         $query = Shift::where('company_id', $companyId)->orderBy('start_time');
 
-        if (! $actor || $actor->id === $intern->user_id) {
-            $query->whereHas('interns', fn ($q) => $q->whereKey($intern->id));
-        }
-
         return $query->get();
     }
 
     /**
-     * Pilihan shift di panel Pembimbing/Mentor: SEMUA jenis baku (Shift::TYPES — Pagi & Siang) selalu
+     * Pilihan shift di panel Pembimbing/Mentor: SEMUA jenis baku (Shift::TYPES — Pagi, Siang & Malam) selalu
      * tersedia. Master shift perusahaan yang sudah ada dipakai apa adanya (jam dari admin); jenis yang
      * belum ada tampil sebagai model BELUM TERSIMPAN (id null, jam bawaan) dan baru dibuat saat
      * diterapkan (lihat shiftIdForType). Shift lain buatan admin tetap ikut. Urut jam masuk.
@@ -196,7 +296,7 @@ class ShiftAssignmentService
 
     /**
      * Id master shift jenis baku untuk perusahaan peserta — dibuat dengan jam bawaan bila belum ada.
-     * Hanya untuk yang berhak mengoreksi (Pembimbing binaannya / Mentor dampingannya).
+     * Hanya untuk yang berhak mengoreksi (Mentor dampingannya).
      *
      * @throws ValidationException
      */

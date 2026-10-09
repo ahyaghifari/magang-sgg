@@ -3,15 +3,15 @@
     nama + unit. Memilih → $wire.set('internId', id) (ikut tersimpan di ?intern=ID) dan memicu
     event window "shift-intern-picked" (dipakai daftar "Baru dilihat").
 
-    Props: interns (koleksi Intern dengan relasi unit + atribut has_shift/has_schedule),
+    Props: interns (koleksi Intern dengan relasi unit + kolom uses_shift),
            selected (Intern|null).
 --}}
 @props(['interns' => collect(), 'selected' => null])
 
 @php
-    $isRegistered = fn ($i) => $i->has_shift || $i->has_schedule;
+    $isRegistered = fn ($i) => (bool) $i->uses_shift;
     $groups = [
-        'reg' => ['label' => 'Terdaftar shift / sudah punya jadwal', 'items' => $interns->filter($isRegistered)],
+        'reg' => ['label' => 'Memakai jadwal shift', 'items' => $interns->filter($isRegistered)],
         'other' => ['label' => 'Peserta lainnya', 'items' => $interns->reject($isRegistered)],
     ];
 @endphp

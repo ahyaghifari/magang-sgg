@@ -32,8 +32,9 @@ class ScheduleResolver
      * @param  int|null  $companyId  perusahaan untuk fallback jadwal tetap (null = pakai unit intern)
      * @return array{source: string, label: ?string, shift_id: ?int, start_time: ?string, end_time: ?string,
      *               break_minutes: int, late_tolerance_minutes: int, early_leave_tolerance_minutes: int,
-     *               checkin_buffer_minutes: int, checkout_buffer_minutes: int}|null
+     *               checkin_buffer_minutes: int, checkout_buffer_minutes: int, overnight: bool}|null
      *         source: 'shift' | 'off' | 'fixed'. null = tidak ada jadwal kerja.
+     *         overnight = jam pulang jatuh keesokan hari (shift lintas hari, mis. Malam).
      */
     public function resolve(?Intern $intern, mixed $companyId, Carbon|string $date): ?array
     {
@@ -47,7 +48,7 @@ class ScheduleResolver
                     'source' => 'off', 'label' => 'Libur', 'shift_id' => null,
                     'start_time' => null, 'end_time' => null, 'break_minutes' => 0,
                     'late_tolerance_minutes' => 0, 'early_leave_tolerance_minutes' => 0,
-                    'checkin_buffer_minutes' => 0, 'checkout_buffer_minutes' => 0,
+                    'checkin_buffer_minutes' => 0, 'checkout_buffer_minutes' => 0, 'overnight' => false,
                 ];
             }
 
@@ -62,6 +63,7 @@ class ScheduleResolver
                     'early_leave_tolerance_minutes' => (int) $s->early_leave_tolerance_minutes,
                     'checkin_buffer_minutes' => (int) $s->checkin_buffer_minutes,
                     'checkout_buffer_minutes' => (int) $s->checkout_buffer_minutes,
+                    'overnight' => (bool) $s->is_overnight,
                 ];
             }
 
@@ -82,7 +84,61 @@ class ScheduleResolver
             'early_leave_tolerance_minutes' => (int) $cfg->early_leave_tolerance_minutes,
             'checkin_buffer_minutes' => (int) $cfg->checkin_buffer_minutes,
             'checkout_buffer_minutes' => (int) $cfg->checkout_buffer_minutes,
+            'overnight' => false,
         ];
+    }
+
+    /**
+     * Tanggal kerja (tanggal shift) tempat sebuah tap dihitung. Biasanya sama dengan tanggal tap,
+     * KECUALI tap pagi setelah shift lintas hari (mis. Malam 20:00–08:00): bila tanggal
+     * sebelumnya berisi shift lintas hari dan tap masih dalam jendela pulangnya (jam pulang +
+     * jendela tap pulang), tap itu milik tanggal sebelumnya — jadi masuk 20:00 & pulang 08:00
+     * esoknya tercatat sebagai satu rekap di tanggal shift dimulai.
+     */
+    public function workDate(?Intern $intern, Carbon|string $scanDate, string $scanTime): string
+    {
+        $scanDate = Carbon::parse($scanDate)->toDateString();
+
+        if (! $intern) {
+            return $scanDate;
+        }
+
+        $previous = Carbon::parse($scanDate)->subDay()->toDateString();
+        $shift = $this->assignment($intern->id, $previous)?->shift;
+
+        if (! $shift || ! $shift->is_overnight || $this->assignment($intern->id, $previous)->off_day) {
+            return $scanDate;
+        }
+
+        $tap = self::minutes($scanTime);
+        $prevEnd = self::minutes($shift->end_time);
+        $latest = min(24 * 60 - 1, $prevEnd + (int) $shift->checkout_buffer_minutes);
+
+        if ($tap > $latest) {
+            return $scanDate;
+        }
+
+        // Tap juga masuk jendela tap masuk SHIFT yang diisi di hari itu sendiri (mis. Malam lalu
+        // Siang 14:00, tap 11:58) → pilih yang lebih dekat: jam pulang Malam atau jam masuk hari itu.
+        // Hari yang belum diisi (jadwal tetap perusahaan) tidak ikut bersaing: setelah Malam, tap
+        // di jendela pulang selalu dianggap tap pulang.
+        $own = $this->assignment($intern->id, $scanDate)?->shift;
+        if ($own && ! $this->assignment($intern->id, $scanDate)->off_day) {
+            $ownStart = self::minutes($own->start_time);
+            if ($tap >= $ownStart - (int) $own->checkin_buffer_minutes && abs($ownStart - $tap) < abs($tap - $prevEnd)) {
+                return $scanDate;
+            }
+        }
+
+        return $previous;
+    }
+
+    /** "HH:MM[:SS]" → menit sejak tengah malam. */
+    public static function minutes(?string $time): int
+    {
+        [$h, $m] = array_map('intval', explode(':', (string) $time) + [0, 0]);
+
+        return $h * 60 + $m;
     }
 
     /**

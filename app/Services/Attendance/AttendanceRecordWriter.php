@@ -3,7 +3,6 @@
 namespace App\Services\Attendance;
 
 use App\Models\AttendanceRecord;
-use Illuminate\Support\Collection;
 
 /**
  * Upsert hasil FixedScheduleCalculator ke attendance_records.
@@ -41,7 +40,8 @@ class AttendanceRecordWriter
         }
 
         // Gabung semua waktu tap yang pernah terlihat -> paling awal & paling akhir.
-        $times = $this->sortedTimes([
+        // Urutan kronologis per tanggal kerja (shift lintas hari: jam pagi esoknya di akhir).
+        $times = $this->calculator->orderTimes($r['nip'], $r['company_id'], $r['date'], [
             $existing->check_in_time,
             $existing->check_out_time,
             $r['check_in_time'],
@@ -73,16 +73,5 @@ class AttendanceRecordWriter
         ]);
 
         return $existing;
-    }
-
-    /** @param  array<int, ?string>  $values  jam "HH:MM:SS" */
-    private function sortedTimes(array $values): Collection
-    {
-        return collect($values)
-            ->map(fn ($v) => $v ? substr((string) $v, 0, 8) : null)
-            ->filter()
-            ->unique()
-            ->sort()
-            ->values();
     }
 }

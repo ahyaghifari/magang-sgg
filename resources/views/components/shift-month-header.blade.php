@@ -87,10 +87,10 @@
             <summary aria-label="Bantuan"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Bantuan</summary>
             <div class="shift-help-body">
                 @if ($editable)
-                    Ketuk satu atau beberapa tanggal, lalu pilih <b>Pagi</b>, <b>Siang</b>, <b>Libur</b>, atau <b>Kosongkan</b> di panel bawah.
+                    Ketuk satu atau beberapa tanggal, lalu pilih <b>Pagi</b>, <b>Siang</b>, <b>Malam</b>, <b>Libur</b>, atau <b>Kosongkan</b> di panel bawah — atau pilih <b>Atur Per Tanggal</b> untuk memberi shift berbeda per tanggal lalu simpan sekaligus. Pilih cepat: ketuk <b>nama hari</b> (mis. Sen) untuk semua hari itu bulan ini, atau tombol <i class="fa-solid fa-angles-right" aria-hidden="true"></i> di kiri baris untuk satu minggu.
                     Tanggal yang sudah lewat juga bisa diubah — presensinya otomatis dihitung ulang.
                 @else
-                    Kalender ini hanya untuk dilihat. Jadwal diisi oleh pembimbing atau mentor peserta.
+                    Shift Malam dimulai di tanggal itu dan berakhir esok paginya.
                 @endif
                 Tanggal kosong mengikuti jam kerja biasa perusahaan. Tahan/arahkan kursor ke tanggal untuk melihat siapa yang terakhir mengubah.
             </div>

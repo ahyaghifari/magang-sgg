@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -21,6 +20,7 @@ class Intern extends Model
         'unit_id',
         'pembimbing_id',
         'mentor_id',
+        'uses_shift',
         'nama',
         'nama_panggilan',
         'avatar_path',
@@ -115,6 +115,7 @@ class Intern extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'uses_shift' => 'boolean',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
         'nilai_akhir' => 'decimal:2',
@@ -237,13 +238,20 @@ class Intern extends Model
     }
 
     /**
-     * Master shift tempat intern ini terdaftar (dipilih admin di form Master Shift) —
-     * hanya shift ini yang bisa dia pilih saat mengisi Jadwal Shift.
+     * Intern ini memakai jadwal shift — dipilih admin di form Intern ("Memakai jadwal shift: Ya/Tidak").
+     * Syarat menu "Jadwal Shift" muncul dan syarat boleh mengajukan perubahan shift.
      */
-    public function shifts(): BelongsToMany
+    public function usesShifts(): bool
     {
-        return $this->belongsToMany(Shift::class, 'intern_shift')->withTimestamps();
+        return (bool) $this->uses_shift;
     }
+
+    /** Pengajuan perubahan jadwal shift dari intern ini (diputuskan Mentor-nya). */
+    public function shiftChangeRequests(): HasMany
+    {
+        return $this->hasMany(ShiftChangeRequest::class);
+    }
+
 
     /**
      * Pembimbing/Mentor (atau admin) yang memberi penilaian akhir ini.

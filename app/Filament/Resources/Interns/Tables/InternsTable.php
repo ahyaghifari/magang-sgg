@@ -3,15 +3,13 @@
 namespace App\Filament\Resources\Interns\Tables;
 
 use App\Models\Intern;
-use App\Models\Shift;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 class InternsTable
 {
@@ -55,16 +53,13 @@ class InternsTable
                     ->badge()
                     ->placeholder('Belum ditempatkan')
                     ->sortable(),
-                // Shift tempat intern terdaftar (dipilih di menu Shift). Kosong = jam kerja biasa.
-                TextColumn::make('shifts.code')
+                // Memakai jadwal shift (dipilih di form Intern). Tidak = jam kerja biasa perusahaan.
+                TextColumn::make('uses_shift')
                     ->label('Shift')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Pagi' => 'warning',
-                        'Siang' => 'info',
-                        default => 'gray',
-                    })
-                    ->placeholder('Tidak memakai shift')
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ya' : 'Tidak')
+                    ->color(fn (bool $state): string => $state ? 'primary' : 'gray')
+                    ->sortable()
                     ->toggleable(),
                 TextColumn::make('pembimbing.name')
                     ->label('Pembimbing')
@@ -120,14 +115,10 @@ class InternsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('shift')
-                    ->label('Shift')
-                    ->options(array_combine(Shift::TYPES, Shift::TYPES) + ['none' => 'Tidak memakai shift'])
-                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
-                        null, '' => $query,
-                        'none' => $query->whereDoesntHave('shifts'),
-                        default => $query->whereHas('shifts', fn (Builder $q) => $q->where('code', $data['value'])),
-                    }),
+                TernaryFilter::make('uses_shift')
+                    ->label('Memakai jadwal shift')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak'),
             ])
             ->recordActions([
                 Action::make('viewCertificate')

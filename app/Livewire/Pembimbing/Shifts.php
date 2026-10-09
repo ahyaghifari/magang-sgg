@@ -4,7 +4,9 @@ namespace App\Livewire\Pembimbing;
 
 use App\Models\Intern;
 use App\Models\InternShiftAssignment;
+use App\Models\ShiftChangeRequest;
 use App\Services\Shift\ShiftAssignmentService;
+use App\Services\Shift\ShiftChangeRequestService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -18,9 +20,11 @@ use Livewire\Component;
  * (komponen ini disematkan dengan embedded=true), bukan halaman terpisah.
  * - Daftar intern: Pimpinan semua; lainnya User::visibleInterns() (Admin semua, Pembimbing
  *   binaannya, Mentor semua).
- * - Mengubah: hanya Pembimbing (binaannya) dan Mentor (dampingannya) — InternShiftAssignmentPolicy::
+ * - Mengubah: hanya Mentor (dampingannya) — InternShiftAssignmentPolicy::
  *   correctAnyDate — boleh tanggal mana saja termasuk lampau; koreksi tanggal hari ini/lampau otomatis
  *   menghitung ulang presensi (di ShiftAssignmentService). Admin & Pimpinan baca-saja.
+ * - Pengajuan perubahan dari intern: daftar "menunggu" tampil untuk Mentor intern tsb, yang
+ *   menyetujui/menolak (ShiftChangeRequestService::decide).
  */
 #[Layout('components.layouts.app')]
 class Shifts extends Component
@@ -37,6 +41,9 @@ class Shifts extends Component
 
     /** true = disematkan di Dashboard Pimpinan (tanpa judul halaman). */
     public bool $embedded = false;
+
+    /** Catatan keputusan mentor per pengajuan, [id => teks]. */
+    public array $decisionNotes = [];
 
     public function mount()
     {
@@ -133,6 +140,32 @@ class Shifts extends Component
             : [...$this->selected, $date];
     }
 
+    /**
+     * Pilih cepat (satu kolom hari / satu baris minggu): kalau semua sudah terpilih → dilepas,
+     * selain itu ditambahkan ke pilihan.
+     */
+    public function toggleDates(array $dates): void
+    {
+        if (! $this->canCorrect($this->intern())) {
+            return;
+        }
+
+        $dates = array_values(array_unique(array_filter($dates, fn ($d) => is_string($d) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d))));
+        $this->selected = self::toggleSet($this->selected, $dates);
+    }
+
+    /** @return array<int, string> */
+    public static function toggleSet(array $selected, array $dates): array
+    {
+        if ($dates === []) {
+            return $selected;
+        }
+
+        return array_diff($dates, $selected) === []
+            ? array_values(array_diff($selected, $dates))
+            : array_values(array_unique([...$selected, ...$dates]));
+    }
+
     public function selectAllOpen(): void
     {
         if (! $this->canCorrect($this->intern())) {
@@ -152,7 +185,7 @@ class Shifts extends Component
         $this->selected = [];
     }
 
-    /** @param  int|string|null  $shiftId  id master shift atau jenis baku (Pagi/Siang) yang belum punya master shift */
+    /** @param  int|string|null  $shiftId  id master shift atau jenis baku (Pagi/Siang/Malam) yang belum punya master shift */
     public function apply(string $action, int|string|null $shiftId = null): void
     {
         $intern = $this->intern();
@@ -188,6 +221,76 @@ class Shifts extends Component
         $this->dispatch('shift-toast', type: 'success', message: $message);
     }
 
+    /**
+     * Mode "Atur Per Tanggal": tiap tanggal diberi shift berbeda lalu disimpan sekaligus.
+     * Intern yang diatur = intern yang sedang dipilih di halaman (tidak diterima dari klien).
+     *
+     * @param  array<int, array{date: string, shift: string}>  $entries  shift: pagi|siang|malam|libur
+     */
+    public function saveBulkShiftSchedule(array $entries): void
+    {
+        $intern = $this->intern();
+
+        try {
+            if (! $intern) {
+                throw ValidationException::withMessages(['entries' => 'Pilih peserta dulu.']);
+            }
+            $result = app(ShiftAssignmentService::class)->applyEntries(auth()->user(), $intern, $entries);
+        } catch (ValidationException $e) {
+            $this->dispatch('shift-toast', type: 'error', message: collect($e->errors())->flatten()->first());
+
+            return;
+        }
+
+        $message = count($result['saved']) . ' tersimpan, ' . count($result['skipped']) . ' dilewati.';
+        if ($result['past_changed'] !== []) {
+            $message .= ' Presensi ' . count($result['past_changed']) . ' tanggal yang sudah lewat dihitung ulang.';
+        }
+
+        $this->selected = [];
+        $this->dispatch('shift-toast', type: 'success', message: $message);
+        $this->dispatch('shift-bulk-saved');
+    }
+
+    /** Mentor menyetujui / menolak pengajuan perubahan shift intern dampingannya. */
+    public function decide(int $id, bool $approve): void
+    {
+        $request = ShiftChangeRequest::with('intern')->find($id);
+
+        try {
+            if (! $request) {
+                throw ValidationException::withMessages(['request' => 'Pengajuan tidak ditemukan.']);
+            }
+            app(ShiftChangeRequestService::class)->decide(auth()->user(), $request, $approve, $this->decisionNotes[$id] ?? null);
+        } catch (ValidationException $e) {
+            $this->dispatch('shift-toast', type: 'error', message: collect($e->errors())->flatten()->first());
+
+            return;
+        }
+
+        unset($this->decisionNotes[$id]);
+        $this->dispatch('shift-toast', type: 'success', message: $approve
+            ? 'Pengajuan disetujui — jadwal ' . $request->intern->nama . ' sudah diperbarui.'
+            : 'Pengajuan ditolak.');
+    }
+
+    /** Pengajuan menunggu dari intern dampingan mentor ini (kosong untuk peran lain). */
+    protected function pendingRequestsForMentor()
+    {
+        $user = auth()->user();
+
+        if (! $user->isMentor() || $user->isSuperAdmin() || $user->isViewingAsIntern()) {
+            return collect();
+        }
+
+        return ShiftChangeRequest::query()
+            ->with(['intern:id,nama,avatar_path,mentor_id', 'oldShift', 'requestedShift'])
+            ->where('status', ShiftChangeRequest::STATUS_PENDING)
+            ->whereHas('intern', fn ($q) => $q->where('mentor_id', $user->id))
+            ->orderBy('date')
+            ->get();
+    }
+
     public function render()
     {
         $user = auth()->user();
@@ -219,22 +322,29 @@ class Shifts extends Component
             $weeks[] = $week;
         }
 
-        // Pilihan intern: yang sudah terdaftar di shift / punya jadwal tampil di grup pertama.
+        // Pilihan intern: yang memakai jadwal shift (dipilih admin) tampil di grup pertama.
         $interns = $this->internsQuery()
             ->with('unit:id,name')
-            ->withExists(['shifts as has_shift', 'shiftAssignments as has_schedule'])
+            ->orderByDesc('interns.uses_shift')
             ->orderBy('nama')
-            ->get(['interns.id', 'interns.nama', 'interns.unit_id', 'interns.avatar_path']);
+            ->get(['interns.id', 'interns.nama', 'interns.unit_id', 'interns.avatar_path', 'interns.uses_shift']);
 
         return view('livewire.pembimbing.shifts', [
             'intern' => $intern,
             'interns' => $interns,
             'canCorrect' => $canCorrect,
             'hasCompany' => $intern ? (bool) $service->companyId($intern) : true,
-            // Pembimbing/Mentor yang berhak: Pagi & Siang selalu bisa dipilih (lihat pickableShifts).
+            // Mentor yang berhak: Pagi, Siang & Malam selalu bisa dipilih (lihat pickableShifts).
             'shifts' => $intern ? ($canCorrect ? $service->pickableShifts($intern) : $service->availableShifts($intern)) : collect(),
             'entries' => $entries,
             'weeks' => $weeks,
+            'pendingRequests' => $this->embedded ? collect() : $this->pendingRequestsForMentor(),
+            'pendingDates' => $intern
+                ? ShiftChangeRequest::where('intern_id', $intern->id)
+                    ->where('status', ShiftChangeRequest::STATUS_PENDING)
+                    ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+                    ->pluck('date')->map(fn ($d) => $d->toDateString())->all()
+                : [],
             'monthLabel' => $start->copy()->locale('id')->translatedFormat('F Y'), // locale eksplisit: update Livewire menyetel ulang locale app (en)
             'today' => Carbon::today()->toDateString(),
             'isCurrentMonth' => $start->isSameMonth(Carbon::today()),

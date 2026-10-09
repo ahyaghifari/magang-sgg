@@ -3,6 +3,7 @@
 namespace App\Services\Attendance;
 
 use App\Models\Intern;
+use App\Services\Shift\ScheduleResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -51,6 +52,8 @@ class AccessLogReader
     /** Rentang tanggal, untuk backfill / jalankan ulang manual. */
     public function readRange(string $fromDate, string $toDate, ?string $nip = null): array
     {
+        // +1 hari: tap pulang shift lintas hari di tanggal terakhir jatuh keesokan paginya.
+        $toDate = \Illuminate\Support\Carbon::parse($toDate)->addDay()->toDateString();
         $query = $this->accessLogs()->whereBetween('access_date', [$fromDate, $toDate]);
 
         if ($nip) {
@@ -96,9 +99,15 @@ class AccessLogReader
         $entries = [];
         $unmatched = [];
 
-        // Kelompokkan per (nip, tanggal-scan). Tidak ada penanganan overnight:
-        // check-out selalu jatuh di access_date yang sama dengan check-in.
-        $groups = $rows->groupBy(fn ($r) => $r->employee_id.'|'.$r->access_date);
+        // Kelompokkan per (nip, tanggal KERJA). Biasanya = tanggal scan; tap pagi setelah shift
+        // lintas hari (mis. Malam 20:00–08:00) masuk ke tanggal shift dimulai (ScheduleResolver::workDate).
+        $resolver = new ScheduleResolver;
+        $groups = $rows->groupBy(function ($r) use ($interns, $resolver) {
+            $intern = $interns->get($r->employee_id);
+            $date = $intern ? $resolver->workDate($intern, $r->access_date, (string) $r->access_time) : $r->access_date;
+
+            return $r->employee_id.'|'.$date;
+        });
 
         foreach ($groups as $key => $dayRows) {
             [$nip, $date] = explode('|', $key, 2);

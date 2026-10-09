@@ -24,13 +24,6 @@ class ShiftsTable
                     ->badge()
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('interns.nama')
-                    ->label('Intern terdaftar')
-                    ->badge()
-                    ->color('gray')
-                    ->limitList(3)
-                    ->expandableLimitedList()
-                    ->placeholder('Belum ada'),
                 TextColumn::make('start_time')
                     ->label('Masuk')
                     ->time('H:i')
@@ -77,6 +70,6 @@ class ShiftsTable
                 ]),
             ])
             ->emptyStateHeading('Belum ada shift')
-            ->emptyStateDescription('Tambahkan shift (Pagi atau Siang) untuk perusahaan yang memakai jadwal shift, lalu pilih intern yang memakainya.');
+            ->emptyStateDescription('Tambahkan shift (Pagi, Siang, atau Malam) untuk perusahaan yang memakai jadwal shift. Intern yang memakai shift dipilih di data Intern (Memakai jadwal shift: Ya).');
     }
 }

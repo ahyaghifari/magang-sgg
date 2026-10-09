@@ -31,12 +31,14 @@ class LeaveUnchangedTest extends TestCase
     public function test_pengajuan_izin_tetap_sama_untuk_intern_dengan_jadwal_shift(): void
     {
         $pembimbing = $this->makeUser(UserRole::Pembimbing);
-        $intern = $this->makeIntern(['pembimbing_id' => $pembimbing->id]);
-        $intern->shifts()->attach($this->siang->id);
-        // Hari izin sudah diisi shift Siang & hari lain Libur.
-        app(\App\Services\Shift\ShiftAssignmentService::class)->apply($pembimbing, $intern, ['2026-10-06'], 'shift', $this->siang->id);
-        app(\App\Services\Shift\ShiftAssignmentService::class)->apply($pembimbing, $intern, ['2026-10-07'], 'off');
+        $mentor = $this->makeUser(UserRole::Mentor);
+        $intern = $this->makeIntern(['pembimbing_id' => $pembimbing->id, 'mentor_id' => $mentor->id]);
+        $intern->update(['uses_shift' => true]); // admin: memakai jadwal shift = Ya
+        // Hari izin sudah diisi shift Siang & hari lain Libur (jadwal diisi Mentor).
+        app(\App\Services\Shift\ShiftAssignmentService::class)->apply($mentor, $intern, ['2026-10-06'], 'shift', $this->siang->id);
+        app(\App\Services\Shift\ShiftAssignmentService::class)->apply($mentor, $intern, ['2026-10-07'], 'off');
         $scheduleBefore = InternShiftAssignment::orderBy('id')->get(['intern_id', 'date', 'shift_id', 'off_day', 'updated_by'])->toArray();
+        $this->assertCount(2, $scheduleBefore);
 
         // Jam izin di luar jam shift (shift Siang 12:00) tetap diterima seperti sebelumnya.
         Livewire::actingAs($intern->user)->test(LeaveCreate::class)
@@ -64,7 +66,7 @@ class LeaveUnchangedTest extends TestCase
     public function test_validasi_izin_tetap_sama(): void
     {
         $intern = $this->makeIntern();
-        $intern->shifts()->attach($this->pagi->id);
+        $intern->update(['uses_shift' => true]); // admin: memakai jadwal shift = Ya
 
         Livewire::actingAs($intern->user)->test(LeaveCreate::class)
             ->call('open')

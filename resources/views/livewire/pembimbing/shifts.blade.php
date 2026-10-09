@@ -1,5 +1,5 @@
 @php
-    // Yang berhak mengoreksi (Pembimbing binaannya / Mentor dampingannya) boleh memilih tanggal mana
+    // Yang berhak mengoreksi (Mentor dampingannya) boleh memilih tanggal mana
     // saja, termasuk lampau; selain itu kalender hanya menampilkan.
     $readonly = ! $canCorrect;
     $knownIds = $interns->pluck('id')->map(fn ($id) => (string) $id)->values();
@@ -27,10 +27,10 @@
         <div style="margin-bottom:1.1rem;">
             <h1 class="portal-title">Jadwal Shift Intern</h1>
             <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-                @if (auth()->user()->isPembimbing() || auth()->user()->isMentor())
-                    Isi & koreksi jadwal shift peserta yang kamu {{ auth()->user()->isMentor() ? 'dampingi' : 'bimbing' }}.
+                @if (auth()->user()->isMentor())
+                    Isi & koreksi jadwal shift peserta yang kamu dampingi, serta tinjau pengajuan perubahan dari mereka.
                 @else
-                    Pantau jadwal shift peserta — jadwal diisi oleh pembimbing atau mentor.
+                    Pantau jadwal shift peserta — jadwal diisi oleh mentor masing-masing peserta.
                 @endif
             </p>
         </div>
@@ -44,6 +44,42 @@
            :style="`color:${toastType === 'error' ? '#dc2626' : 'var(--brand-success)'};`" aria-hidden="true"></i>
         <span class="text-sm" style="color:var(--text-body);" x-text="toast"></span>
     </div>
+
+    {{-- Pengajuan perubahan shift dari intern dampingan (khusus Mentor intern tsb) --}}
+    @if ($pendingRequests->isNotEmpty())
+        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:0.75rem;">
+            <p style="font-weight:800; color:var(--text-heading); margin-bottom:0.6rem;">
+                <i class="fa-solid fa-hourglass-half" style="color:#d97706;" aria-hidden="true"></i>
+                Pengajuan perubahan shift <span class="shift-req-status is-pending" style="margin-left:0.3rem;">{{ $pendingRequests->count() }} menunggu</span>
+            </p>
+            <div class="shift-req-list">
+                @foreach ($pendingRequests as $req)
+                    <div class="shift-req" wire:key="pending-{{ $req->id }}">
+                        <div class="shift-req-main">
+                            <p class="shift-req-title">
+                                {{ $req->intern->nama }} · {{ $req->date->locale('id')->translatedFormat('D, j M Y') }}
+                            </p>
+                            <p class="shift-req-meta"><b>{{ $req->changeLabel() }}</b> — Alasan: {{ $req->reason }}</p>
+                            <input type="text" wire:model="decisionNotes.{{ $req->id }}" maxlength="500" class="form-input"
+                                   style="width:100%; margin-top:0.45rem;" placeholder="Catatan untuk intern (opsional)"
+                                   aria-label="Catatan keputusan untuk {{ $req->intern->nama }}">
+                        </div>
+                        <div class="shift-req-actions">
+                            <button type="button" class="shift-action-btn shift-tone-lain" style="--st-bg:#d1fae5; --st-fg:#065f46; --st-bd:#a7f3d0;"
+                                    wire:click="decide({{ $req->id }}, true)" wire:loading.attr="disabled" wire:target="decide">
+                                <i class="fa-solid fa-check" aria-hidden="true"></i> Setujui
+                            </button>
+                            <button type="button" class="shift-action-btn is-neutral"
+                                    wire:click="decide({{ $req->id }}, false)" wire:loading.attr="disabled" wire:target="decide"
+                                    wire:confirm="Tolak pengajuan ini?">
+                                <i class="fa-solid fa-xmark" aria-hidden="true"></i> Tolak
+                            </button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- Pilih peserta --}}
     <div class="surface-card" style="padding:0.85rem 1rem; margin-bottom:0.75rem;">
@@ -112,7 +148,7 @@
 
         <x-shift-legend :shifts="$shifts" style="margin-bottom:0.6rem;" />
 
-        <x-shift-calendar :weeks="$weeks" :entries="$entries" :selected="$selected" :today="$today" :readonly="$readonly" />
+        <x-shift-calendar :weeks="$weeks" :entries="$entries" :selected="$selected" :today="$today" :readonly="$readonly" :pending="$pendingDates" />
 
         <div style="margin-top:0.65rem;">
             <x-shift-last-change :change="$lastChange" />
@@ -120,8 +156,9 @@
 
         @if ($canCorrect)
             {{-- Ruang kosong supaya baris kalender terakhir tidak tertutup action bar --}}
-            <div x-data x-show="$wire.selected.length > 0" style="display:none; height:10rem;" wire:ignore.self aria-hidden="true"></div>
-            <x-shift-action-bar :shifts="$shifts" />
+            <div x-data="{ tall: false }" x-on:shift-bar-mode.window="tall = $event.detail.mode === 'perDate'"
+                 x-show="$wire.selected.length > 0" :style="{ height: tall ? '70vh' : '10rem' }" style="display:none; height:10rem;" wire:ignore.self aria-hidden="true"></div>
+            <x-shift-action-bar :shifts="$shifts" :entries="$entries" />
         @endif
     @endif
 </div>
