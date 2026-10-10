@@ -27,6 +27,15 @@ class AppServiceProvider extends ServiceProvider
         // Nama hari & bulan pada helper tanggal (translatedFormat) memakai Bahasa Indonesia.
         Carbon::setLocale('id');
 
+        // Semua DatePicker panel admin tampil & diketik DD/MM/YYYY (picker bawaan browser mengikuti
+        // bahasa perangkat, mis. "hh/bb/tttt"). Nilai yang disimpan tetap Y-m-d.
+        \Filament\Forms\Components\DatePicker::configureUsing(fn (\Filament\Forms\Components\DatePicker $picker) => $picker
+            ->native(false)
+            ->displayFormat('d/m/Y')
+            ->placeholder('DD/MM/YYYY')
+            ->firstDayOfWeek(1)
+            ->locale('id'));
+
         // Paket webpush diam-diam menelan push yang gagal terkirim (tidak ada exception) —
         // catat ke log supaya masalah seperti sertifikat SSL/kunci VAPID salah kelihatan.
         Event::listen(function (NotificationFailed $event) {

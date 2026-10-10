@@ -86,6 +86,32 @@
         border-block-end-color: #1e293b;
     }
 
+    /* Brand logo (resources/views/filament/brand-logo.blade.php): ikon persegi + nama panel. */
+    .sgg-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        height: 100%;
+    }
+    .sgg-brand-icon {
+        height: 100%;
+        width: auto;
+        aspect-ratio: 1 / 1;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+    .sgg-brand-name {
+        font-size: 0.9rem;
+        font-weight: 800;
+        line-height: 1.15;
+        color: #0f172a;
+        white-space: normal;
+        max-width: 11rem;
+    }
+    .dark .sgg-brand-name {
+        color: #f1f5f9;
+    }
+
     /* Item nav aktif — pill solid navy + teks putih, seperti .portal-nav-link.active. */
     .fi-sidebar-item-btn {
         border-radius: 12px;

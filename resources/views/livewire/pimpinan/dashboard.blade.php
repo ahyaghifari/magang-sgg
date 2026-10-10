@@ -98,11 +98,11 @@
             </div>
             <div>
                 <label for="k-from" class="form-label">Dari tanggal</label>
-                <input id="k-from" type="date" wire:model.live="kegiatanDateFrom" class="form-input">
+                <x-date-input id="k-from" model="kegiatanDateFrom" live />
             </div>
             <div>
                 <label for="k-to" class="form-label">Sampai tanggal</label>
-                <input id="k-to" type="date" wire:model.live="kegiatanDateTo" class="form-input">
+                <x-date-input id="k-to" model="kegiatanDateTo" live />
             </div>
             @if ($kegiatanInternId !== '' || $kegiatanDateFrom !== '' || $kegiatanDateTo !== '')
                 <div style="display:flex; align-items:flex-end;">
@@ -165,11 +165,11 @@
             </div>
             <div>
                 <label for="p-from" class="form-label">Dari tanggal</label>
-                <input id="p-from" type="date" wire:model.live="presensiDateFrom" class="form-input">
+                <x-date-input id="p-from" model="presensiDateFrom" live />
             </div>
             <div>
                 <label for="p-to" class="form-label">Sampai tanggal</label>
-                <input id="p-to" type="date" wire:model.live="presensiDateTo" class="form-input">
+                <x-date-input id="p-to" model="presensiDateTo" live />
             </div>
             <div style="display:flex; align-items:flex-end;">
                 <button type="button" wire:click="resetPresensiFilter" class="btn-ghost" style="padding:0.5rem 0.85rem;">

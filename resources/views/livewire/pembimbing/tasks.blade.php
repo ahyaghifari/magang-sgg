@@ -111,11 +111,11 @@
         </div>
         <div>
             <label for="f-from" class="form-label">Dari tanggal</label>
-            <input id="f-from" type="date" wire:model.live="dateFrom" class="form-input">
+            <x-date-input id="f-from" model="dateFrom" live />
         </div>
         <div>
             <label for="f-to" class="form-label">Sampai tanggal</label>
-            <input id="f-to" type="date" wire:model.live="dateTo" class="form-input">
+            <x-date-input id="f-to" model="dateTo" live />
         </div>
         @if ($dateFrom !== '' || $dateTo !== '')
             <div style="display:flex; align-items:flex-end;">
@@ -602,7 +602,7 @@
                         <label class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
                         <div class="flex items-start" style="gap:0.6rem;">
                             <div style="flex:1;">
-                                <input id="a-due-date" type="date" wire:model="dueDate" class="form-input" aria-label="Tanggal tenggat">
+                                <x-date-input id="a-due-date" model="dueDate" aria-label="Tanggal tenggat" />
                                 @error('dueDate')
                                     <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                                 @enderror
@@ -682,7 +682,7 @@
                         <label class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
                         <div class="flex items-start" style="gap:0.6rem;">
                             <div style="flex:1;">
-                                <input id="e-due-date" type="date" wire:model="editDueDate" class="form-input" aria-label="Tanggal tenggat">
+                                <x-date-input id="e-due-date" model="editDueDate" aria-label="Tanggal tenggat" />
                                 @error('editDueDate')
                                     <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                                 @enderror

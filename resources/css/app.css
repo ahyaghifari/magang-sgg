@@ -190,6 +190,26 @@ html.dark .btn-primary:hover {
 .form-input::placeholder {
     color: var(--text-faint);
 }
+
+/* Input tanggal DD/MM/YYYY (resources/views/components/date-input.blade.php). */
+.date-input { position: relative; }
+.date-input .date-input-text { padding-right: 2.75rem; font-variant-numeric: tabular-nums; }
+.date-input .date-input-text.is-invalid { border-color: #dc2626; }
+.date-input-btn {
+    position: absolute; top: 0; right: 0; width: 2.6rem; height: 2.75rem;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); border-radius: 0 12px 12px 0;
+}
+.date-input-btn:hover { color: var(--brand); }
+/* Pemilih tanggal bawaan, transparan di atas ikon: ketukan di ikon langsung membukanya (iOS/Android/desktop). */
+.date-input-btn input[type="date"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0;
+}
+.date-input-btn input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer;
+}
+.date-input-error { font-size: 0.78rem; color: #dc2626; margin-top: 0.25rem; }
 .form-input:focus {
     outline: none;
     border-color: #042c6c;
@@ -490,14 +510,16 @@ html.dark .stat-card-deco {
     z-index: 1;
     max-width: 420px;
 }
+/* Kotak putih lebar seperti desain awal (latar hero biru tua); ikon di tengahnya, sedikit
+   lebih besar dari semula (kotak 130px → 152px, padding vertikal lebih tipis). */
 .auth-hero-logo {
-    width: 130px;
-    max-width: 40%;
+    width: 152px;
+    max-width: 46%;
     height: auto;
     aspect-ratio: 519 / 304;
     object-fit: contain;
     background: #fff;
-    padding: 0.6rem 0.85rem;
+    padding: 0.45rem 0.85rem;
     border-radius: 14px;
 }
 .auth-hero-content .auth-hero-title {
@@ -847,13 +869,28 @@ html.dark .file-box::file-selector-button:hover {
     margin-bottom: 0.75rem;
     border-bottom: 1px solid var(--border-soft);
 }
+/* Ikon persegi + nama web sebagai teks di sebelahnya. */
+.portal-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+}
 .portal-brand-logo {
     display: block;
-    width: 104px;
-    max-width: 100%;
-    height: auto;
-    aspect-ratio: 519 / 304;
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    aspect-ratio: 1 / 1;
     object-fit: contain;
+}
+.portal-brand-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text-heading);
+    min-width: 0;
 }
 .portal-brand-tagline {
     font-size: 0.62rem;

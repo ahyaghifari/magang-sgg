@@ -79,7 +79,7 @@
                             <label class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
                             <div class="flex items-start" style="gap:0.6rem;">
                                 <div style="flex:1;">
-                                    <input id="t-due-date" type="date" wire:model="dueDate" class="form-input" aria-label="Tanggal tenggat">
+                                    <x-date-input id="t-due-date" model="dueDate" aria-label="Tanggal tenggat" />
                                     @error('dueDate')
                                         <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                                     @enderror

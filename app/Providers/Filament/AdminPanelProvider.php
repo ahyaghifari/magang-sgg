@@ -29,9 +29,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Internship Syifa Global Group · Admin')
-            ->brandLogo(fn (): string => \App\Support\Brand::logoUrl())
-            ->brandLogoHeight('2.75rem')
-            ->favicon(fn (): string => \App\Support\Brand::logoUrl())
+            // Ikon web + nama panel sebagai teks (lihat resources/views/filament/brand-logo.blade.php).
+            ->brandLogo(fn () => view('filament.brand-logo'))
+            ->brandLogoHeight('2.5rem')
+            ->favicon(fn (): string => \App\Support\Brand::faviconUrl())
             ->font('Plus Jakarta Sans')
             ->colors([
                 // Disamakan dengan portal peserta: navy sebagai warna utama, hijau brand, netral slate.

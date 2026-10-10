@@ -12,13 +12,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="icon" href="{{ \App\Support\Brand::faviconUrl() }}">
+    {{-- Favicon & ikon (versi ?v= otomatis dari waktu ubah file — lihat App\Support\Brand::versioned). --}}
+    <link rel="icon" type="image/x-icon" href="{{ \App\Support\Brand::versioned('images/favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ \App\Support\Brand::versioned('images/favicon-16.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ \App\Support\Brand::versioned('images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="64x64" href="{{ \App\Support\Brand::versioned('images/favicon-64.png') }}">
 
     {{-- PWA: wajib supaya portal bisa di-"Add to Home Screen" — di iPhone/iPad (iOS 16.4+)
          notifikasi push HANYA jalan kalau portal dibuka dari ikon Home Screen, bukan dari Safari. --}}
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="{{ \App\Support\Brand::versioned('manifest.webmanifest') }}">
     <meta name="theme-color" content="#042c6c">
-    <link rel="apple-touch-icon" href="/images/app-icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ \App\Support\Brand::versioned('images/apple-touch-icon.png') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Magang SGG">
@@ -96,7 +100,9 @@
             {{-- ===== Sidebar ===== --}}
             <aside class="portal-sidebar" :class="{ 'is-open': nav }">
                 <a href="{{ route('home') }}" wire:navigate class="portal-brand">
-                    <x-app-logo class="portal-brand-logo" />
+                    <span class="portal-brand-row">
+                        <x-app-logo class="portal-brand-logo" alt="" />
+                    </span>
                     <span class="portal-brand-tagline">Syifa Global Group Internship</span>
                 </a>
 

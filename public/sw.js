@@ -28,7 +28,7 @@ self.addEventListener('push', function (event) {
         // icon = gambar besar di kanan, hanya kalau ada foto profil pengirim (logo sudah tampil
         // sebagai ikon aplikasi); badge = siluet putih kecil di status bar Android.
         icon: payload.icon || undefined,
-        badge: payload.badge || '/images/notif-badge.png',
+        badge: payload.badge || '/images/notif-badge.png?v=2',
         // WebPushMessage::data() dikirim sebagai payload.data — url ada di dalamnya.
         data: { url: (payload.data && payload.data.url) || payload.url || '/' },
         // Tombol aksi (mis. "Lihat Tugas" / "Nanti") — tampil di Android & Windows, diabaikan di iOS.
