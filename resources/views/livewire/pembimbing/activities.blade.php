@@ -43,11 +43,11 @@
         </div>
         <div>
             <label for="f-from" class="form-label">Dari tanggal</label>
-            <input id="f-from" type="date" wire:model.live="dateFrom" class="form-input">
+            <x-date-input id="f-from" model="dateFrom" live />
         </div>
         <div>
             <label for="f-to" class="form-label">Sampai tanggal</label>
-            <input id="f-to" type="date" wire:model.live="dateTo" class="form-input">
+            <x-date-input id="f-to" model="dateTo" live />
         </div>
         @if ($dateFrom !== $defaultDateFrom || $dateTo !== $today)
             <div style="display:flex; align-items:flex-end;">

@@ -59,11 +59,11 @@
         <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:flex; flex-wrap:wrap; align-items:flex-end; gap:0.75rem;">
             <div>
                 <label for="t-from" class="form-label">Dari tanggal</label>
-                <input id="t-from" type="date" wire:model.live="dateFrom" class="form-input" style="max-width:12rem;">
+                <x-date-input id="t-from" model="dateFrom" live style="max-width:12rem;" />
             </div>
             <div>
                 <label for="t-to" class="form-label">Sampai tanggal</label>
-                <input id="t-to" type="date" wire:model.live="dateTo" class="form-input" style="max-width:12rem;">
+                <x-date-input id="t-to" model="dateTo" live style="max-width:12rem;" />
             </div>
             @if ($dateFrom !== '' || $dateTo !== '')
                 <button type="button" wire:click="resetDateFilter" class="btn-ghost" style="padding:0.5rem 0.85rem;">
@@ -75,8 +75,8 @@
         <div class="flex" style="flex-direction:column; gap:0.85rem;">
             @forelse ($tasks as $task)
                 <article class="surface-card task-entry task-entry-{{ $task->status }}" style="padding:1.1rem 1.15rem;">
-                    <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap;">
-                        <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
+                    <div class="flex items-center justify-between" style="gap:0.5rem 0.75rem; flex-wrap:wrap;">
+                        <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap; min-width:0; flex:1 1 16rem;">
                             <span style="font-weight:700; color:var(--text-heading);">{{ $task->title }}</span>
                             @if ($task->status === 'done')
                                 <span class="badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-circle-check"></i> Selesai</span>
@@ -96,7 +96,7 @@
                             </span>
                         </div>
                         @if ($task->due_date)
-                            <span class="text-sm" style="color:var(--text-muted); flex-shrink:0;">
+                            <span class="text-sm" style="color:var(--text-muted); flex:0 1 auto;">
                                 <i class="fa-regular fa-calendar"></i> Tenggat {{ $task->due_date->translatedFormat('d F Y') }}
                                 <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $task->due_date->format('H:i') }}
                             </span>

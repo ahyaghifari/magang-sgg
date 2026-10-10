@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AttendanceRecords\Tables;
 
+use App\Services\Shift\ScheduleResolver;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\IconColumn;
@@ -15,6 +16,8 @@ class AttendanceRecordsTable
 {
     public static function configure(Table $table): Table
     {
+        $resolver = null;
+
         return $table
             ->columns([
                 TextColumn::make('date')
@@ -30,6 +33,19 @@ class AttendanceRecordsTable
                     ->placeholder('—'),
                 TextColumn::make('company.name')
                     ->label('Perusahaan')
+                    ->placeholder('—')
+                    ->toggleable(),
+                // Nama shift hari itu, dibaca dari jadwal shift intern saat tampil (tidak disimpan
+                // di attendance_records). Kosong = jadwal kerja biasa perusahaan.
+                TextColumn::make('shift_label')
+                    ->label('Shift')
+                    ->state(function ($record) use (&$resolver) {
+                        $resolver ??= new ScheduleResolver;
+
+                        return $resolver->labelFor($record->intern, $record->date);
+                    })
+                    ->badge()
+                    ->color(fn ($state) => $state === 'Libur' ? 'danger' : 'info')
                     ->placeholder('—')
                     ->toggleable(),
                 TextColumn::make('check_in_time')

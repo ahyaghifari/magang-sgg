@@ -98,11 +98,11 @@
             </div>
             <div>
                 <label for="k-from" class="form-label">Dari tanggal</label>
-                <input id="k-from" type="date" wire:model.live="kegiatanDateFrom" class="form-input">
+                <x-date-input id="k-from" model="kegiatanDateFrom" live />
             </div>
             <div>
                 <label for="k-to" class="form-label">Sampai tanggal</label>
-                <input id="k-to" type="date" wire:model.live="kegiatanDateTo" class="form-input">
+                <x-date-input id="k-to" model="kegiatanDateTo" live />
             </div>
             @if ($kegiatanInternId !== '' || $kegiatanDateFrom !== '' || $kegiatanDateTo !== '')
                 <div style="display:flex; align-items:flex-end;">
@@ -165,11 +165,11 @@
             </div>
             <div>
                 <label for="p-from" class="form-label">Dari tanggal</label>
-                <input id="p-from" type="date" wire:model.live="presensiDateFrom" class="form-input">
+                <x-date-input id="p-from" model="presensiDateFrom" live />
             </div>
             <div>
                 <label for="p-to" class="form-label">Sampai tanggal</label>
-                <input id="p-to" type="date" wire:model.live="presensiDateTo" class="form-input">
+                <x-date-input id="p-to" model="presensiDateTo" live />
             </div>
             <div style="display:flex; align-items:flex-end;">
                 <button type="button" wire:click="resetPresensiFilter" class="btn-ghost" style="padding:0.5rem 0.85rem;">
@@ -195,6 +195,7 @@
                         </p>
                     </div>
                     <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap;">
+                        @include('livewire.shifts.partials.badge', ['shiftLabel' => $shiftLabels[$row->nip . '|' . Carbon::parse($row->date)->toDateString()] ?? null])
                         @if ($row->late_minutes > 0)
                             <span class="badge" style="background:#fef3c7; color:#92400e;">Telat {{ $row->late_minutes }}m</span>
                         @elseif ($row->check_in_time)
@@ -221,6 +222,15 @@
                 </button>
             </div>
         @endif
+    </section>
+
+    {{-- ===== Jadwal Shift (baca-saja) ===== --}}
+    <section style="margin-bottom:1.75rem;">
+        <h2 style="font-size:1rem; font-weight:700; color:var(--text-heading); margin-bottom:0.7rem;">
+            <i class="fa-solid fa-calendar-days" style="color:var(--brand); margin-right:0.35rem;"></i>
+            Jadwal Shift Peserta Magang
+        </h2>
+        <livewire:pembimbing.shifts :embedded="true" />
     </section>
 
     {{-- ===== Izin (semua) ===== --}}

@@ -6,6 +6,7 @@ use App\Http\Controllers\PushSubscriptionController;
 use App\Livewire\Attendance\Index as AttendanceIndex;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Shifts\Index as ShiftIndex;
 use App\Livewire\Home;
 use App\Livewire\Journals\Index as JournalIndex;
 use App\Livewire\Leaves\Index as LeaveIndex;
@@ -14,6 +15,7 @@ use App\Livewire\Pembimbing\Attendance as PembimbingAttendance;
 use App\Livewire\Pembimbing\Certificates as PembimbingCertificates;
 use App\Livewire\Pembimbing\Interns as PembimbingInterns;
 use App\Livewire\Pembimbing\Leaves as PembimbingLeaves;
+use App\Livewire\Pembimbing\Shifts as PembimbingShifts;
 use App\Livewire\Pembimbing\Tasks as PembimbingTasks;
 use App\Livewire\Pimpinan\Dashboard as PimpinanDashboard;
 use App\Livewire\Tasks\Index as TaskIndex;
@@ -48,6 +50,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/tugas-intern', PembimbingTasks::class)->name('pembimbing.tasks');
 
     Route::get('/izin', LeaveIndex::class)->name('leaves.index');
+
+    // Jadwal shift milik intern (isi sendiri per tanggal; aturan di ShiftAssignmentService).
+    Route::get('/jadwal-shift', ShiftIndex::class)->name('shifts.index');
+    // Jadwal shift intern untuk Pembimbing/Mentor/Admin (koreksi) & Pimpinan (baca-saja).
+    Route::get('/jadwal-shift-intern', PembimbingShifts::class)->name('pembimbing.shifts');
     Route::get('/izin-intern', PembimbingLeaves::class)->name('pembimbing.leaves');
 
     Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');

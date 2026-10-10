@@ -28,7 +28,7 @@ trait BuildsWebPush
         $message = (new WebPushMessage)
             ->title($title)
             ->body(implode("\n", array_filter($lines, fn ($line) => filled($line))))
-            ->badge('/images/notif-badge.png')
+            ->badge(\App\Support\Brand::versioned('images/notif-badge.png'))
             ->action($actionLabel, 'open')
             ->action('Nanti', 'dismiss')
             ->vibrate([120, 60, 120])

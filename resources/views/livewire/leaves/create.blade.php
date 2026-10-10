@@ -61,14 +61,14 @@
                         <div class="flex" style="gap:0.75rem; margin-bottom:1.1rem;">
                             <div style="flex:1;">
                                 <label for="l-start" class="form-label">Mulai</label>
-                                <input id="l-start" type="date" wire:model="startDate" class="form-input">
+                                <x-date-input id="l-start" model="startDate" />
                                 @error('startDate')
                                     <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                                 @enderror
                             </div>
                             <div style="flex:1;">
                                 <label for="l-end" class="form-label">Selesai</label>
-                                <input id="l-end" type="date" wire:model="endDate" class="form-input">
+                                <x-date-input id="l-end" model="endDate" />
                                 @error('endDate')
                                     <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                                 @enderror

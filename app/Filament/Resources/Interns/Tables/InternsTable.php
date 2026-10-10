@@ -8,6 +8,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class InternsTable
@@ -52,6 +53,14 @@ class InternsTable
                     ->badge()
                     ->placeholder('Belum ditempatkan')
                     ->sortable(),
+                // Memakai jadwal shift (dipilih di form Intern). Tidak = jam kerja biasa perusahaan.
+                TextColumn::make('uses_shift')
+                    ->label('Shift')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Ya' : 'Tidak')
+                    ->color(fn (bool $state): string => $state ? 'primary' : 'gray')
+                    ->sortable()
+                    ->toggleable(),
                 TextColumn::make('pembimbing.name')
                     ->label('Pembimbing')
                     ->placeholder('Belum ditugaskan')
@@ -106,7 +115,10 @@ class InternsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                TernaryFilter::make('uses_shift')
+                    ->label('Memakai jadwal shift')
+                    ->trueLabel('Ya')
+                    ->falseLabel('Tidak'),
             ])
             ->recordActions([
                 Action::make('viewCertificate')

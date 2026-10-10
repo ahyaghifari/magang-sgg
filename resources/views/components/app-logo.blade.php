@@ -1,4 +1,4 @@
-@props([])
-{{-- Logo Syifa Global Group. Sumbernya diatur di App\Support\Brand::logoUrl()
-     (file resmi di public/images/syifa-logo.* bila ada, kalau tidak pakai mark bawaan). --}}
-<img src="{{ \App\Support\Brand::logoUrl() }}" alt="Syifa Global Group" {{ $attributes }}>
+@props(['alt' => 'Internship Syifa Global Group'])
+{{-- Ikon web (tanpa tulisan) — sumbernya di App\Support\Brand::logoUrl(). Ukurannya persegi;
+     beri alt="" bila nama web sudah ditulis sebagai teks di sebelahnya (hindari dibaca dua kali). --}}
+<img src="{{ \App\Support\Brand::logoUrl() }}" alt="{{ $alt }}" width="512" height="512" {{ $attributes }}>

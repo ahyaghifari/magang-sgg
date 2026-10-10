@@ -57,9 +57,15 @@
     @if ($canScope)
         <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;" role="group" aria-label="Tampilkan tugas">
             @php
+                // Teks tombol menyesuaikan peran: Pembimbing → "Bimbingan saya", Mentor (pendamping) → "Dampingan saya".
+                $mineLabel = match (true) {
+                    auth()->user()->isPembimbing() => 'Bimbingan saya',
+                    auth()->user()->isMentor() => 'Dampingan saya',
+                    default => 'Bimbingan/dampingan saya',
+                };
                 $scopeOptions = [
                     ['value' => '', 'label' => 'Semua intern', 'icon' => 'fa-users', 'count' => $scopeCounts['all']],
-                    ['value' => 'mine', 'label' => 'Bimbingan/mentee saya', 'icon' => 'fa-user-check', 'count' => $scopeCounts['mine']],
+                    ['value' => 'mine', 'label' => $mineLabel, 'icon' => 'fa-user-check', 'count' => $scopeCounts['mine']],
                 ];
             @endphp
             @foreach ($scopeOptions as $opt)
@@ -105,11 +111,11 @@
         </div>
         <div>
             <label for="f-from" class="form-label">Dari tanggal</label>
-            <input id="f-from" type="date" wire:model.live="dateFrom" class="form-input">
+            <x-date-input id="f-from" model="dateFrom" live />
         </div>
         <div>
             <label for="f-to" class="form-label">Sampai tanggal</label>
-            <input id="f-to" type="date" wire:model.live="dateTo" class="form-input">
+            <x-date-input id="f-to" model="dateTo" live />
         </div>
         @if ($dateFrom !== '' || $dateTo !== '')
             <div style="display:flex; align-items:flex-end;">
@@ -145,8 +151,10 @@
                 $uniform = $sameTitle && $sameDesc && $sameDue;
             @endphp
             <article wire:key="task-group-{{ md5($group['key']) }}" class="surface-card" style="padding:1.1rem 1.15rem;">
-                <div class="flex items-start justify-between" style="gap:0.75rem; flex-wrap:wrap;">
-                    <div style="min-width:0; flex:1;">
+                {{-- Kolom judul punya lebar dasar 16rem: di HP tenggat otomatis turun ke baris sendiri
+                     (dulu tenggat tidak boleh menyusut, jadi judul & label terjepit jadi sempit). --}}
+                <div class="flex items-start justify-between" style="gap:0.5rem 0.75rem; flex-wrap:wrap;">
+                    <div style="min-width:0; flex:1 1 16rem;">
                         {{-- Isi berbeda per peserta → judul kotak "Tugas berbeda untuk tiap peserta";
                              judul tugas aslinya (kalau semua masih sama) tampil kecil di bawahnya. --}}
                         <p style="font-weight:700; font-size:1rem; color:var(--text-heading);">
@@ -181,7 +189,7 @@
                         </div>
                     </div>
                     @if ($sameDue && $first->due_date)
-                        <span class="text-sm" style="color:var(--text-muted); flex-shrink:0;">
+                        <span class="text-sm" style="color:var(--text-muted); flex:0 1 auto;">
                             <i class="fa-regular fa-calendar"></i> Tenggat {{ $first->due_date->translatedFormat('d F Y') }}
                             <i class="fa-regular fa-clock" style="margin-left:0.35rem;"></i> {{ $first->due_date->format('H:i') }}
                         </span>
@@ -594,7 +602,7 @@
                         <label class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
                         <div class="flex items-start" style="gap:0.6rem;">
                             <div style="flex:1;">
-                                <input id="a-due-date" type="date" wire:model="dueDate" class="form-input" aria-label="Tanggal tenggat">
+                                <x-date-input id="a-due-date" model="dueDate" aria-label="Tanggal tenggat" />
                                 @error('dueDate')
                                     <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                                 @enderror
@@ -674,7 +682,7 @@
                         <label class="form-label">Tenggat <span style="color:var(--text-faint); font-weight:400;">(opsional)</span></label>
                         <div class="flex items-start" style="gap:0.6rem;">
                             <div style="flex:1;">
-                                <input id="e-due-date" type="date" wire:model="editDueDate" class="form-input" aria-label="Tanggal tenggat">
+                                <x-date-input id="e-due-date" model="editDueDate" aria-label="Tanggal tenggat" />
                                 @error('editDueDate')
                                     <p class="text-sm" style="color:#dc2626; margin-top:0.4rem;">{{ $message }}</p>
                                 @enderror

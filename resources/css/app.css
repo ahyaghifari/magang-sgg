@@ -190,6 +190,26 @@ html.dark .btn-primary:hover {
 .form-input::placeholder {
     color: var(--text-faint);
 }
+
+/* Input tanggal DD/MM/YYYY (resources/views/components/date-input.blade.php). */
+.date-input { position: relative; }
+.date-input .date-input-text { padding-right: 2.75rem; font-variant-numeric: tabular-nums; }
+.date-input .date-input-text.is-invalid { border-color: #dc2626; }
+.date-input-btn {
+    position: absolute; top: 0; right: 0; width: 2.6rem; height: 2.75rem;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); border-radius: 0 12px 12px 0;
+}
+.date-input-btn:hover { color: var(--brand); }
+/* Pemilih tanggal bawaan, transparan di atas ikon: ketukan di ikon langsung membukanya (iOS/Android/desktop). */
+.date-input-btn input[type="date"] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; border: 0; padding: 0; margin: 0;
+}
+.date-input-btn input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer;
+}
+.date-input-error { font-size: 0.78rem; color: #dc2626; margin-top: 0.25rem; }
 .form-input:focus {
     outline: none;
     border-color: #042c6c;
@@ -490,14 +510,16 @@ html.dark .stat-card-deco {
     z-index: 1;
     max-width: 420px;
 }
+/* Kotak putih lebar seperti desain awal (latar hero biru tua); ikon di tengahnya, sedikit
+   lebih besar dari semula (kotak 130px → 152px, padding vertikal lebih tipis). */
 .auth-hero-logo {
-    width: 130px;
-    max-width: 40%;
+    width: 152px;
+    max-width: 46%;
     height: auto;
     aspect-ratio: 519 / 304;
     object-fit: contain;
     background: #fff;
-    padding: 0.6rem 0.85rem;
+    padding: 0.45rem 0.85rem;
     border-radius: 14px;
 }
 .auth-hero-content .auth-hero-title {
@@ -599,6 +621,8 @@ html.dark .auth-card {
     font-weight: 600;
     padding: 0.2rem 0.6rem;
     border-radius: 9999px;
+    /* Label tidak dipecah jadi dua baris ("2 / peserta") saat ruangnya sempit di HP. */
+    white-space: nowrap;
 }
 .badge-approved {
     background: #dcfce7;
@@ -845,13 +869,28 @@ html.dark .file-box::file-selector-button:hover {
     margin-bottom: 0.75rem;
     border-bottom: 1px solid var(--border-soft);
 }
+/* Ikon persegi + nama web sebagai teks di sebelahnya. */
+.portal-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+}
 .portal-brand-logo {
     display: block;
-    width: 104px;
-    max-width: 100%;
-    height: auto;
-    aspect-ratio: 519 / 304;
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    aspect-ratio: 1 / 1;
     object-fit: contain;
+}
+.portal-brand-name {
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text-heading);
+    min-width: 0;
 }
 .portal-brand-tagline {
     font-size: 0.62rem;
@@ -983,9 +1022,12 @@ html.dark .portal-logout:hover {
     align-items: center;
     gap: 1rem;
     padding: 0.7rem 1.15rem;
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
 }
+
 .portal-topbar-actions {
     display: flex;
     align-items: center;
@@ -1049,4 +1091,412 @@ html.dark .portal-logout:hover {
     .portal-scrim {
         display: none !important;
     }
+}
+
+/* =========================================================================
+   Jadwal Shift — kalender, legenda, header bulan, action bar, pemilih peserta
+   (komponen <x-shift-*>; dipakai halaman peserta, pembimbing/mentor/admin,
+   dan Dashboard Pimpinan). Warna shift lewat token --st-* per .shift-tone-*.
+   ========================================================================= */
+.shift-tone-pagi  { --st-bg: #fef3c7; --st-fg: #92400e; --st-bd: #fcd34d; }
+.shift-tone-siang { --st-bg: #e0f2fe; --st-fg: #075985; --st-bd: #7dd3fc; }
+.shift-tone-malam { --st-bg: #e0e7ff; --st-fg: #3730a3; --st-bd: #a5b4fc; }
+.shift-tone-libur { --st-bg: #ffe4e6; --st-fg: #be123c; --st-bd: #fda4af; }
+.shift-tone-lain  { --st-bg: var(--surface-alt); --st-fg: var(--text-body); --st-bd: var(--border); }
+html.dark .shift-tone-pagi  { --st-bg: rgba(245, 158, 11, 0.16); --st-fg: #fcd34d; --st-bd: rgba(245, 158, 11, 0.45); }
+html.dark .shift-tone-siang { --st-bg: rgba(14, 165, 233, 0.16); --st-fg: #7dd3fc; --st-bd: rgba(14, 165, 233, 0.45); }
+html.dark .shift-tone-malam { --st-bg: rgba(99, 102, 241, 0.18); --st-fg: #a5b4fc; --st-bd: rgba(99, 102, 241, 0.45); }
+html.dark .shift-tone-libur { --st-bg: rgba(244, 63, 94, 0.16); --st-fg: #fda4af; --st-bd: rgba(244, 63, 94, 0.45); }
+
+/* Badge shift di rekap presensi */
+.badge.shift-badge { background: var(--st-bg); color: var(--st-fg); }
+
+/* ---- Chip (legenda & ringkasan) ---- */
+.shift-chip {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.75rem; font-weight: 600; line-height: 1.2;
+    padding: 0.3rem 0.65rem; border-radius: 9999px;
+    background: var(--st-bg, var(--surface-alt)); color: var(--st-fg, var(--text-body));
+    border: 1px solid var(--st-bd, var(--border));
+}
+.shift-chip-empty { border-style: dashed; background: transparent; color: var(--text-muted); }
+.shift-chip-today-dot { width: 0.9rem; height: 0.9rem; border-radius: 9999px; background: var(--brand); flex-shrink: 0; }
+
+/* ---- Header bulan ---- */
+.shift-head { padding: 0.85rem 1rem; }
+.shift-nav-btn {
+    width: 44px; height: 44px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-heading);
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.shift-nav-btn:hover { background: var(--surface-alt); box-shadow: var(--shadow-card); }
+.shift-nav-btn:focus-visible, .shift-btn-sm:focus-visible, .shift-action-btn:focus-visible,
+.shift-picker-btn:focus-visible, .shift-picker-opt:focus-visible, .shift-recent-btn:focus-visible,
+.shift-help > summary:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 2px;
+}
+.shift-month { font-size: 1.15rem; font-weight: 800; color: var(--text-heading); letter-spacing: -0.01em; }
+.shift-progress { height: 6px; border-radius: 9999px; background: var(--surface-alt); overflow: hidden; }
+.shift-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--brand-success); transition: width 0.3s ease; }
+.shift-btn-sm {
+    display: inline-flex; align-items: center; gap: 0.4rem; min-height: 36px;
+    padding: 0.35rem 0.8rem; border-radius: 10px; font-size: 0.8rem; font-weight: 600;
+    border: 1px solid var(--border); background: transparent; color: var(--text-body); cursor: pointer;
+    transition: background 0.15s ease;
+}
+.shift-btn-sm:hover { background: var(--surface-alt); }
+.shift-readonly-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem; border-radius: 9999px;
+    background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border);
+}
+.shift-help > summary {
+    list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.8rem; font-weight: 600; color: var(--text-muted); min-height: 36px; border-radius: 8px;
+}
+.shift-help > summary::-webkit-details-marker { display: none; }
+.shift-help[open] > summary { color: var(--brand); }
+.shift-help-body {
+    margin-top: 0.4rem; padding: 0.65rem 0.8rem; border-radius: 10px;
+    background: var(--surface-alt); color: var(--text-body); font-size: 0.8rem; line-height: 1.5;
+}
+
+/* ---- Kalender ---- */
+.shift-cal { padding: 0.75rem; }
+.shift-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.4rem; }
+.shift-cal-dow {
+    text-align: center; font-size: 0.72rem; font-weight: 700; padding: 0.3rem 0;
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;
+}
+.shift-cal-dow.is-weekend { color: #be123c; }
+html.dark .shift-cal-dow.is-weekend { color: #fda4af; }
+
+/* Pilih cepat: kolom kecil di kiri untuk "pilih satu minggu", nama hari bisa diketuk. */
+.shift-cal-grid.has-week { grid-template-columns: 1.6rem repeat(7, minmax(0, 1fr)); }
+.shift-cal-dow.is-pick, .shift-cal-week {
+    font-family: inherit; cursor: pointer; border-radius: 9999px;
+    background: transparent; border: 1px solid transparent;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.shift-cal-week {
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    color: var(--text-faint); font-size: 0.7rem; border-radius: 8px;
+}
+.shift-cal-dow.is-pick:hover:not(:disabled), .shift-cal-week:hover:not(:disabled) {
+    background: var(--surface-alt); border-color: var(--border); color: var(--brand);
+}
+.shift-cal-dow.is-pick.is-active, .shift-cal-week.is-active {
+    background: color-mix(in srgb, var(--brand) 14%, transparent); border-color: var(--brand); color: var(--brand);
+}
+.shift-cal-dow.is-pick:disabled, .shift-cal-week:disabled { cursor: default; opacity: 0.35; }
+.shift-cal-dow.is-pick:focus-visible, .shift-cal-week:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+.shift-cell {
+    position: relative; width: 100%; min-height: 5rem;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 0.3rem;
+    padding: 0.45rem 0.5rem; border-radius: 12px; text-align: left; font: inherit;
+    background: var(--surface); color: var(--text-heading);
+    border: 1px dashed var(--border);
+    transition: box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+}
+.shift-cell.is-weekend:not(.has-shift) { background: rgba(190, 18, 60, 0.045); }
+html.dark .shift-cell.is-weekend:not(.has-shift) { background: rgba(244, 63, 94, 0.07); }
+.shift-cell.has-shift { background: var(--st-bg); color: var(--st-fg); border: 1px solid var(--st-bd); }
+.shift-cell.is-pickable { cursor: pointer; }
+.shift-cell.is-pickable:hover { box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12); transform: translateY(-1px); }
+.shift-cell:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.shift-cell.is-past { opacity: 0.7; }
+.shift-cell.is-past:hover, .shift-cell.is-past:focus-visible { opacity: 1; }
+.shift-cell.is-selected { opacity: 1; box-shadow: 0 0 0 2px var(--brand), 0 6px 16px rgba(4, 44, 108, 0.18); }
+.shift-cell-day {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 1.8rem; height: 1.8rem; padding: 0 0.3rem; border-radius: 9999px;
+    font-size: 1.05rem; font-weight: 700; line-height: 1; color: inherit;
+}
+.shift-cell.is-today .shift-cell-day { background: var(--brand); color: #fff; }
+html.dark .shift-cell.is-today .shift-cell-day { color: #0f172a; }
+.shift-cell-corner { position: absolute; top: 0.35rem; right: 0.35rem; line-height: 1; }
+.shift-cell-corner .fa-circle-check { color: var(--brand); font-size: 0.95rem; }
+.shift-cell-corner .fa-lock { color: var(--text-faint); font-size: 0.65rem; }
+.shift-cell-label {
+    display: flex; align-items: center; gap: 0.3rem; min-width: 0;
+    font-size: 0.74rem; font-weight: 700; line-height: 1.2;
+}
+.shift-cell-label .lbl-long { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shift-cell-label .lbl-short { display: none; }
+.shift-cell-empty { font-size: 0.7rem; color: var(--text-faint); }
+@media (max-width: 639px) {
+    .shift-cal { padding: 0.45rem; }
+    .shift-cal-grid { gap: 0.25rem; }
+    .shift-cal-grid.has-week { grid-template-columns: 1.15rem repeat(7, minmax(0, 1fr)); }
+    .shift-cell {
+        min-height: 3.5rem; padding: 0.25rem 0.15rem; border-radius: 10px;
+        align-items: center; justify-content: center; text-align: center;
+    }
+    .shift-cell-day { font-size: 0.92rem; min-width: 1.6rem; height: 1.6rem; }
+    .shift-cell-label { justify-content: center; font-size: 0.68rem; }
+    .shift-cell-label .lbl-long { display: none; }
+    .shift-cell-label .lbl-short { display: inline; }
+    .shift-cell-empty { display: none; }
+    .shift-cell-corner { top: 0.15rem; right: 0.2rem; }
+}
+
+/* ---- Action bar (sticky bawah) ---- */
+.shift-actionbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    background: var(--surface); border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 24px rgba(2, 6, 23, 0.14);
+}
+@media (min-width: 1024px) { .shift-actionbar { left: 264px; } }
+.shift-action-btn {
+    min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.55rem 0.95rem; border-radius: 12px; font-size: 0.875rem; font-weight: 700; cursor: pointer;
+    background: var(--st-bg); color: var(--st-fg); border: 1px solid var(--st-bd);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+.shift-action-btn:hover { box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12); transform: translateY(-1px); }
+.shift-action-btn:disabled { opacity: 0.6; cursor: wait; }
+.shift-action-btn.is-neutral { --st-bg: transparent; --st-fg: var(--text-body); --st-bd: var(--border); font-weight: 600; }
+
+/* ---- Pemilih peserta (searchable) ---- */
+.shift-picker { position: relative; }
+.shift-picker-btn {
+    width: 100%; min-height: 52px; display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.5rem 0.8rem; border-radius: 12px; text-align: left; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-heading);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.shift-picker-btn:hover { border-color: var(--brand); }
+.shift-picker-panel {
+    position: absolute; z-index: 30; left: 0; right: 0; margin-top: 0.35rem; overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.2);
+}
+.shift-picker-list { max-height: 19rem; overflow-y: auto; padding: 0.35rem; }
+.shift-picker-group {
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-muted); padding: 0.55rem 0.6rem 0.25rem;
+}
+.shift-picker-opt {
+    width: 100%; min-height: 44px; display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.45rem 0.6rem; border-radius: 10px; text-align: left; color: var(--text-heading); cursor: pointer;
+}
+.shift-picker-opt:hover, .shift-picker-opt.is-active { background: var(--surface-alt); }
+.shift-picker-opt[aria-selected="true"] { font-weight: 700; }
+.shift-avatar {
+    width: 2.25rem; height: 2.25rem; border-radius: 9999px; flex-shrink: 0; overflow: hidden;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--surface-alt); color: var(--text-muted); font-weight: 700; font-size: 0.8rem;
+    border: 1px solid var(--border);
+}
+.shift-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.shift-avatar.is-lg { width: 3.25rem; height: 3.25rem; font-size: 1.1rem; }
+.shift-muted-line { font-size: 0.78rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Empty state & baru dilihat ---- */
+.shift-empty { padding: 2.25rem 1.25rem; text-align: center; }
+.shift-empty-art {
+    width: 5rem; height: 5rem; margin: 0 auto; border-radius: 1.5rem;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-alt); color: var(--brand);
+}
+.shift-recent-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; cursor: pointer;
+    padding: 0.35rem 0.8rem 0.35rem 0.4rem; border-radius: 9999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-heading);
+    font-size: 0.82rem; font-weight: 600; transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.shift-recent-btn:hover { background: var(--surface-alt); box-shadow: var(--shadow-card); }
+.shift-recent-btn .shift-avatar { width: 1.9rem; height: 1.9rem; font-size: 0.7rem; }
+
+/* ---- Footer "terakhir diubah" ---- */
+.shift-lastchange {
+    display: inline-flex; align-items: flex-start; gap: 0.45rem; max-width: 100%;
+    padding: 0.45rem 0.75rem; border-radius: 12px; font-size: 0.78rem; line-height: 1.4;
+    background: var(--surface-alt); color: var(--text-muted); white-space: normal; overflow-wrap: anywhere;
+}
+.shift-lastchange b { color: var(--text-heading); }
+
+/* ---- Mode "Atur Per Tanggal" (panel bawah Mentor & pengajuan intern) ---- */
+.shift-actionbar { max-height: 88vh; overflow-y: auto; overscroll-behavior: contain; }
+.shift-seg {
+    display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px;
+    background: var(--surface-alt); border: 1px solid var(--border);
+}
+.shift-seg-btn {
+    font: inherit; font-size: 0.78rem; font-weight: 700; padding: 0.4rem 0.7rem; border-radius: 8px;
+    border: 0; background: transparent; color: var(--text-muted); cursor: pointer; white-space: nowrap;
+}
+.shift-seg-btn.is-on { background: var(--surface); color: var(--brand); box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12); }
+.shift-seg-btn:focus-visible, .shift-pd-chip:focus-visible, .shift-pd-opt:focus-visible, .shift-pd-submit:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 2px;
+}
+.shift-pd-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; margin-bottom: 0.45rem; }
+.shift-pd-tools-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-right: 0.15rem; }
+.shift-pd-chip {
+    font: inherit; font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.65rem; border-radius: 9999px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 0.3rem; min-height: 34px;
+    background: var(--st-bg, transparent); color: var(--st-fg, var(--text-body)); border: 1px solid var(--st-bd, var(--border));
+}
+.shift-pd-chip.is-neutral { --st-bg: transparent; --st-fg: var(--text-body); --st-bd: var(--border); font-weight: 600; }
+.shift-pd-list {
+    display: flex; flex-direction: column; gap: 0.45rem; max-height: 45vh; overflow-y: auto;
+    padding: 0.15rem 0.1rem; overscroll-behavior: contain;
+}
+.shift-pd-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 0.65rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+}
+.shift-pd-date { display: flex; flex-direction: column; gap: 0.2rem; min-width: 6.5rem; flex: 0 0 auto; }
+.shift-pd-day { font-weight: 800; font-size: 0.9rem; color: var(--text-heading); }
+.shift-pd-now {
+    align-self: flex-start; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 9999px;
+    background: var(--st-bg, var(--surface-alt)); color: var(--st-fg, var(--text-muted)); border: 1px solid var(--st-bd, var(--border));
+}
+.shift-pd-now.is-empty { --st-bg: var(--surface-alt); --st-fg: var(--text-muted); --st-bd: var(--border); }
+.shift-pd-opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.3rem; flex: 1 1 16rem; }
+.shift-pd-opt {
+    font: inherit; cursor: pointer; min-height: 44px; padding: 0.3rem 0.2rem; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.05rem;
+    background: transparent; color: var(--text-body); border: 1px solid var(--border);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.shift-pd-opt.is-on { background: var(--st-bg); color: var(--st-fg); border-color: var(--st-fg); box-shadow: inset 0 0 0 1px var(--st-fg); }
+.shift-pd-opt-label { font-size: 0.8rem; font-weight: 800; line-height: 1.1; }
+.shift-pd-opt-time { font-size: 0.64rem; font-weight: 600; opacity: 0.75; white-space: nowrap; }
+.shift-pd-submit {
+    font: inherit; font-size: 0.875rem; font-weight: 700; min-height: 44px; padding: 0.55rem 1rem; border-radius: 12px;
+    display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+    background: var(--brand); color: #fff; border: 1px solid var(--brand);
+}
+.shift-pd-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+.shift-pd-reason-row { flex-basis: 100%; width: 100%; font-size: 0.85rem; }
+.shift-pd-switch {
+    display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 0.6rem; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600; color: var(--text-body); min-height: 32px;
+}
+.shift-pd-switch input { width: 1.05rem; height: 1.05rem; accent-color: var(--brand); }
+html.dark .shift-pd-submit { color: #0b1a33; }
+@media (max-width: 639px) {
+    .shift-pd-row { padding: 0.5rem; }
+    .shift-pd-date { flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
+    .shift-pd-opts { flex-basis: 100%; }
+    .shift-pd-opt-time { font-size: 0.6rem; }
+}
+
+/* ---- Pengajuan perubahan shift (intern → mentor) ---- */
+.shift-cell-corner.is-pending .fa-hourglass-half { color: #d97706; font-size: 0.7rem; }
+.shift-req-list { display: flex; flex-direction: column; gap: 0.55rem; }
+.shift-req {
+    display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.6rem;
+    padding: 0.75rem 0.85rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface);
+}
+.shift-req-main { min-width: 0; flex: 1 1 14rem; }
+.shift-req-title { font-weight: 700; color: var(--text-heading); font-size: 0.9rem; }
+.shift-req-meta { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem; overflow-wrap: anywhere; }
+.shift-req-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.shift-req-status {
+    display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.72rem; font-weight: 700;
+    padding: 0.2rem 0.55rem; border-radius: 9999px; border: 1px solid var(--border);
+    background: var(--surface-alt); color: var(--text-muted);
+}
+.shift-req-status.is-pending { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.shift-req-status.is-approved { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.shift-req-status.is-rejected { background: #ffe4e6; color: #be123c; border-color: #fecdd3; }
+html.dark .shift-req-status.is-pending { background: rgba(217, 119, 6, 0.18); color: #fcd34d; border-color: rgba(217, 119, 6, 0.35); }
+html.dark .shift-req-status.is-approved { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.35); }
+html.dark .shift-req-status.is-rejected { background: rgba(225, 29, 72, 0.18); color: #fda4af; border-color: rgba(225, 29, 72, 0.35); }
+/* =========================================================================
+   Animated background (portal) — icon bertema jurnal magang, warna per peran,
+   dipasang lewat <x-animated-bg> di components/layouts/app.blade.php
+   ========================================================================= */
+.animated-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    --c1: 16 185 129;   /* intern: hijau */
+    --c2: 59 130 246;
+    --c3: 168 85 247;
+}
+.animated-bg[data-role="mentor"]     { --c1: 245 158 11; --c2: 239 68 68;  --c3: 236 72 153; }
+.animated-bg[data-role="pembimbing"] { --c1: 59 130 246; --c2: 99 102 241; --c3: 14 165 233; }
+.animated-bg[data-role="pimpinan"]   { --c1: 124 58 237; --c2: 217 119 6;  --c3: 30 41 59; }
+
+.animated-bg .shape {
+    position: absolute;
+    line-height: 1;
+    will-change: transform;
+}
+
+/* Buku */
+.animated-bg .ic-book {
+    font-size: clamp(44px, 4.6vmax, 76px); top: 12%; left: 6%;
+    color: rgb(var(--c1) / 0.5);
+    animation: bg-drift-a 20s ease-in-out infinite alternate;
+}
+/* Laptop */
+.animated-bg .ic-laptop {
+    font-size: clamp(50px, 5.2vmax, 84px); bottom: 14%; right: 8%;
+    color: rgb(var(--c2) / 0.5);
+    animation: bg-drift-b 24s ease-in-out infinite alternate;
+}
+/* HP */
+.animated-bg .ic-phone {
+    font-size: clamp(38px, 4vmax, 64px); top: 10%; right: 12%;
+    color: rgb(var(--c3) / 0.5);
+    animation: bg-sway 13s ease-in-out infinite alternate;
+}
+/* Pena */
+.animated-bg .ic-pen {
+    font-size: clamp(36px, 3.8vmax, 60px); bottom: 10%; left: 10%;
+    color: rgb(var(--c1) / 0.55);
+    animation: bg-sway 12s ease-in-out infinite alternate;
+}
+/* Clipboard tugas */
+.animated-bg .ic-clip {
+    font-size: clamp(34px, 3.6vmax, 56px); top: 58%; left: 44%;
+    color: rgb(var(--c2) / 0.5);
+    animation: bg-drift-c 16s ease-in-out infinite alternate;
+}
+/* Kalender */
+.animated-bg .ic-cal {
+    font-size: clamp(32px, 3.4vmax, 52px); top: 30%; left: 28%;
+    color: rgb(var(--c3) / 0.5);
+    animation: bg-sway 15s ease-in-out infinite alternate;
+}
+/* Sidik jari (presensi) — satu-satunya yang berputar */
+.animated-bg .ic-finger {
+    font-size: clamp(34px, 3.6vmax, 56px); top: 64%; right: 24%;
+    color: rgb(var(--c1) / 0.5);
+    animation: bg-spin 40s linear infinite;
+}
+/* Topi wisuda */
+.animated-bg .ic-cap {
+    font-size: clamp(40px, 4.2vmax, 68px); top: 8%; left: 44%;
+    color: rgb(var(--c2) / 0.5);
+    animation: bg-drift-a 22s ease-in-out infinite alternate;
+}
+
+@keyframes bg-drift-a  { to { transform: translate(14vw, 16vh) scale(1.1); } }
+@keyframes bg-drift-b  { to { transform: translate(-14vw, -14vh) scale(1.08); } }
+@keyframes bg-drift-c  { to { transform: translate(-10vw, 14vh) rotate(20deg); } }
+@keyframes bg-spin     { to { transform: rotate(360deg); } }
+@keyframes bg-sway     { from { transform: translate(0, 0) rotate(-12deg); }
+                         to   { transform: translate(5vw, -8vh) rotate(12deg); } }
+
+html.dark .animated-bg .shape { opacity: 0.85; }
+
+/* HP: sembunyikan sebagian icon biar tidak ramai */
+@media (max-width: 640px) {
+    .animated-bg .ic-clip,
+    .animated-bg .ic-cal,
+    .animated-bg .ic-cap { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animated-bg .shape { animation: none; }
 }

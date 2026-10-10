@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -40,5 +41,11 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /** Peran portal: User::factory()->role(UserRole::Pembimbing) dst. */
+    public function role(UserRole $role): static
+    {
+        return $this->state(fn () => ['role' => $role, 'approved_at' => now()]);
     }
 }

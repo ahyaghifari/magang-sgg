@@ -175,6 +175,7 @@ class Dashboard extends Component
             ])->count(),
             'kegiatan' => $kegiatan,
             'presensi' => $presensi,
+            'shiftLabels' => \App\Services\Shift\ScheduleResolver::labelsForRecords($presensi),
             'hadirHariIni' => $todayAttendance->whereNotNull('check_in_time')->count(),
             'telatHariIni' => $todayAttendance->where('late_minutes', '>', 0)->count(),
             'izin' => $izin,

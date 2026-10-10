@@ -2,41 +2,35 @@
 
 namespace App\Support;
 
+/**
+ * Logo & ikon web (portal, login/daftar, panel admin, favicon, PWA). Hanya IKON — nama web
+ * "Internship Syifa Global Group" selalu ditulis sebagai teks di sebelahnya.
+ *
+ * Logo perusahaan di Sertifikat PKL / PDF TIDAK lewat sini (InternCertificateController membaca
+ * public/images/syifa-logo.* langsung), jadi mengganti ikon web tidak mengubah sertifikat.
+ *
+ * Setiap URL diberi ?v=<waktu ubah file> (cache-busting): bila file ikon ditimpa, browser & HP
+ * otomatis memuat versi baru tanpa perlu menaikkan versi secara manual.
+ */
 class Brand
 {
-    /**
-     * URL logo utama Syifa Global Group.
-     *
-     * Pakai file pertama yang ada di public/images/syifa-logo.{png,jpg,jpeg,webp,svg}.
-     * PNG transparan (background-removed) diutamakan. Kalau belum ada satupun, tetap
-     * kembalikan path .png supaya penggantian file cukup menaruh syifa-logo.png.
-     */
+    /** Ikon web (PNG transparan persegi, 512x512). */
     public static function logoUrl(): string
     {
-        foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $ext) {
-            $relative = "images/syifa-logo.{$ext}";
-
-            if (is_file(public_path($relative))) {
-                return asset($relative);
-            }
-        }
-
-        return asset('images/syifa-logo.png');
+        return self::versioned('images/logo-simagang.png');
     }
 
-    /**
-     * URL ikon bulat/persegi Syifa Global Group (cuma lambang, tanpa wordmark) —
-     * dipakai untuk favicon, supaya tidak memakai logo lebar (logoUrl()) yang jadi
-     * gepeng/kurang jelas kalau dipaksa persegi oleh browser.
-     */
+    /** Favicon PNG 32x32 (dipakai juga panel admin & tab Editor Sertifikat). */
     public static function faviconUrl(): string
     {
-        $relative = 'images/syifa-favicon.png';
+        return self::versioned('images/favicon-32.png');
+    }
 
-        if (is_file(public_path($relative))) {
-            return asset($relative);
-        }
+    /** URL aset di public/ + ?v=<filemtime> bila file ada. */
+    public static function versioned(string $relative): string
+    {
+        $path = public_path($relative);
 
-        return self::logoUrl();
+        return asset($relative) . (is_file($path) ? '?v=' . filemtime($path) : '');
     }
 }

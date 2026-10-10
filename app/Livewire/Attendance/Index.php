@@ -5,6 +5,7 @@ namespace App\Livewire\Attendance;
 use App\Models\AccessScanLog;
 use App\Models\AttendanceRecord;
 use App\Models\CompanyFixedSchedule;
+use App\Services\Shift\ScheduleResolver;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -59,6 +60,8 @@ class Index extends Component
         $monthEnd = $selectedMonth->copy()->endOfMonth()->toDateString();
 
         $schedule = null;
+        $scheduleLabel = null;
+        $shiftLabels = [];
         $today = null;
         $records = null;
         $todayTaps = collect();
@@ -73,6 +76,18 @@ class Index extends Component
                     ->first()
                 : null;
 
+            // Intern yang punya isian jadwal shift hari ini: tampilkan jam shift / Libur itu.
+            // Tanpa isian → jadwal tetap perusahaan di atas (perilaku lama).
+            $resolved = app(ScheduleResolver::class)->resolve($intern, $companyId, $todayStr);
+            if ($resolved && $resolved['source'] !== 'fixed') {
+                $schedule = (object) [
+                    'is_off_day' => $resolved['source'] === 'off',
+                    'start_time' => $resolved['start_time'],
+                    'end_time' => $resolved['end_time'],
+                ];
+                $scheduleLabel = $resolved['label'];
+            }
+
             $today = AttendanceRecord::where('nip', $intern->nip)
                 ->whereDate('date', $todayStr)
                 ->first();
@@ -81,6 +96,8 @@ class Index extends Component
                 ->whereBetween('date', [$monthStart, $monthEnd])
                 ->orderByDesc('date')
                 ->paginate(14);
+            $records->getCollection()->each(fn ($r) => $r->setRelation('intern', $intern));
+            $shiftLabels = ScheduleResolver::labelsForRecords($records);
 
             $todayTaps = AccessScanLog::where('nip', $intern->nip)
                 ->whereDate('scan_date', $todayStr)
@@ -104,6 +121,8 @@ class Index extends Component
             'selectedMonth' => $selectedMonth,
             'isCurrentMonth' => $selectedMonth->isSameMonth($now),
             'schedule' => $schedule,
+            'scheduleLabel' => $scheduleLabel,
+            'shiftLabels' => $shiftLabels,
             'today' => $today,
             'todayTaps' => $todayTaps,
             'records' => $records,

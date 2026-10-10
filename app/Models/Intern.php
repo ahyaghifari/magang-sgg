@@ -20,6 +20,7 @@ class Intern extends Model
         'unit_id',
         'pembimbing_id',
         'mentor_id',
+        'uses_shift',
         'nama',
         'nama_panggilan',
         'avatar_path',
@@ -114,6 +115,7 @@ class Intern extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'uses_shift' => 'boolean',
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
         'nilai_akhir' => 'decimal:2',
@@ -225,6 +227,31 @@ class Intern extends Model
     {
         return $this->hasMany(LeaveRequest::class);
     }
+
+    /**
+     * Jadwal shift harian intern ini (1 entri per tanggal: shift atau Libur).
+     * Lihat App\Services\Shift\ShiftAssignmentService.
+     */
+    public function shiftAssignments(): HasMany
+    {
+        return $this->hasMany(InternShiftAssignment::class);
+    }
+
+    /**
+     * Intern ini memakai jadwal shift — dipilih admin di form Intern ("Memakai jadwal shift: Ya/Tidak").
+     * Syarat menu "Jadwal Shift" muncul dan syarat boleh mengajukan perubahan shift.
+     */
+    public function usesShifts(): bool
+    {
+        return (bool) $this->uses_shift;
+    }
+
+    /** Pengajuan perubahan jadwal shift dari intern ini (diputuskan Mentor-nya). */
+    public function shiftChangeRequests(): HasMany
+    {
+        return $this->hasMany(ShiftChangeRequest::class);
+    }
+
 
     /**
      * Pembimbing/Mentor (atau admin) yang memberi penilaian akhir ini.

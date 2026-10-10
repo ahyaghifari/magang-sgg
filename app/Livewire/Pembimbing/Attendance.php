@@ -5,6 +5,7 @@ namespace App\Livewire\Pembimbing;
 use App\Models\AttendanceRecord;
 use App\Models\Intern;
 use App\Models\LeaveRequest;
+use App\Services\Shift\ScheduleResolver;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Url;
@@ -111,6 +112,7 @@ class Attendance extends Component
 
         return view('livewire.pembimbing.attendance', [
             'records' => $records,
+            'shiftLabels' => ScheduleResolver::labelsForRecords($records),
             'summary' => $summary,
             'leaves' => $leaves,
             'interns' => $this->visibleInterns()->orderBy('nama')->get(['id', 'nama', 'nip']),
