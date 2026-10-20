@@ -61,7 +61,7 @@
     .arc-6 { width: 287px; height: 287px; right: -129px; bottom: -129px; border: 26px solid #c74ba0; opacity: .24; }
 
     .brand { position: absolute; top: 58px; left: 76px; width: 380px; }
-    .brand img { height: 46px; }
+    .brand img { height: 52px; }
     .brand-text { margin-top: 4px; font-size: 11px; letter-spacing: 1px; color: #64748b; font-weight: bold; }
     .brand-text b { display: block; font-size: 13px; color: #042c6c; }
 
@@ -69,7 +69,7 @@
     .el { position: absolute; }
     .el b { color: #042c6c; }
     .deco-underline { border-bottom: 2px solid #c74ba0; padding-bottom: 10px; }
-    .deco-signline { border-top: 1.3px solid #94a3b8; padding-top: 7px; }
+    .deco-signline { border-top: 1.3px solid #94a3b8; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid; border-radius: 999px; padding: 6px 20px; }
     .prefix-no { color: #64748b; letter-spacing: 1.2px; margin-right: 8px; }
 
@@ -78,7 +78,9 @@
      * di tengah halaman A4 (bingkai .appraisal-inner). Layout dua-kolom SENGAJA pakai posisi
      * absolut (bukan tabel dua-kolom) karena nested table di DomPDF tidak reliable.
      */
-    .appraisal { page-break-before: always; position: relative; width: 297mm; height: 210mm; overflow: hidden; }
+    .appraisal { position: relative; width: 297mm; height: 210mm; overflow: hidden; }
+    .appraisal.after-front { page-break-before: always; }
+    .appraisal.rotated { transform: rotate(180deg); transform-origin: 148.5mm 105mm; }
     .appraisal-inner { position: absolute; top: 7mm; left: 8.5mm; width: 280mm; height: 196mm; font-size: 9pt; color: #111827; }
     .appraisal-inner h1 { position: absolute; top: 10mm; left: 14mm; right: 14mm; text-align: center; font-size: 13pt; margin: 0; letter-spacing: 0.5px; }
 
@@ -88,7 +90,7 @@
     .appraisal-inner .info-table .colon { width: 3mm; }
     .appraisal-inner .info-table .sep { width: 6mm; }
 
-    .appraisal-inner .col-cat { position: absolute; top: 38mm; width: 121mm; }
+    .appraisal-inner .col-cat { position: absolute; top: 46mm; width: 121mm; }
     .appraisal-inner .col-cat.left { left: 14mm; }
     .appraisal-inner .col-cat.right { left: 145mm; }
     .appraisal-inner .cat-label { font-weight: bold; font-size: 9pt; margin: 0 0 1mm; padding-left: 2mm; border-left: 1mm solid; }
@@ -105,10 +107,10 @@
     .appraisal-inner .cat-label.attitude { color: #1c8a4d; border-left-color: #1c8a4d; }
     .appraisal-inner .cat-label.knowledge { color: #c74ba0; border-left-color: #c74ba0; }
 
-    .appraisal-inner .bottom-block { position: absolute; top: 116mm; width: 121mm; }
+    .appraisal-inner .bottom-block { position: absolute; top: 125mm; width: 121mm; }
     .appraisal-inner .bottom-block.left { left: 14mm; }
     .appraisal-inner .bottom-block.right { left: 145mm; }
-    .appraisal-inner .sign-date { margin-bottom: 8mm; font-size: 9pt; }
+    .appraisal-inner .sign-date { margin-bottom: 22mm; font-size: 9pt; }
     .appraisal-inner .sign-line { border-top: 0.75pt solid #000; width: 50mm; padding-top: 1.5mm; font-size: 8.5pt; }
     .appraisal-inner .summary { width: 100%; border-collapse: collapse; margin-bottom: 3mm; background-color: #eef4fc; border-radius: 1.5mm; }
     .appraisal-inner .summary td { padding: 1mm 2mm; font-size: 8.5pt; }
@@ -118,6 +120,12 @@
 </style>
 </head>
 <body>
+    {{-- $halaman: 'depan' | 'belakang' | null (dua-duanya). $putar: putar 180° halaman belakang (cetak manual bolak-balik). --}}
+    @php
+        $halaman = $halaman ?? null;
+        $putar = ($putar ?? false) && $halaman === 'belakang';
+    @endphp
+    @if ($halaman !== 'belakang')
     <div class="cert">
         <div class="stripe"></div>
         <div class="stripe-green"></div>
@@ -144,9 +152,7 @@
                 $style = $content['styles'][$key];
             @endphp
             <div class="el{{ isset($layout['deco']) ? ' deco-' . $layout['deco'] : '' }}" style="{{ CertificateContent::styleCss($style, true) }}">
-                @if ($key === 'predikat')
-                    <span class="pill" style="border-color: {{ $style['color'] }};">{{ $layout['prefix'] }}{{ $content['predikat'] }}</span>
-                @elseif ($key === 'no')
+                @if ($key === 'no')
                     <span class="prefix-no">NO. SERTIFIKAT</span>{{ $content['no'] }}
                 @elseif ($key === 'kegiatan' && ! in_array('kegiatan', $content['overridden'], true))
                     Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.
@@ -158,8 +164,10 @@
             </div>
         @endforeach
     </div>
+    @endif
 
-    <div class="appraisal">
+    @if ($halaman !== 'depan')
+    <div class="appraisal{{ $halaman === null ? ' after-front' : '' }}{{ $putar ? ' rotated' : '' }}">
         <div class="appraisal-inner">
             <h1>{{ $content['form_judul'] }}</h1>
 
@@ -218,5 +226,6 @@
             </div>
         </div>
     </div>
+    @endif
 </body>
 </html>

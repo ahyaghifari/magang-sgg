@@ -7,6 +7,7 @@ use App\Support\CertificateAccess;
 use App\Support\CertificateContent;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -23,29 +24,37 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class InternCertificateController extends Controller
 {
-    public function view(Intern $intern): Response
+    public function view(Request $request, Intern $intern): Response
     {
-        $pdf = $this->buildPdf($intern);
+        $pdf = $this->buildPdf($intern, $this->halaman($request), $request->boolean('putar'));
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $this->filename($intern) . '"',
+            'Content-Disposition' => 'inline; filename="' . $this->filename($intern, $this->halaman($request)) . '"',
         ]);
     }
 
-    public function download(Intern $intern): Response
+    public function download(Request $request, Intern $intern): Response
     {
-        $pdf = $this->buildPdf($intern);
+        $pdf = $this->buildPdf($intern, $this->halaman($request), $request->boolean('putar'));
 
         return response($pdf, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $this->filename($intern) . '"',
+            'Content-Disposition' => 'attachment; filename="' . $this->filename($intern, $this->halaman($request)) . '"',
         ]);
     }
 
-    protected function filename(Intern $intern): string
+    /** ?halaman=depan|belakang → satu halaman; selain itu (atau kosong) → dua halaman. */
+    protected function halaman(Request $request): ?string
     {
-        return 'Sertifikat-PKL-' . Str::slug($intern->nama) . '.pdf';
+        $halaman = $request->query('halaman');
+
+        return in_array($halaman, ['depan', 'belakang'], true) ? $halaman : null;
+    }
+
+    protected function filename(Intern $intern, ?string $halaman = null): string
+    {
+        return 'Sertifikat-PKL-' . Str::slug($intern->nama) . ($halaman ? '-' . $halaman : '') . '.pdf';
     }
 
     /**
@@ -70,7 +79,7 @@ class InternCertificateController extends Controller
         ]);
     }
 
-    protected function buildPdf(Intern $intern): string
+    protected function buildPdf(Intern $intern, ?string $halaman = null, bool $putar = false): string
     {
         CertificateAccess::authorizeView(auth()->user(), $intern);
 
@@ -82,6 +91,8 @@ class InternCertificateController extends Controller
             // Sama dengan editor: data asli digabung editan tersimpan (sertifikat_overrides),
             // jadi PDF yang diunduh intern/pembimbing/admin ikut berubah setelah disimpan.
             'content' => CertificateContent::for($intern),
+            'halaman' => $halaman,
+            'putar' => $putar,
         ])
             ->setPaper('a4', 'landscape')
             // Hanya huruf yang dipakai yang disematkan — font TTF (resources/fonts) bisa ratusan KB.
@@ -94,8 +105,9 @@ class InternCertificateController extends Controller
     {
         $intern->loadMissing(['institusi', 'unit.company', 'pembimbing', 'mentor']);
 
-        $logoPath = collect(['png', 'jpg', 'jpeg', 'webp'])
-            ->map(fn ($ext) => public_path("images/syifa-logo.{$ext}"))
+        // Logo terbaru (ikon portal) lebih dulu; logo lama hanya cadangan kalau filenya tidak ada.
+        $logoPath = collect(['logo-simagang.png', 'syifa-logo.png', 'syifa-logo.jpg', 'syifa-logo.jpeg', 'syifa-logo.webp'])
+            ->map(fn ($file) => public_path("images/{$file}"))
             ->first(fn ($path) => is_file($path));
 
         $logoDataUri = $logoPath

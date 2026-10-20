@@ -32,8 +32,8 @@
     // Nama elemen yang tampil di panel gaya.
     $labels = [
         'judul' => 'Judul', 'pengantar' => 'Kalimat pengantar', 'nama' => 'Nama peserta',
-        'sekolah' => 'Asal sekolah', 'kegiatan' => 'Kalimat kegiatan', 'periode' => 'Periode',
-        'predikat' => 'Predikat', 'tanggal' => 'Tempat & tanggal', 'ttd_nama' => 'Nama TTD kiri',
+        'sekolah' => 'Asal sekolah', 'kegiatan' => 'Kalimat kegiatan', 'periode' => 'Waktu pelaksanaan',
+        'tanggal' => 'Tempat & tanggal', 'ttd_nama' => 'Nama TTD kiri',
         'ttd_jabatan' => 'Jabatan TTD kiri', 'ttd2_nama' => 'Nama TTD kanan', 'ttd2_jabatan' => 'Jabatan TTD kanan',
         'no' => 'Nomor sertifikat',
     ];
@@ -120,6 +120,14 @@
     .btn-sm { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
     .btn-toggle[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
 
+    .printbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 16px; border-top: 1px dashed var(--bar-border); }
+    .printbar-label { font-size: 13px; font-weight: 700; color: var(--bar-text); margin-right: 4px; }
+    .printbar-rotate { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--bar-muted); }
+    .print-guide { padding: 4px 16px 12px; font-size: 13px; color: var(--bar-text); line-height: 1.55; }
+    .print-guide[hidden] { display: none; }
+    .print-guide ol { margin: 6px 0 0; padding-left: 20px; }
+    .print-guide-note { margin: 0; padding: 8px 10px; border-radius: 8px; background: rgba(11, 71, 161, 0.08); }
+
     .stylebar { display: none; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 16px 10px; border-top: 1px dashed var(--bar-border); }
     .stylebar.show { display: flex; }
     .stylebar-label { font-size: 13px; font-weight: 700; color: var(--bar-text); margin-right: 4px; }
@@ -158,7 +166,7 @@
     .arc-6 { width: 287px; height: 287px; right: -129px; bottom: -129px; border: 26px solid var(--magenta); opacity: .24; }
 
     .brand { position: absolute; top: 58px; left: 76px; }
-    .brand img { height: 46px; display: block; }
+    .brand img { height: 52px; display: block; }
     .brand-text { margin-top: 4px; font-size: 11px; letter-spacing: 1px; color: var(--muted); font-weight: 700; }
     .brand-text b { display: block; font-size: 13px; color: var(--navy); }
 
@@ -166,7 +174,7 @@
     .el { position: absolute; white-space: pre-line; border-radius: 3px; }
     .el b { color: var(--navy); }
     .deco-underline { border-bottom: 2px solid var(--magenta); padding-bottom: 10px; }
-    .deco-signline { border-top: 1.3px solid #94a3b8; padding-top: 7px; }
+    .deco-signline { border-top: 1.3px solid #94a3b8; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid currentColor; border-radius: 999px; padding: 6px 20px; }
     .el .prefix-no { color: var(--muted); letter-spacing: 1.2px; margin-right: 8px; }
 
@@ -222,7 +230,7 @@
     .b-summary .value { font-weight: 800; color: var(--blue); }
 
     .b-sign { position: absolute; top: 580px; left: 578px; width: 492px; }
-    .b-sign-date { font-size: 12.5px; margin-bottom: 52px; }
+    .b-sign-date { font-size: 12.5px; margin-bottom: 96px; }
     .b-sign-line { border-top: 1px solid #000; width: 230px; padding-top: 6px; font-size: 12.5px; }
     .b-sign-line .who { font-weight: 700; }
 
@@ -236,6 +244,14 @@
         .page:last-child { page-break-after: auto; break-after: auto; }
         .el, [contenteditable="true"] { box-shadow: none !important; outline: none !important; background: transparent !important; }
         [contenteditable="true"]:empty::before { content: none; }
+
+        /* Cetak satu halaman saja (manual bolak-balik): class di <body> diset JS sebelum print. */
+        body.print-only-depan #page-back,
+        body.print-only-belakang #page-front { display: none !important; }
+        body.print-only-depan .page,
+        body.print-only-belakang .page { page-break-after: auto; break-after: auto; }
+        /* Putar 180° seluruh halaman belakang (ukuran kertas tetap). */
+        body.print-only-belakang.print-rotate #page-back { transform: rotate(180deg); transform-origin: 50% 50%; }
     }
 </style>
 </head>
@@ -270,6 +286,32 @@
                 <button type="button" class="btn" id="btn-print">Print</button>
                 <button type="button" class="btn btn-primary" id="btn-pdf">Unduh PDF</button>
             </div>
+        </div>
+
+        {{-- Cetak manual bolak-balik: depan & belakang dicetak terpisah, kertas dibalik sendiri. --}}
+        <div class="printbar">
+            <span class="printbar-label">Cetak bolak-balik manual:</span>
+            <button type="button" class="btn btn-sm" id="btn-print-front">Cetak Halaman Depan</button>
+            <button type="button" class="btn btn-sm" id="btn-print-back">Cetak Halaman Belakang</button>
+            <button type="button" class="btn btn-sm" id="btn-pdf-front">Unduh PDF Depan</button>
+            <button type="button" class="btn btn-sm" id="btn-pdf-back">Unduh PDF Belakang</button>
+            <label class="printbar-rotate">
+                Sisi belakang:
+                <select class="field" id="sel-rotate" aria-label="Arah halaman belakang">
+                    <option value="1">Putar 180° (bawaan)</option>
+                    <option value="0">Normal</option>
+                </select>
+            </label>
+            <button type="button" class="btn btn-sm" id="btn-guide" aria-expanded="false" aria-controls="print-guide">Petunjuk cetak bolak-balik</button>
+        </div>
+        <div class="print-guide" id="print-guide" hidden>
+            <p class="print-guide-note">Sisi belakang bawaannya <b>Putar 180°</b>. Kalau hasil cetak sisi belakang terbalik (kepala di bawah), pilih <b>Normal</b> lalu cetak ulang.</p>
+            <ol>
+                <li>Pilih <b>Cetak Halaman Depan</b>. Di dialog cetak: ukuran kertas <b>A4</b>, orientasi <b>Landscape</b>, skala <b>100%</b> (jangan &ldquo;Fit to page&rdquo;), margin <b>None</b>, dan <b>Cetak latar belakang</b> aktif.</li>
+                <li>Ambil kertas hasil cetak, balik, lalu masukkan lagi ke printer. Perhatikan sisi mana yang menghadap ke atas.</li>
+                <li>Pilih <b>Cetak Halaman Belakang</b> dengan pengaturan yang sama.</li>
+                <li>Tips: tes dulu pakai kertas bekas yang ditandai panah &ldquo;atas&rdquo; supaya tahu arah masuknya kertas. Kalau sisi belakang terbalik, ganti ke <b>Normal</b>.</li>
+            </ol>
         </div>
 
         @if ($canEdit)
@@ -322,9 +364,7 @@
 
             @foreach (array_keys(CertificateContent::FRONT_LAYOUT) as $key)
                 <div class="{{ $decoClass($key) }}" {!! $front($key) !!} data-label="{{ $labels[$key] ?? $key }}">
-                    @if ($key === 'predikat')
-                        <span class="pill">{{ $prefix($key) }}<span class="txt" id="front-predikat-value">{{ $content['predikat'] }}</span></span>
-                    @elseif ($key === 'no')
+                    @if ($key === 'no')
                         <span class="prefix-no">NO. SERTIFIKAT</span><span class="txt">{{ $content['no'] }}</span>
                     @elseif ($key === 'kegiatan' && ! $isOverridden('kegiatan'))
                         {{-- Belum diedit: tampil dengan penebalan (teks polosnya identik dengan data asli). --}}
@@ -444,7 +484,7 @@
                 el.style.color = s.color;
             }
 
-            // ===== Nilai per kriteria → hitung ulang Total Score, Rating & Predikat depan =====
+            // ===== Nilai per kriteria → hitung ulang Total Score & Rating =====
             const colors = { 'Excellent': '#1c8a4d', 'Good': '#0b47a1', 'Fair': '#b45309', 'Below Average': '#c2410c', 'Poor': '#b91c1c' };
             function ratingFor(v) {
                 if (v >= 4.5) return 'Excellent';
@@ -464,31 +504,40 @@
                     const ratingEl = document.getElementById('rating');
                     ratingEl.textContent = rating;
                     ratingEl.style.color = colors[rating];
-                    document.getElementById('front-predikat-value').textContent = rating;
-                    // Warna predikat depan ikut rating, kecuali warnanya sudah diubah manual.
-                    const predikatEl = document.querySelector('[data-front][data-key="predikat"]');
-                    const st = state.get(predikatEl);
-                    const auto = st.style.color.toLowerCase() === st.def.color.toLowerCase();
-                    st.def.color = colors[rating];
-                    if (auto) { st.style.color = colors[rating]; applyStyle(predikatEl); }
                 });
             });
 
             // ===== Unduh PDF (browser) & Print =====
-            const btnPdf = document.getElementById('btn-pdf');
-            btnPdf.addEventListener('click', async function () {
-                const label = btnPdf.textContent;
-                btnPdf.disabled = true;
-                btnPdf.textContent = 'Membuat PDF…';
+            // Pilihan arah halaman belakang disimpan di browser (localStorage), bukan database.
+            const selRotate = document.getElementById('sel-rotate');
+            selRotate.value = '1'; // bawaan: Putar 180°
+            try { const saved = localStorage.getItem('sertifikat.putar'); if (saved === '0' || saved === '1') selRotate.value = saved; } catch (e) {}
+            selRotate.addEventListener('change', function () {
+                try { localStorage.setItem('sertifikat.putar', selRotate.value); } catch (e) {}
+            });
+            const rotateBack = function () { return selRotate.value === '1'; };
+
+            const printbarButtons = ['btn-print', 'btn-pdf', 'btn-print-front', 'btn-print-back', 'btn-pdf-front', 'btn-pdf-back']
+                .map(function (id) { return document.getElementById(id); });
+
+            function beginExport() {
                 if (window.deselect) window.deselect();
                 document.body.classList.add('exporting');
                 if (document.activeElement) document.activeElement.blur();
+            }
+
+            // Buat PDF A4 landscape dari daftar halaman; rotate = putar 180° (hanya dipakai halaman belakang).
+            async function exportPdf(pageEls, name, rotate, btn) {
+                const label = btn.textContent;
+                printbarButtons.forEach(function (b) { b.disabled = true; });
+                btn.textContent = 'Membuat PDF…';
+                beginExport();
 
                 try {
                     if (document.fonts && document.fonts.ready) await document.fonts.ready;
                     const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-                    for (let i = 0; i < pages.length; i++) {
-                        const canvas = await html2canvas(pages[i], {
+                    for (let i = 0; i < pageEls.length; i++) {
+                        let canvas = await html2canvas(pageEls[i], {
                             scale: 2,
                             useCORS: true,
                             backgroundColor: '#ffffff',
@@ -496,24 +545,68 @@
                             height: PAGE_H,
                             windowWidth: PAGE_W,
                         });
+                        if (rotate) {
+                            const r = document.createElement('canvas');
+                            r.width = canvas.width;
+                            r.height = canvas.height;
+                            const ctx = r.getContext('2d');
+                            ctx.translate(r.width, r.height);
+                            ctx.rotate(Math.PI);
+                            ctx.drawImage(canvas, 0, 0);
+                            canvas = r;
+                        }
                         if (i > 0) pdf.addPage('a4', 'landscape');
                         pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 297, 210);
                     }
-                    pdf.save(filename);
+                    pdf.save(name);
                 } catch (err) {
                     console.error(err);
                     alert('Gagal membuat PDF: ' + (err && err.message ? err.message : err));
                 } finally {
                     document.body.classList.remove('exporting');
-                    btnPdf.disabled = false;
-                    btnPdf.textContent = label;
+                    printbarButtons.forEach(function (b) { b.disabled = false; });
+                    btn.textContent = label;
                 }
+            }
+
+            const pageFront = document.getElementById('page-front');
+            const pageBack = document.getElementById('page-back');
+            const baseName = filename.replace(/\.pdf$/i, '');
+
+            document.getElementById('btn-pdf').addEventListener('click', function (e) {
+                exportPdf(pages, filename, false, e.currentTarget);
+            });
+            document.getElementById('btn-pdf-front').addEventListener('click', function (e) {
+                exportPdf([pageFront], baseName + '-depan.pdf', false, e.currentTarget);
+            });
+            document.getElementById('btn-pdf-back').addEventListener('click', function (e) {
+                exportPdf([pageBack], baseName + '-belakang' + (rotateBack() ? '-putar180' : '') + '.pdf', rotateBack(), e.currentTarget);
             });
 
-            document.getElementById('btn-print').addEventListener('click', function () {
+            // Print: class di <body> menyembunyikan halaman lain (lihat @media print); dibersihkan setelah dialog tertutup.
+            function printMode(classes) {
                 if (window.deselect) window.deselect();
                 if (document.activeElement) document.activeElement.blur();
+                const cleanup = function () {
+                    document.body.classList.remove('print-only-depan', 'print-only-belakang', 'print-rotate');
+                    window.removeEventListener('afterprint', cleanup);
+                };
+                window.addEventListener('afterprint', cleanup);
+                classes.forEach(function (c) { document.body.classList.add(c); });
                 window.print();
+            }
+
+            document.getElementById('btn-print').addEventListener('click', function () { printMode([]); });
+            document.getElementById('btn-print-front').addEventListener('click', function () { printMode(['print-only-depan']); });
+            document.getElementById('btn-print-back').addEventListener('click', function () {
+                printMode(rotateBack() ? ['print-only-belakang', 'print-rotate'] : ['print-only-belakang']);
+            });
+
+            const btnGuide = document.getElementById('btn-guide');
+            const printGuide = document.getElementById('print-guide');
+            btnGuide.addEventListener('click', function () {
+                printGuide.hidden = !printGuide.hidden;
+                btnGuide.setAttribute('aria-expanded', printGuide.hidden ? 'false' : 'true');
             });
 
             if (!canEdit) return;

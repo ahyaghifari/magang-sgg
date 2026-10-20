@@ -56,11 +56,10 @@ class CertificateContent
         'judul' => ['top' => 186, 'left' => 150, 'width' => 823, 'align' => 'center', 'font' => 'jakarta', 'size' => 38, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.2],
         'pengantar' => ['top' => 250, 'left' => 200, 'width' => 723, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3],
         'nama' => ['top' => 276, 'left' => 170, 'width' => 783, 'align' => 'center', 'font' => 'playfair', 'size' => 44, 'bold' => true, 'italic' => true, 'color' => '#0b47a1', 'lh' => 1.2, 'deco' => 'underline'],
-        'sekolah' => ['top' => 358, 'left' => 200, 'width' => 723, 'align' => 'center', 'font' => 'jakarta', 'size' => 15, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3],
-        'kegiatan' => ['top' => 392, 'left' => 175, 'width' => 773, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.7],
-        'periode' => ['top' => 490, 'left' => 250, 'width' => 623, 'align' => 'center', 'font' => 'jakarta', 'size' => 13.5, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'prefix' => 'Periode: '],
-        'predikat' => ['top' => 520, 'left' => 250, 'width' => 623, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => true, 'italic' => false, 'color' => null, 'lh' => 1.3, 'deco' => 'pill', 'prefix' => 'Predikat: '],
-        'tanggal' => ['top' => 630, 'left' => 95, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 12, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3],
+        'sekolah' => ['top' => 381, 'left' => 200, 'width' => 723, 'align' => 'center', 'font' => 'jakarta', 'size' => 15, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3],
+        'kegiatan' => ['top' => 424, 'left' => 175, 'width' => 773, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.7],
+        'periode' => ['top' => 518, 'left' => 250, 'width' => 623, 'align' => 'center', 'font' => 'jakarta', 'size' => 13.5, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'prefix' => 'Waktu Pelaksanaan: '],
+        'tanggal' => ['top' => 570, 'left' => 95, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 12, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3],
         'ttd_nama' => ['top' => 672, 'left' => 95, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'deco' => 'signline'],
         'ttd_jabatan' => ['top' => 704, 'left' => 95, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 11.5, 'bold' => false, 'italic' => false, 'color' => '#64748b', 'lh' => 1.3],
         'ttd2_nama' => ['top' => 672, 'left' => 758, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'deco' => 'signline'],
@@ -128,7 +127,8 @@ class CertificateContent
             ? $intern->tanggal_mulai->translatedFormat('d F Y') . ' – ' . $intern->tanggal_selesai->translatedFormat('d F Y')
             : '-';
         $company = $intern->unit->company->name ?? 'Syifa Global Group';
-        $signer = $intern->pembimbing->name ?? $intern->mentor->name ?? '..............................';
+        // Penanda tangan kiri = Mentor peserta; kosong (hanya garis tanda tangan) kalau belum punya mentor.
+        $signer = $intern->mentor->name ?? '';
 
         $kriteria = [];
         foreach (Intern::CRITERIA as $field => $c) {
@@ -151,7 +151,7 @@ class CertificateContent
             'predikat' => $intern->predikat() ?? '-',
             'tanggal' => $tanggal,
             'ttd_nama' => $signer,
-            'ttd_jabatan' => 'Head of Department',
+            'ttd_jabatan' => 'Mentor',
             'ttd2_nama' => '..............................',
             'ttd2_jabatan' => 'Pimpinan Perusahaan',
             'no' => sprintf('%03d/SGG-INT/%s', $intern->id, now()->format('Y')),
@@ -170,7 +170,7 @@ class CertificateContent
             'rating' => $intern->predikat() ?? 'Poor',
             'form_tanggal' => $tanggal,
             'form_ttd_nama' => $signer,
-            'form_ttd_jabatan' => 'Head of Department',
+            'form_ttd_jabatan' => 'Mentor',
         ];
     }
 
