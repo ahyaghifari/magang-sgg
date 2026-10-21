@@ -69,9 +69,8 @@
     .el { position: absolute; }
     .el b { color: #042c6c; }
     .deco-underline { border-bottom: 2px solid #c74ba0; padding-bottom: 10px; }
-    .deco-signline { border-top: 1.3px solid #94a3b8; padding-top: 7px; min-height: 22px; }
+    .deco-signline { border-top: 2px solid #475569; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid; border-radius: 999px; padding: 6px 20px; }
-    .prefix-no { color: #64748b; letter-spacing: 1.2px; margin-right: 8px; }
 
     /*
      * Halaman 2 — form Appraisal. Isi & tata letaknya tetap seperti versi 280x196mm, diletakkan
@@ -110,8 +109,9 @@
     .appraisal-inner .bottom-block { position: absolute; top: 125mm; width: 121mm; }
     .appraisal-inner .bottom-block.left { left: 14mm; }
     .appraisal-inner .bottom-block.right { left: 145mm; }
-    .appraisal-inner .sign-date { margin-bottom: 22mm; font-size: 9pt; }
-    .appraisal-inner .sign-line { border-top: 0.75pt solid #000; width: 50mm; padding-top: 1.5mm; font-size: 8.5pt; }
+    .appraisal-inner .sign-block { margin-top: 4mm; text-align: center; }
+    .appraisal-inner .sign-date { margin-bottom: 25mm; font-size: 9pt; text-align: center; }
+    .appraisal-inner .sign-line { border-top: 0.75pt solid #000; width: 50mm; margin: 0 auto; padding-top: 1.5mm; font-size: 8.5pt; text-align: center; }
     .appraisal-inner .summary { width: 100%; border-collapse: collapse; margin-bottom: 3mm; background-color: #eef4fc; border-radius: 1.5mm; }
     .appraisal-inner .summary td { padding: 1mm 2mm; font-size: 8.5pt; }
     .appraisal-inner .summary .label { width: 26mm; }
@@ -153,7 +153,7 @@
             @endphp
             <div class="el{{ isset($layout['deco']) ? ' deco-' . $layout['deco'] : '' }}" style="{{ CertificateContent::styleCss($style, true) }}">
                 @if ($key === 'no')
-                    <span class="prefix-no">NO. SERTIFIKAT</span>{{ $content['no'] }}
+                    No. {{ $content['no'] }}
                 @elseif ($key === 'kegiatan' && ! in_array('kegiatan', $content['overridden'], true))
                     Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.
                 @elseif ($key === 'kegiatan')
@@ -213,16 +213,16 @@
                 </div>
             @endforeach
 
-            <div class="bottom-block left">
-                <div class="sign-date">{{ $content['form_tanggal'] }}</div>
-                <div class="sign-line">{{ $content['form_ttd_nama'] }}<br>{{ $content['form_ttd_jabatan'] }}</div>
-            </div>
-
+            {{-- Kolom kanan: kotak Total Score/Rating, lalu tepat di bawahnya blok tanda tangan (rata tengah terhadap kotak). --}}
             <div class="bottom-block right">
                 <table class="summary">
                     <tr><td class="label">Total Score</td><td class="colon">:</td><td class="value">{{ $content['nilai_akhir'] }}</td></tr>
                     <tr><td class="label">Rating</td><td class="colon">:</td><td class="value" style="color:{{ CertificateContent::ratingColor($content['rating']) }};">{{ $content['rating'] }}</td></tr>
                 </table>
+                <div class="sign-block">
+                    <div class="sign-date">{{ $content['form_tanggal'] }}</div>
+                    <div class="sign-line"><b>{{ $content['form_ttd_nama'] }}</b><br>{{ $content['form_ttd_jabatan'] }}</div>
+                </div>
             </div>
         </div>
     </div>

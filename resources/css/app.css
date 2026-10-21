@@ -189,6 +189,37 @@ html.dark .btn-primary:hover {
 }
 .form-input::placeholder {
     color: var(--text-faint);
+    text-overflow: ellipsis;
+}
+.form-input { text-overflow: ellipsis; }
+
+/* ---- Baris filter (dipakai semua halaman yang punya filter) ----------------------
+   Tinggi semua kontrol sama (input teks, dropdown, tanggal); di layar sempit jadi 1 kolom. */
+.filter-bar {
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 0.75rem;
+    align-items: end;
+}
+.filter-bar.is-inline {
+    display: flex;
+    flex-wrap: wrap;
+}
+.filter-bar .form-input,
+.form-input.filter-control {
+    height: 2.75rem;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 0.9375rem;
+    border-radius: 12px;
+}
+/* Teks bantuan kecil di bawah filter: jarak jelas ke filter dan ke daftar di bawahnya. */
+.filter-hint {
+    margin: -0.5rem 0.15rem 1.25rem;
+    line-height: 1.5;
+    color: var(--text-muted);
 }
 
 /* Input tanggal DD/MM/YYYY (resources/views/components/date-input.blade.php). */
@@ -1059,14 +1090,47 @@ html.dark .portal-logout:hover {
     width: 100%;
     max-width: 64rem;
     margin: 0 auto;
-    padding: 1.6rem 1.15rem 3rem;
+    padding: 1.75rem 1.15rem 3rem;
 }
 
 .portal-title {
     font-size: 1.6rem;
     font-weight: 800;
+    line-height: 1.25;
     letter-spacing: -0.02em;
     color: var(--text-heading);
+}
+
+/* ---- Header halaman (komponen <x-page-header>) ---------------------------------
+   Judul kiri, tombol aksi sejajar vertikal di kanan; jarak bawah sama di semua halaman. */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+.page-header-main {
+    flex: 1 1 14rem;
+    min-width: 0;
+}
+.page-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+.page-header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+@media (max-width: 520px) {
+    .portal-title { font-size: 1.4rem; }
+    .page-header-main { flex-basis: 100%; }
+    .page-header-actions { width: 100%; }
 }
 
 /* ---- Mobile drawer backdrop -------------------------------------------------- */
@@ -1432,61 +1496,66 @@ html.dark .shift-req-status.is-rejected { background: rgba(225, 29, 72, 0.18); c
     will-change: transform;
 }
 
+/*
+ * Zona ikon: hanya di tepi layar kiri/kanan dan bagian bawah, jauh dari area judul (atas) dan
+ * tengah konten; geseran animasinya pendek supaya ikon tidak melintasi judul/kartu. Opasitas
+ * rendah supaya teks di atasnya tetap terbaca (kartu & filter juga opaque, di atas ikon).
+ */
 /* Buku */
 .animated-bg .ic-book {
-    font-size: clamp(44px, 4.6vmax, 76px); top: 12%; left: 6%;
-    color: rgb(var(--c1) / 0.5);
+    font-size: clamp(44px, 4.6vmax, 76px); top: 34%; left: 1.5%;
+    color: rgb(var(--c1) / 0.3);
     animation: bg-drift-a 20s ease-in-out infinite alternate;
 }
 /* Laptop */
 .animated-bg .ic-laptop {
-    font-size: clamp(50px, 5.2vmax, 84px); bottom: 14%; right: 8%;
-    color: rgb(var(--c2) / 0.5);
+    font-size: clamp(50px, 5.2vmax, 84px); bottom: 6%; right: 2%;
+    color: rgb(var(--c2) / 0.3);
     animation: bg-drift-b 24s ease-in-out infinite alternate;
 }
 /* HP */
 .animated-bg .ic-phone {
-    font-size: clamp(38px, 4vmax, 64px); top: 10%; right: 12%;
-    color: rgb(var(--c3) / 0.5);
+    font-size: clamp(38px, 4vmax, 64px); top: 34%; right: 2%;
+    color: rgb(var(--c3) / 0.3);
     animation: bg-sway 13s ease-in-out infinite alternate;
 }
 /* Pena */
 .animated-bg .ic-pen {
-    font-size: clamp(36px, 3.8vmax, 60px); bottom: 10%; left: 10%;
-    color: rgb(var(--c1) / 0.55);
+    font-size: clamp(36px, 3.8vmax, 60px); bottom: 6%; left: 2%;
+    color: rgb(var(--c1) / 0.32);
     animation: bg-sway 12s ease-in-out infinite alternate;
 }
 /* Clipboard tugas */
 .animated-bg .ic-clip {
-    font-size: clamp(34px, 3.6vmax, 56px); top: 58%; left: 44%;
-    color: rgb(var(--c2) / 0.5);
+    font-size: clamp(34px, 3.6vmax, 56px); top: 62%; left: 1%;
+    color: rgb(var(--c2) / 0.3);
     animation: bg-drift-c 16s ease-in-out infinite alternate;
 }
 /* Kalender */
 .animated-bg .ic-cal {
-    font-size: clamp(32px, 3.4vmax, 52px); top: 30%; left: 28%;
-    color: rgb(var(--c3) / 0.5);
+    font-size: clamp(32px, 3.4vmax, 52px); top: 62%; right: 1.5%;
+    color: rgb(var(--c3) / 0.3);
     animation: bg-sway 15s ease-in-out infinite alternate;
 }
 /* Sidik jari (presensi) — satu-satunya yang berputar */
 .animated-bg .ic-finger {
-    font-size: clamp(34px, 3.6vmax, 56px); top: 64%; right: 24%;
-    color: rgb(var(--c1) / 0.5);
+    font-size: clamp(34px, 3.6vmax, 56px); bottom: 22%; right: 4%;
+    color: rgb(var(--c1) / 0.3);
     animation: bg-spin 40s linear infinite;
 }
 /* Topi wisuda */
 .animated-bg .ic-cap {
-    font-size: clamp(40px, 4.2vmax, 68px); top: 8%; left: 44%;
-    color: rgb(var(--c2) / 0.5);
+    font-size: clamp(40px, 4.2vmax, 68px); bottom: 22%; left: 4%;
+    color: rgb(var(--c2) / 0.3);
     animation: bg-drift-a 22s ease-in-out infinite alternate;
 }
 
-@keyframes bg-drift-a  { to { transform: translate(14vw, 16vh) scale(1.1); } }
-@keyframes bg-drift-b  { to { transform: translate(-14vw, -14vh) scale(1.08); } }
-@keyframes bg-drift-c  { to { transform: translate(-10vw, 14vh) rotate(20deg); } }
+@keyframes bg-drift-a  { to { transform: translate(2.5vw, 4vh) scale(1.08); } }
+@keyframes bg-drift-b  { to { transform: translate(-2.5vw, -4vh) scale(1.06); } }
+@keyframes bg-drift-c  { to { transform: translate(2vw, 4vh) rotate(14deg); } }
 @keyframes bg-spin     { to { transform: rotate(360deg); } }
-@keyframes bg-sway     { from { transform: translate(0, 0) rotate(-12deg); }
-                         to   { transform: translate(5vw, -8vh) rotate(12deg); } }
+@keyframes bg-sway     { from { transform: translate(0, 0) rotate(-10deg); }
+                         to   { transform: translate(1.5vw, -3vh) rotate(10deg); } }
 
 html.dark .animated-bg .shape { opacity: 0.85; }
 

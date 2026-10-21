@@ -53,18 +53,17 @@ class CertificateContent
      * color null = warna otomatis (predikat: mengikuti rating).
      */
     public const FRONT_LAYOUT = [
-        'judul' => ['top' => 186, 'left' => 150, 'width' => 823, 'align' => 'center', 'font' => 'jakarta', 'size' => 38, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.2],
-        'pengantar' => ['top' => 250, 'left' => 200, 'width' => 723, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3],
-        'nama' => ['top' => 276, 'left' => 170, 'width' => 783, 'align' => 'center', 'font' => 'playfair', 'size' => 44, 'bold' => true, 'italic' => true, 'color' => '#0b47a1', 'lh' => 1.2, 'deco' => 'underline'],
-        'sekolah' => ['top' => 381, 'left' => 200, 'width' => 723, 'align' => 'center', 'font' => 'jakarta', 'size' => 15, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3],
-        'kegiatan' => ['top' => 424, 'left' => 175, 'width' => 773, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.7],
-        'periode' => ['top' => 518, 'left' => 250, 'width' => 623, 'align' => 'center', 'font' => 'jakarta', 'size' => 13.5, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'prefix' => 'Waktu Pelaksanaan: '],
-        'tanggal' => ['top' => 570, 'left' => 95, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 12, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3],
-        'ttd_nama' => ['top' => 672, 'left' => 95, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'deco' => 'signline'],
-        'ttd_jabatan' => ['top' => 704, 'left' => 95, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 11.5, 'bold' => false, 'italic' => false, 'color' => '#64748b', 'lh' => 1.3],
-        'ttd2_nama' => ['top' => 672, 'left' => 758, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'deco' => 'signline'],
-        'ttd2_jabatan' => ['top' => 704, 'left' => 758, 'width' => 270, 'align' => 'center', 'font' => 'jakarta', 'size' => 11.5, 'bold' => false, 'italic' => false, 'color' => '#64748b', 'lh' => 1.3],
-        'no' => ['top' => 744, 'left' => 95, 'width' => 520, 'align' => 'left', 'font' => 'jakarta', 'size' => 10.5, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'prefix' => 'NO. SERTIFIKAT  '],
+        'judul' => ['top' => 168, 'left' => 150, 'width' => 823, 'align' => 'center', 'font' => 'jakarta', 'size' => 38, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.2],
+        'no' => ['top' => 224, 'left' => 150, 'width' => 823, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3, 'prefix' => 'No. '],
+        'pengantar' => ['top' => 262, 'left' => 200, 'width' => 723, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3],
+        'nama' => ['top' => 290, 'left' => 170, 'width' => 783, 'align' => 'center', 'font' => 'playfair', 'size' => 44, 'bold' => true, 'italic' => true, 'color' => '#0b47a1', 'lh' => 1.2, 'deco' => 'underline'],
+        'sekolah' => ['top' => 392, 'left' => 200, 'width' => 723, 'align' => 'center', 'font' => 'jakarta', 'size' => 15, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3],
+        'kegiatan' => ['top' => 434, 'left' => 175, 'width' => 773, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.7],
+        'periode' => ['top' => 520, 'left' => 250, 'width' => 623, 'align' => 'center', 'font' => 'jakarta', 'size' => 13.5, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'prefix' => 'Waktu Pelaksanaan: '],
+        // Blok tanda tangan: satu kolom berpusat di sumbu tengah halaman (left = (1123 - 300) / 2).
+        'tanggal' => ['top' => 570, 'left' => 411.5, 'width' => 300, 'align' => 'center', 'font' => 'jakarta', 'size' => 12, 'bold' => false, 'italic' => false, 'color' => '#334155', 'lh' => 1.3],
+        'ttd_nama' => ['top' => 672, 'left' => 411.5, 'width' => 300, 'align' => 'center', 'font' => 'jakarta', 'size' => 14, 'bold' => true, 'italic' => false, 'color' => '#042c6c', 'lh' => 1.3, 'deco' => 'signline'],
+        'ttd_jabatan' => ['top' => 704, 'left' => 411.5, 'width' => 300, 'align' => 'center', 'font' => 'jakarta', 'size' => 11.5, 'bold' => false, 'italic' => false, 'color' => '#64748b', 'lh' => 1.3],
     ];
 
     /** Properti gaya/posisi yang boleh diubah per elemen depan. */
@@ -87,8 +86,6 @@ class CertificateContent
         'tanggal' => 255,
         'ttd_nama' => 255,
         'ttd_jabatan' => 255,
-        'ttd2_nama' => 255,
-        'ttd2_jabatan' => 255,
         'no' => 255,
         // Halaman belakang (form penilaian)
         'form_judul' => 255,
@@ -152,8 +149,6 @@ class CertificateContent
             'tanggal' => $tanggal,
             'ttd_nama' => $signer,
             'ttd_jabatan' => 'Mentor',
-            'ttd2_nama' => '..............................',
-            'ttd2_jabatan' => 'Pimpinan Perusahaan',
             'no' => sprintf('%03d/SGG-INT/%s', $intern->id, now()->format('Y')),
 
             'form_judul' => 'PENILAIAN',

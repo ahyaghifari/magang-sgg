@@ -24,16 +24,13 @@
      x-on:shift-intern-picked.window="remember($event.detail.id)">
 
     @unless ($embedded)
-        <div style="margin-bottom:1.1rem;">
-            <h1 class="portal-title">Jadwal Shift Intern</h1>
-            <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-                @if (auth()->user()->isMentor())
+        <x-page-header title="Jadwal Shift Intern">
+            @if (auth()->user()->isMentor())
+                <x-slot:subtitle>
                     Isi & koreksi jadwal shift peserta yang kamu dampingi, serta tinjau pengajuan perubahan dari mereka.
-                @else
-                    Pantau jadwal shift peserta — jadwal diisi oleh mentor masing-masing peserta.
-                @endif
-            </p>
-        </div>
+                </x-slot:subtitle>
+            @endif
+        </x-page-header>
     @endunless
 
     {{-- Pesan sukses / gagal --}}

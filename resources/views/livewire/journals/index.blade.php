@@ -1,18 +1,17 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
-        <div>
-            <h1 class="portal-title">Jurnal Harian</h1>
-            <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
+    <x-page-header title="Jurnal Harian">
+        <x-slot:subtitle>
                 Riwayat kegiatan harian magang kamu
-            </p>
-        </div>
+        </x-slot:subtitle>
+        <x-slot:actions>
         @if ($intern)
             <button type="button" wire:click="$dispatch('open-journal-modal')" class="btn-primary" style="flex-shrink:0;">
                 <i class="fa-solid fa-pen-to-square"></i>
                 <span>Isi Jurnal</span>
             </button>
         @endif
-    </div>
+        </x-slot:actions>
+    </x-page-header>
 
     <div x-data="{ show: false }" x-cloak
          x-on:journal-saved.window="show = true; setTimeout(() => show = false, 4000)"
@@ -33,7 +32,7 @@
         </div>
     @else
         {{-- ===== Filter tanggal ===== --}}
-        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:flex; flex-wrap:wrap; align-items:flex-end; gap:0.75rem;">
+        <div class="surface-card filter-bar is-inline">
             <div>
                 <label for="j-from" class="form-label">Dari tanggal</label>
                 <x-date-input id="j-from" model="dateFrom" live style="max-width:12rem;" />

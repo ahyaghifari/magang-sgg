@@ -33,8 +33,8 @@
     $labels = [
         'judul' => 'Judul', 'pengantar' => 'Kalimat pengantar', 'nama' => 'Nama peserta',
         'sekolah' => 'Asal sekolah', 'kegiatan' => 'Kalimat kegiatan', 'periode' => 'Waktu pelaksanaan',
-        'tanggal' => 'Tempat & tanggal', 'ttd_nama' => 'Nama TTD kiri',
-        'ttd_jabatan' => 'Jabatan TTD kiri', 'ttd2_nama' => 'Nama TTD kanan', 'ttd2_jabatan' => 'Jabatan TTD kanan',
+        'tanggal' => 'Tempat & tanggal', 'ttd_nama' => 'Nama TTD',
+        'ttd_jabatan' => 'Jabatan TTD',
         'no' => 'Nomor sertifikat',
     ];
 @endphp
@@ -101,6 +101,7 @@
     .toolbar-hint { font-size: 13px; color: var(--bar-muted); margin-top: 2px; }
     .toolbar-meta { font-size: 12px; color: var(--bar-muted); margin-top: 3px; }
     .toolbar-meta b { color: var(--bar-text); }
+    .toolbar-meta:empty { display: none; }
     .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .btn-save { background: var(--green); border-color: var(--green); color: #fff; }
     .btn-save:hover { background: #167240; border-color: #167240; }
@@ -117,6 +118,8 @@
     .btn-primary { background: var(--navy); border-color: var(--navy); color: #fff; }
     .btn-primary:hover { background: var(--blue); border-color: var(--blue); }
     .btn[disabled] { opacity: 0.6; cursor: progress; }
+    .btn-icon { display: inline-flex; align-items: center; justify-content: center; padding: 8px 10px; }
+    .btn-icon[disabled] { opacity: 0.35; cursor: not-allowed; }
     .btn-sm { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
     .btn-toggle[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
 
@@ -174,9 +177,9 @@
     .el { position: absolute; white-space: pre-line; border-radius: 3px; }
     .el b { color: var(--navy); }
     .deco-underline { border-bottom: 2px solid var(--magenta); padding-bottom: 10px; }
-    .deco-signline { border-top: 1.3px solid #94a3b8; padding-top: 7px; min-height: 22px; }
+    .deco-signline { border-top: 2px solid #475569; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid currentColor; border-radius: 999px; padding: 6px 20px; }
-    .el .prefix-no { color: var(--muted); letter-spacing: 1.2px; margin-right: 8px; }
+    .el .prefix-no { color: inherit; }
 
     .can-edit .el { cursor: grab; }
     .can-edit .el:hover { box-shadow: 0 0 0 1px rgba(11, 71, 161, 0.35); }
@@ -229,9 +232,10 @@
     .b-summary .colon { width: 12px; }
     .b-summary .value { font-weight: 800; color: var(--blue); }
 
-    .b-sign { position: absolute; top: 580px; left: 578px; width: 492px; }
+    /* Tepat di bawah kotak Total Score/Rating (kolom kanan), rata tengah terhadap kotak itu. */
+    .b-sign { position: absolute; top: 566px; left: 578px; width: 492px; text-align: center; }
     .b-sign-date { font-size: 12.5px; margin-bottom: 96px; }
-    .b-sign-line { border-top: 1px solid #000; width: 230px; padding-top: 6px; font-size: 12.5px; }
+    .b-sign-line { border-top: 1px solid #000; width: 230px; margin: 0 auto; padding-top: 6px; font-size: 12.5px; }
     .b-sign-line .who { font-weight: 700; }
 
     /* ===== Print ===== */
@@ -260,26 +264,21 @@
         <div class="toolbar">
             <div>
                 <div class="toolbar-title">Editor Sertifikat &middot; {{ $intern->nama }}</div>
-                <div class="toolbar-hint">
-                    @if ($canEdit)
-                        Halaman depan: <b>klik</b> teks untuk memilih lalu geser/atur gaya, <b>klik ganda</b> untuk mengetik.
-                        Tekan <b>Simpan</b> (Ctrl+S). Mengubah angka di sertifikat <b>tidak</b> mengubah data penilaian aslinya.
-                    @else
-                        Versi final (baca-saja).
-                    @endif
-                </div>
-                <div class="toolbar-meta" id="edit-meta"
-                     data-empty="Belum pernah diedit — menampilkan data asli.">
-                    @if ($meta['updated_at'])
-                        Terakhir diedit oleh <b>{{ $meta['updated_by'] ?? 'pengguna dihapus' }}</b> &middot; {{ $meta['updated_at']->translatedFormat('d M Y, H:i') }}
-                    @else
-                        Belum pernah diedit — menampilkan data asli.
-                    @endif
-                </div>
+                @unless ($canEdit)
+                    <div class="toolbar-hint">Versi final (baca-saja).</div>
+                @endunless
+                {{-- Kosong (disembunyikan lewat :empty) selama sertifikat belum pernah diedit. --}}
+                <div class="toolbar-meta" id="edit-meta" data-empty="">@if ($meta['updated_at'])Terakhir diedit oleh <b>{{ $meta['updated_by'] ?? 'pengguna dihapus' }}</b> &middot; {{ $meta['updated_at']->translatedFormat('d M Y, H:i') }}@endif</div>
             </div>
             <div class="toolbar-actions">
                 @if ($canEdit)
                     <span class="save-status" id="save-status" aria-live="polite"></span>
+                    <button type="button" class="btn btn-icon" id="btn-undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+                    </button>
+                    <button type="button" class="btn btn-icon" id="btn-redo" title="Redo (Ctrl+Shift+Z / Ctrl+Y)" aria-label="Redo" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+                    </button>
                     <button type="button" class="btn" id="btn-reset">Reset ke Data Asli</button>
                     <button type="button" class="btn btn-save" id="btn-save">Simpan</button>
                 @endif
@@ -363,16 +362,8 @@
             </div>
 
             @foreach (array_keys(CertificateContent::FRONT_LAYOUT) as $key)
-                <div class="{{ $decoClass($key) }}" {!! $front($key) !!} data-label="{{ $labels[$key] ?? $key }}">
-                    @if ($key === 'no')
-                        <span class="prefix-no">NO. SERTIFIKAT</span><span class="txt">{{ $content['no'] }}</span>
-                    @elseif ($key === 'kegiatan' && ! $isOverridden('kegiatan'))
-                        {{-- Belum diedit: tampil dengan penebalan (teks polosnya identik dengan data asli). --}}
-                        <span class="txt">Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.</span>
-                    @else
-                        {{ $prefix($key) }}<span class="txt">{{ $content[$key] }}</span>
-                    @endif
-                </div>
+                {{-- Isi ditulis rapat tanpa baris baru di awal: .el memakai white-space: pre-line, jadi baris baru di template akan tampil sebagai baris kosong (menggeser teks ke bawah). --}}
+                <div class="{{ $decoClass($key) }}" {!! $front($key) !!} data-label="{{ $labels[$key] ?? $key }}">@if ($key === 'no')<span class="prefix-no">No. </span><span class="txt">{{ $content['no'] }}</span>@elseif ($key === 'kegiatan' && ! $isOverridden('kegiatan'))<span class="txt">Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.</span>@else{{ $prefix($key) }}<span class="txt">{{ $content[$key] }}</span>@endif</div>
             @endforeach
         </section>
 
@@ -420,11 +411,6 @@
                     </table>
                 </div>
             @endforeach
-
-            <div class="b-notes">
-                <div class="b-notes-label">CATATAN PENILAI</div>
-                <div class="b-notes-box" data-placeholder="Tulis catatan penilaian di sini…" {!! $ed('catatan_penilai') !!}>{{ $content['catatan_penilai'] !== '' ? $content['catatan_penilai'] : ($canEdit ? '' : '-') }}</div>
-            </div>
 
             <table class="b-summary">
                 <tr><td class="label">Total Score</td><td class="colon">:</td><td class="value" id="total-score" {!! $ed('nilai_akhir') !!}>{{ $content['nilai_akhir'] }}</td></tr>
@@ -631,11 +617,6 @@
             let editing = null;
             let dirty = false;
 
-            function markDirty() {
-                dirty = true;
-                setStatus('Belum disimpan', 'dirty');
-            }
-
             function syncPanel() {
                 if (!selected) return;
                 const s = state.get(selected).style;
@@ -649,6 +630,7 @@
 
             function select(el) {
                 if (selected === el) return;
+                commit();
                 if (editing) exitEdit();
                 if (selected) selected.classList.remove('selected');
                 selected = el;
@@ -692,12 +674,14 @@
                 editing = null;
             }
 
-            function update(prop, value) {
+            // live = perubahan beruntun (color picker): dicatat ke riwayat saat pilihan selesai.
+            function update(prop, value, live) {
                 if (!selected) return;
+                if (!live) commit();
                 state.get(selected).style[prop] = value;
                 applyStyle(selected);
                 syncPanel();
-                markDirty();
+                if (live) liveDirty(); else commit();
             }
 
             // Panel gaya
@@ -711,16 +695,22 @@
             sb.sizeUp.addEventListener('click', function () { setSize(state.get(selected).style.size + 1); });
             sb.bold.addEventListener('click', function () { update('bold', !state.get(selected).style.bold); });
             sb.italic.addEventListener('click', function () { update('italic', !state.get(selected).style.italic); });
-            sb.color.addEventListener('input', function () { update('color', sb.color.value); });
+            let colorOpen = false;
+            sb.color.addEventListener('input', function () {
+                if (!colorOpen) { commit(); colorOpen = true; }
+                update('color', sb.color.value, true);
+            });
+            sb.color.addEventListener('change', function () { colorOpen = false; commit(); });
             sb.edit.addEventListener('click', function () { if (selected) enterEdit(selected); });
             sb.done.addEventListener('click', deselect);
             sb.reset.addEventListener('click', function () {
                 if (!selected) return;
+                commit();
                 const st = state.get(selected);
                 st.style = Object.assign({}, st.def);
                 applyStyle(selected);
                 syncPanel();
-                markDirty();
+                commit();
             });
 
             // Klik sekali = pilih + bisa langsung digeser; klik ganda = mode ketik.
@@ -734,6 +724,7 @@
                     // tetap bisa di-scroll di HP); geser mulai dari sentuhan berikutnya.
                     if (e.pointerType === 'touch' && !wasSelected) return;
                     e.preventDefault();
+                    commit();
                     const s = state.get(el).style;
                     drag = { el: el, id: e.pointerId, x: e.clientX, y: e.clientY, top: s.top, left: s.left, moved: false };
                     el.setPointerCapture(e.pointerId);
@@ -759,7 +750,7 @@
                 });
                 function endDrag(e) {
                     if (!drag || drag.el !== el) return;
-                    if (drag.moved) markDirty();
+                    if (drag.moved) commit();
                     el.classList.remove('dragging');
                     guide.classList.remove('show');
                     try { el.releasePointerCapture(e.pointerId); } catch (_) {}
@@ -768,7 +759,6 @@
                 el.addEventListener('pointerup', endDrag);
                 el.addEventListener('pointercancel', endDrag);
                 el.addEventListener('dblclick', function () { enterEdit(el); });
-                el.addEventListener('input', markDirty);
                 el.addEventListener('keydown', function (e) {
                     if (editing !== el) return;
                     // Enter selesai mengetik (kecuali kalimat kegiatan: Enter = baris baru).
@@ -787,6 +777,7 @@
                 if (!selected || editing || !e.key.startsWith('Arrow')) return;
                 if (e.target.closest && e.target.closest('input, select, textarea, [contenteditable="true"]')) return;
                 e.preventDefault();
+                if (pendingKind !== 'arrow') commit();
                 const step = e.shiftKey ? 10 : 1;
                 const st = state.get(selected);
                 if (e.key === 'ArrowLeft') st.style.left = Math.max(0, st.style.left - step);
@@ -794,7 +785,7 @@
                 if (e.key === 'ArrowUp') st.style.top = Math.max(0, st.style.top - step);
                 if (e.key === 'ArrowDown') st.style.top = Math.min(PAGE_H - selected.offsetHeight, st.style.top + step);
                 applyStyle(selected);
-                markDirty();
+                schedule('arrow');
             });
 
             // Klik di luar elemen & panel = batal pilih.
@@ -830,10 +821,155 @@
                 }
             }
 
-            // Halaman belakang: input teks biasa.
-            document.addEventListener('input', function (e) {
-                if (e.target.closest && e.target.closest('#page-back [data-key][contenteditable="true"]')) markDirty();
+            // ===== Riwayat Undo/Redo (sisi browser) =====
+            // Snapshot = seluruh isi editor (teks depan & belakang, posisi/gaya, warna rating).
+            // Status "Belum disimpan"/"Tersimpan" = snapshot sekarang dibandingkan snapshot tersimpan.
+            const STYLE_KEYS = ['top', 'left', 'font', 'size', 'bold', 'italic', 'color'];
+            const HISTORY_MAX = 100;
+            const backEls = Array.from(document.querySelectorAll('#page-back [data-key][contenteditable="true"]'));
+            const ratingEl = document.getElementById('rating');
+            const btnUndo = document.getElementById('btn-undo');
+            const btnRedo = document.getElementById('btn-redo');
+
+            function snapshot() {
+                const front = {};
+                frontEls.forEach(function (el) {
+                    const s = state.get(el).style;
+                    const style = {};
+                    STYLE_KEYS.forEach(function (k) { style[k] = s[k]; });
+                    front[el.dataset.key] = { html: el.querySelector('.txt').innerHTML, style: style };
+                });
+                const back = {};
+                backEls.forEach(function (el) { back[el.dataset.key] = el.innerHTML; });
+                return JSON.stringify({ front: front, back: back, ratingColor: ratingEl.style.color });
+            }
+
+            const history = [snapshot()];
+            let hIdx = 0;
+            let savedStr = history[0];
+            let cleanLabel = '';
+            let wasDirty = false;
+            let pendingKind = null;
+            let pendingTimer = null;
+
+            function updateStatus() {
+                if (dirty) { wasDirty = true; setStatus('Belum disimpan', 'dirty'); }
+                else if (cleanLabel) setStatus(cleanLabel, 'ok');
+                else if (wasDirty) setStatus('Tersimpan', 'ok');
+                else setStatus('');
+            }
+
+            function refreshUi() {
+                dirty = history[hIdx] !== savedStr;
+                btnUndo.disabled = hIdx <= 0;
+                btnRedo.disabled = hIdx >= history.length - 1;
+                updateStatus();
+            }
+
+            // Status "Belum disimpan" langsung (saat mengetik/memilih warna), tanpa menambah langkah riwayat.
+            function liveDirty() {
+                dirty = snapshot() !== savedStr;
+                updateStatus();
+            }
+
+            // Catat keadaan sekarang sebagai satu langkah (kalau berbeda dari langkah terakhir).
+            function commit() {
+                if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+                pendingKind = null;
+                const str = snapshot();
+                if (str !== history[hIdx]) {
+                    history.length = hIdx + 1; // perubahan baru → jalur Redo dihapus
+                    history.push(str);
+                    hIdx++;
+                    if (history.length > HISTORY_MAX + 1) { history.shift(); hIdx--; }
+                }
+                refreshUi();
+            }
+
+            // Ketikan / panah keyboard beruntun dikelompokkan: dicatat setelah jeda 600 ms.
+            function schedule(kind) {
+                pendingKind = kind;
+                if (pendingTimer) clearTimeout(pendingTimer);
+                pendingTimer = setTimeout(commit, 600);
+                liveDirty();
+            }
+
+            function restore(str) {
+                const snap = JSON.parse(str);
+                const active = document.activeElement;
+                frontEls.forEach(function (el) {
+                    const d = snap.front[el.dataset.key];
+                    if (!d) return;
+                    el.querySelector('.txt').innerHTML = d.html;
+                    state.get(el).style = Object.assign({}, d.style);
+                    applyStyle(el);
+                });
+                backEls.forEach(function (el) {
+                    if (snap.back[el.dataset.key] !== undefined) el.innerHTML = snap.back[el.dataset.key];
+                });
+                ratingEl.style.color = snap.ratingColor; // total & rating ikut kembali bersama nilai kriteria
+                syncPanel();
+                if (active && active.isContentEditable) {
+                    active.focus();
+                    const range = document.createRange();
+                    range.selectNodeContents(active);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            }
+
+            function undo() {
+                if (drag) return;
+                commit();
+                if (hIdx <= 0) return;
+                hIdx--;
+                restore(history[hIdx]);
+                refreshUi();
+            }
+
+            function redo() {
+                if (drag) return;
+                commit();
+                if (hIdx >= history.length - 1) return;
+                hIdx++;
+                restore(history[hIdx]);
+                refreshUi();
+            }
+
+            [btnUndo, btnRedo].forEach(function (b) {
+                // Jangan curi fokus dari teks yang sedang diketik.
+                b.addEventListener('pointerdown', function (e) { e.preventDefault(); });
             });
+            btnUndo.addEventListener('click', undo);
+            btnRedo.addEventListener('click', redo);
+
+            // Ctrl/Cmd+Z = Undo; Ctrl/Cmd+Shift+Z atau Ctrl+Y = Redo — menggantikan undo bawaan browser.
+            // Kolom angka (ukuran font) dibiarkan memakai undo bawaannya.
+            function isNumberField(t) { return t && t.tagName === 'INPUT' && t.type === 'number'; }
+            document.addEventListener('keydown', function (e) {
+                if (!(e.ctrlKey || e.metaKey) || e.altKey || isNumberField(e.target)) return;
+                const k = e.key.toLowerCase();
+                if (k === 'z' && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); undo(); }
+                else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); e.stopPropagation(); redo(); }
+            }, true);
+            document.addEventListener('beforeinput', function (e) {
+                if (isNumberField(e.target)) return;
+                if (e.inputType === 'historyUndo') { e.preventDefault(); undo(); }
+                else if (e.inputType === 'historyRedo') { e.preventDefault(); redo(); }
+            });
+
+            // Teks depan & belakang: satu langkah = satu rentetan ketikan.
+            document.addEventListener('input', function (e) {
+                const t = e.target;
+                if (t.closest && t.closest('[data-front] .txt, #page-back [data-key][contenteditable="true"]')) schedule('type');
+            });
+            document.addEventListener('focusout', function (e) {
+                if (pendingKind === 'type' && e.target.closest && e.target.closest('[contenteditable="true"]')) commit();
+            });
+
+            refreshUi();
 
             // Kumpulkan isi: halaman depan = objek {text + posisi + gaya}, halaman belakang = teks
             // (innerText, bukan innerHTML). Key "kriteria.<field>.<sub>" dijadikan objek bertingkat.
@@ -880,12 +1016,16 @@
             async function save() {
                 if (editing) exitEdit();
                 if (document.activeElement) document.activeElement.blur();
+                commit();
+                const atSave = history[hIdx];
+                const payload = collect();
                 btnSave.disabled = true;
                 setStatus('Menyimpan…');
                 try {
-                    const data = await send(saveUrl, 'POST', collect());
-                    dirty = false;
-                    setStatus(data.changed ? 'Tersimpan' : 'Tersimpan (sama dengan data asli)', 'ok');
+                    const data = await send(saveUrl, 'POST', payload);
+                    savedStr = atSave; // riwayat tidak dihapus: masih bisa Undo lalu Simpan lagi
+                    cleanLabel = data.changed ? 'Tersimpan' : 'Tersimpan (sama dengan data asli)';
+                    refreshUi();
                     setMeta(data.meta);
                 } catch (err) {
                     setStatus('Gagal: ' + err.message, 'err');

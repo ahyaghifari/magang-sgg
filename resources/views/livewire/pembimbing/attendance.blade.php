@@ -6,15 +6,10 @@
 @endphp
 
 <div>
-    <div style="margin-bottom:1.4rem;">
-        <h1 class="portal-title">Presensi Intern</h1>
-        <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-            Rekap kehadiran seluruh peserta magang dari mesin sidik jari &middot; jam kerja WITA
-        </p>
-    </div>
+    <x-page-header title="Presensi Intern" />
 
     {{-- ===== Ringkasan ===== --}}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.1rem;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.25rem;">
         <div class="stat-card" style="padding:1.1rem 1.15rem;">
             <span class="stat-card-deco"></span>
             <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Baris Rekap</p>
@@ -33,7 +28,7 @@
     </div>
 
     {{-- ===== Filter ===== --}}
-    <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem;">
+    <div class="surface-card filter-bar">
         <div>
             <label for="f-intern" class="form-label">Peserta</label>
             <select id="f-intern" wire:model.live="internId" class="form-input">

@@ -1,12 +1,11 @@
 <div x-data="{ toast: null, toastType: 'success', timer: null }"
      x-on:shift-toast.window="toast = $event.detail.message; toastType = $event.detail.type; clearTimeout(timer); timer = setTimeout(() => toast = null, 6000)">
-    <div style="margin-bottom:1.1rem;">
-        <h1 class="portal-title">Jadwal Shift</h1>
-        <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-            Jadwal shift kamu diisi oleh mentor. Bila berhalangan, ketuk tanggal (hari ini s.d. {{ $windowDays }} hari ke depan)
-            atau ketuk nama hari / tombol di kiri baris untuk memilih sekaligus, lalu <b>Ajukan Perubahan</b> — jadwal berubah setelah disetujui mentor.
-        </p>
-    </div>
+    <x-page-header title="Jadwal Shift">
+        <x-slot:subtitle>
+                Jadwal shift kamu diisi oleh mentor. Bila berhalangan, ketuk tanggal (hari ini s.d. {{ $windowDays }} hari ke depan)
+                atau ketuk nama hari / tombol di kiri baris untuk memilih sekaligus, lalu <b>Ajukan Perubahan</b> — jadwal berubah setelah disetujui mentor.
+        </x-slot:subtitle>
+    </x-page-header>
 
     {{-- Pesan sukses / gagal --}}
     <div x-show="toast" x-cloak x-transition role="status"

@@ -6,15 +6,14 @@
 @endphp
 
 <div>
-    <div style="margin-bottom:1.4rem;">
-        <h1 class="portal-title">Dashboard Pimpinan</h1>
-        <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-            Ringkasan kegiatan, presensi, jurnal, dan izin seluruh peserta magang &middot; {{ $now->translatedFormat('l, d F Y') }}
-        </p>
-    </div>
+    <x-page-header title="Dashboard Pimpinan">
+        <x-slot:subtitle>
+                Ringkasan kegiatan, presensi, jurnal, dan izin seluruh peserta magang &middot; {{ $now->translatedFormat('l, d F Y') }}
+        </x-slot:subtitle>
+    </x-page-header>
 
     {{-- ===== Ringkasan ===== --}}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.6rem;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.25rem;">
         <div class="stat-card" style="padding:1.1rem 1.15rem;">
             <span class="stat-card-deco"></span>
             <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Peserta Magang</p>
@@ -49,10 +48,12 @@
             Seluruh Intern
         </h2>
 
-        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:0.85rem;">
-            <label for="all-intern-search" class="form-label">Cari</label>
-            <input id="all-intern-search" type="text" wire:model.live.debounce.400ms="internSearch" class="form-input"
-                   placeholder="Nama peserta atau nama sekolah/institusi...">
+        <div class="surface-card filter-bar">
+            <div>
+                <label for="all-intern-search" class="form-label">Cari</label>
+                <input id="all-intern-search" type="text" wire:model.live.debounce.400ms="internSearch" class="form-input"
+                       placeholder="Cari nama atau sekolah">
+            </div>
         </div>
 
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:0.9rem;">
@@ -86,7 +87,7 @@
             Semua Kegiatan &amp; Jurnal
         </h2>
 
-        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:0.85rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem;">
+        <div class="surface-card filter-bar">
             <div>
                 <label for="k-intern" class="form-label">Peserta</label>
                 <select id="k-intern" wire:model.live="kegiatanInternId" class="form-input">
@@ -153,7 +154,7 @@
             Semua Presensi &mdash; Masuk &amp; Telat
         </h2>
 
-        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:0.85rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem;">
+        <div class="surface-card filter-bar">
             <div>
                 <label for="p-intern" class="form-label">Peserta</label>
                 <select id="p-intern" wire:model.live="presensiInternId" class="form-input">
@@ -240,7 +241,7 @@
             Semua Izin Peserta Magang
         </h2>
 
-        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:0.85rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem;">
+        <div class="surface-card filter-bar">
             <div>
                 <label for="i-intern" class="form-label">Peserta</label>
                 <select id="i-intern" wire:model.live="izinInternId" class="form-input">

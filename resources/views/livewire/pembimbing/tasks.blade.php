@@ -1,12 +1,6 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
-        <div>
-            <h1 class="portal-title">Tugas Intern</h1>
-            <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-                Beri tugas langsung lewat web, atau pantau tugas yang dicatat sendiri oleh peserta magang
-            </p>
-        </div>
-        <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap;">
+    <x-page-header title="Tugas Intern">
+        <x-slot:actions>
             <button type="button"
                     x-data="{ state: 'off' }"
                     x-init="window.pushNotificationsActive?.().then(on => { if (on) state = 'on' })"
@@ -20,8 +14,8 @@
                 <i class="fa-solid fa-plus"></i>
                 <span>Beri Tugas</span>
             </button>
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-page-header>
 
     <div x-data="{ show: false, count: 1 }" x-cloak
          x-on:task-assigned.window="count = $event.detail.count ?? 1; show = true; setTimeout(() => show = false, 4000)"
@@ -33,7 +27,7 @@
     </div>
 
     {{-- ===== Ringkasan ===== --}}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.1rem;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.25rem;">
         <div class="stat-card" style="padding:1.1rem 1.15rem;">
             <span class="stat-card-deco"></span>
             <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Total Tugas</p>
@@ -89,7 +83,7 @@
     @endif
 
     {{-- ===== Filter ===== --}}
-    <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.75rem;">
+    <div class="surface-card filter-bar">
         <div>
             <label for="f-intern" class="form-label">Peserta</label>
             <select id="f-intern" wire:model.live="internId" class="form-input">
