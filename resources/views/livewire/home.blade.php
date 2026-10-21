@@ -1,5 +1,5 @@
 <div>
-    <h1 class="portal-title" style="margin-bottom:1.4rem;">Beranda</h1>
+    <x-page-header title="Beranda" />
 
     @if ($journalSaved)
         <div class="surface-card flex items-center"

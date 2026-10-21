@@ -1,11 +1,9 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
-        <div>
-            <h1 class="portal-title">Tugas</h1>
-            <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
+    <x-page-header title="Tugas">
+        <x-slot:subtitle>
                 Tugas dari pembimbing — baik yang diberikan lewat web maupun yang disampaikan langsung (lisan)
-            </p>
-        </div>
+        </x-slot:subtitle>
+        <x-slot:actions>
         @if ($intern)
             <div class="flex items-center" style="gap:0.6rem; flex-wrap:wrap;">
                 <button type="button"
@@ -23,7 +21,8 @@
                 </button>
             </div>
         @endif
-    </div>
+        </x-slot:actions>
+    </x-page-header>
 
     <div x-data="{ show: false }" x-cloak
          x-on:task-saved.window="show = true; setTimeout(() => show = false, 4000)"
@@ -56,7 +55,7 @@
         </div>
 
         {{-- ===== Filter tanggal ===== --}}
-        <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:flex; flex-wrap:wrap; align-items:flex-end; gap:0.75rem;">
+        <div class="surface-card filter-bar is-inline">
             <div>
                 <label for="t-from" class="form-label">Dari tanggal</label>
                 <x-date-input id="t-from" model="dateFrom" live style="max-width:12rem;" />

@@ -1,18 +1,17 @@
 <div>
-    <div class="flex items-center justify-between" style="gap:1rem; flex-wrap:wrap; margin-bottom:1.4rem;">
-        <div>
-            <h1 class="portal-title">Izin</h1>
-            <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
+    <x-page-header title="Izin">
+        <x-slot:subtitle>
                 Ajukan izin atau sakit tidak masuk — menunggu konfirmasi pembimbing
-            </p>
-        </div>
+        </x-slot:subtitle>
+        <x-slot:actions>
         @if ($intern)
             <button type="button" wire:click="$dispatch('open-leave-modal')" class="btn-primary" style="flex-shrink:0;">
                 <i class="fa-solid fa-plus"></i>
                 <span>Ajukan Izin</span>
             </button>
         @endif
-    </div>
+        </x-slot:actions>
+    </x-page-header>
 
     <div x-data="{ show: false }" x-cloak
          x-on:leave-saved.window="show = true; setTimeout(() => show = false, 4000)"

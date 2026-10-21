@@ -7,12 +7,11 @@
 @endphp
 
 <div>
-    <div style="margin-bottom:1.4rem;">
-        <h1 class="portal-title">Presensi</h1>
-        <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-            Rekap kehadiran dari mesin sidik jari &middot; jam kerja WITA
-        </p>
-    </div>
+    <x-page-header title="Presensi">
+        <x-slot:subtitle>
+                Rekap kehadiran dari mesin sidik jari &middot; jam kerja WITA
+        </x-slot:subtitle>
+    </x-page-header>
 
     @if (! $intern)
         <div class="surface-card flex items-center" style="gap:0.85rem; padding:1rem 1.15rem;">
@@ -36,7 +35,7 @@
                 Ringkasan {{ $isCurrentMonth ? 'Bulan Ini' : $selectedMonth->translatedFormat('F Y') }}
             </p>
             <div class="flex items-center" style="gap:0.5rem; flex-wrap:wrap;">
-                <input type="month" wire:model.live="month" class="form-input" style="max-width:11rem;">
+                <input type="month" wire:model.live="month" class="form-input filter-control" style="max-width:11rem;">
                 @unless ($isCurrentMonth)
                     <button type="button" wire:click="resetMonth" class="btn-ghost" style="padding:0.45rem 0.8rem;">
                         <i class="fa-solid fa-rotate-left"></i> Bulan ini

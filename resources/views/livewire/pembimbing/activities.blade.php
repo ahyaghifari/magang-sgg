@@ -1,13 +1,8 @@
 <div>
-    <div style="margin-bottom:1.4rem;">
-        <h1 class="portal-title">Kegiatan Intern</h1>
-        <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-            Semua catatan kegiatan harian dari seluruh peserta magang
-        </p>
-    </div>
+    <x-page-header title="Kegiatan Intern" />
 
     {{-- ===== Ringkasan ===== --}}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.1rem;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:0.85rem; margin-bottom:1.25rem;">
         <div class="stat-card" style="padding:1.1rem 1.15rem;">
             <span class="stat-card-deco"></span>
             <p style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted); font-weight:600;">Total Peserta</p>
@@ -26,11 +21,11 @@
     </div>
 
     {{-- ===== Filter ===== --}}
-    <div class="surface-card" style="padding:0.9rem 1rem; margin-bottom:1rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem;">
+    <div class="surface-card filter-bar">
         <div>
             <label for="f-search" class="form-label">Cari</label>
             <input id="f-search" type="text" wire:model.live.debounce.400ms="search" class="form-input"
-                   placeholder="Nama peserta atau isi kegiatan...">
+                   placeholder="Cari nama atau kegiatan">
         </div>
         <div>
             <label for="f-intern" class="form-label">Peserta</label>
@@ -57,7 +52,7 @@
             </div>
         @endif
     </div>
-    <p class="text-sm" style="color:var(--text-muted); margin:-0.5rem 0 1rem;">
+    <p class="text-sm filter-hint">
         Menampilkan kegiatan hari ini (paling atas) dan 1 minggu sebelumnya secara default — gunakan filter tanggal untuk melihat hari lain.
     </p>
 

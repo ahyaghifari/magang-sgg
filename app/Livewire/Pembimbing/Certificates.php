@@ -3,6 +3,7 @@
 namespace App\Livewire\Pembimbing;
 
 use App\Models\Intern;
+use App\Support\CertificateAccess;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -32,13 +33,13 @@ class Certificates extends Component
     {
         $user = auth()->user();
 
-        return $user && $user->isPortalMentor();
+        return $user && CertificateAccess::hasFullAccess($user);
     }
 
     /** Intern yang boleh DILIHAT user yang sedang login (lihat User::visibleInterns()). */
     protected function visibleInterns()
     {
-        return auth()->user()->visibleInterns();
+        return Intern::query();
     }
 
     /**

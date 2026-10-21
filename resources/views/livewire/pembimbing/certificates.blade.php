@@ -1,13 +1,5 @@
 <div>
-    <div style="margin-bottom:1.4rem;">
-        <h1 class="portal-title">Sertifikat Intern</h1>
-        <p class="text-sm" style="color:var(--text-muted); margin-top:0.2rem;">
-            Lihat/download sertifikat PKL peserta magang (halaman 2 berisi form penilaian/appraisal
-            lengkap) &middot; tombol "Edit Penilaian" hanya tersedia untuk peserta yang kamu bimbing/mentori
-            &middot; klik bintang untuk menilai tiap kriteria (1-5), Nilai Akhir &amp; Rating dihitung
-            otomatis dari rata-ratanya
-        </p>
-    </div>
+    <x-page-header title="Sertifikat Intern" />
 
     {{-- ===== Daftar ===== --}}
     <div class="flex" style="flex-direction:column; gap:0.75rem;">

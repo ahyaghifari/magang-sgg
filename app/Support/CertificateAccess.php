@@ -13,6 +13,20 @@ use App\Models\User;
 class CertificateAccess
 {
     /**
+     * Akses penuh (lihat & edit sertifikat SEMUA intern): semua role selain Intern
+     * (Admin, Pembimbing, Mentor, Pimpinan) dan super admin. Tidak berlaku saat sedang
+     * "melihat sebagai intern".
+     */
+    public static function hasFullAccess(User $user): bool
+    {
+        if ($user->isViewingAsIntern()) {
+            return false;
+        }
+
+        return $user->isSuperAdmin() || ! $user->isIntern();
+    }
+
+    /**
      * Boleh MELIHAT sertifikat: super admin, pemilik (intern itu sendiri), atau user yang
      * intern-nya kelihatan di portal (User::visibleInterns() — admin semua, Pembimbing
      * binaannya, Mentor semua intern). Intern pemilik baru boleh setelah tanggal selesai
@@ -21,6 +35,10 @@ class CertificateAccess
      */
     public static function authorizeView(User $user, Intern $intern): void
     {
+        if (self::hasFullAccess($user)) {
+            return;
+        }
+
         $isOwner = $intern->user_id === $user->id;
         $isSupervisor = $user->visibleInterns()->whereKey($intern->id)->exists();
 
