@@ -144,11 +144,11 @@
     </div>
 
     @if ($records->hasPages())
-        <div class="flex items-center justify-between" style="margin-top:1.25rem;">
+        <div class="pager" style="margin-top:1.25rem;">
             <button wire:click="previousPage" class="btn-ghost" @disabled($records->onFirstPage())>
                 <i class="fa-solid fa-chevron-left"></i> Sebelumnya
             </button>
-            <span style="font-size:0.8rem; color:var(--text-muted);">
+            <span class="pager-info">
                 Halaman {{ $records->currentPage() }} dari {{ $records->lastPage() }}
             </span>
             <button wire:click="nextPage" class="btn-ghost" @disabled(! $records->hasMorePages())>

@@ -68,11 +68,11 @@
         </div>
 
         @if ($allInterns->hasPages())
-            <div class="flex items-center justify-between" style="margin-top:1rem;">
+            <div class="pager" style="margin-top:1rem;">
                 <button wire:click="previousPage('internPage')" class="btn-ghost" @disabled($allInterns->onFirstPage())>
                     <i class="fa-solid fa-chevron-left"></i> Sebelumnya
                 </button>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Halaman {{ $allInterns->currentPage() }} dari {{ $allInterns->lastPage() }}</span>
+                <span class="pager-info">Halaman {{ $allInterns->currentPage() }} dari {{ $allInterns->lastPage() }}</span>
                 <button wire:click="nextPage('internPage')" class="btn-ghost" @disabled(! $allInterns->hasMorePages())>
                     Berikutnya <i class="fa-solid fa-chevron-right"></i>
                 </button>
@@ -135,11 +135,11 @@
         </div>
 
         @if ($kegiatan->hasPages())
-            <div class="flex items-center justify-between" style="margin-top:1rem;">
+            <div class="pager" style="margin-top:1rem;">
                 <button wire:click="previousPage('kegiatanPage')" class="btn-ghost" @disabled($kegiatan->onFirstPage())>
                     <i class="fa-solid fa-chevron-left"></i> Sebelumnya
                 </button>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Halaman {{ $kegiatan->currentPage() }} dari {{ $kegiatan->lastPage() }}</span>
+                <span class="pager-info">Halaman {{ $kegiatan->currentPage() }} dari {{ $kegiatan->lastPage() }}</span>
                 <button wire:click="nextPage('kegiatanPage')" class="btn-ghost" @disabled(! $kegiatan->hasMorePages())>
                     Berikutnya <i class="fa-solid fa-chevron-right"></i>
                 </button>
@@ -213,11 +213,11 @@
         </div>
 
         @if ($presensi->hasPages())
-            <div class="flex items-center justify-between" style="margin-top:1rem;">
+            <div class="pager" style="margin-top:1rem;">
                 <button wire:click="previousPage('presensiPage')" class="btn-ghost" @disabled($presensi->onFirstPage())>
                     <i class="fa-solid fa-chevron-left"></i> Sebelumnya
                 </button>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Halaman {{ $presensi->currentPage() }} dari {{ $presensi->lastPage() }}</span>
+                <span class="pager-info">Halaman {{ $presensi->currentPage() }} dari {{ $presensi->lastPage() }}</span>
                 <button wire:click="nextPage('presensiPage')" class="btn-ghost" @disabled(! $presensi->hasMorePages())>
                     Berikutnya <i class="fa-solid fa-chevron-right"></i>
                 </button>
@@ -317,11 +317,11 @@
         </div>
 
         @if ($izin->hasPages())
-            <div class="flex items-center justify-between" style="margin-top:1rem;">
+            <div class="pager" style="margin-top:1rem;">
                 <button wire:click="previousPage('izinPage')" class="btn-ghost" @disabled($izin->onFirstPage())>
                     <i class="fa-solid fa-chevron-left"></i> Sebelumnya
                 </button>
-                <span style="font-size:0.8rem; color:var(--text-muted);">Halaman {{ $izin->currentPage() }} dari {{ $izin->lastPage() }}</span>
+                <span class="pager-info">Halaman {{ $izin->currentPage() }} dari {{ $izin->lastPage() }}</span>
                 <button wire:click="nextPage('izinPage')" class="btn-ghost" @disabled(! $izin->hasMorePages())>
                     Berikutnya <i class="fa-solid fa-chevron-right"></i>
                 </button>

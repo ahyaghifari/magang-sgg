@@ -1569,3 +1569,48 @@ html.dark .animated-bg .shape { opacity: 0.85; }
 @media (prefers-reduced-motion: reduce) {
     .animated-bg .shape { animation: none; }
 }
+/* ---- Pagination "Sebelumnya · Halaman X dari Y · Berikutnya" ---------------- */
+/* Mobile: info di baris atas (tidak patah baris), dua tombol sama lebar di bawahnya.
+   Desktop: satu baris, info di tengah. */
+.pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    align-items: center;
+}
+.pager-info {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.pager .btn-ghost {
+    width: 100%;
+    white-space: nowrap;
+}
+@media (min-width: 640px) {
+    .pager {
+        grid-template-columns: auto 1fr auto;
+    }
+    .pager-info {
+        grid-column: 2;
+        grid-row: auto;
+    }
+    .pager .btn-ghost {
+        width: auto;
+    }
+}
+
+/* Login/Register di mobile: form langsung di bawah banner (tidak diratakan ke tengah
+   layar penuh, yang membuat ruang kosong besar di atas judul). */
+@media (max-width: 1023.98px) {
+    .auth-page {
+        min-height: 0;
+    }
+    .auth-form-panel {
+        align-items: flex-start;
+        padding: 1rem 1.25rem 2rem;
+    }
+}

@@ -45,6 +45,10 @@
             };
             applyTheme();
             document.addEventListener('livewire:navigated', applyTheme);
+            // Tanpa pilihan manual (tombol tema), ikuti perubahan tema HP/PC secara langsung.
+            try {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+            } catch (e) {}
         })();
     </script>
 
