@@ -379,7 +379,7 @@
                     <td class="label">Department / Section</td><td class="colon">:</td><td class="val" {!! $ed('info_unit') !!}>{{ $content['info_unit'] }}</td>
                 </tr>
                 <tr>
-                    <td class="label">School</td><td class="colon">:</td><td class="val" {!! $ed('info_sekolah') !!}>{{ $content['info_sekolah'] }}</td>
+                    <td class="label">School / University</td><td class="colon">:</td><td class="val" {!! $ed('info_sekolah') !!}>{{ $content['info_sekolah'] }}</td>
                     <td class="sep"></td>
                     <td class="label">Period</td><td class="colon">:</td><td class="val" {!! $ed('info_periode') !!}>{{ $content['info_periode'] }}</td>
                 </tr>
