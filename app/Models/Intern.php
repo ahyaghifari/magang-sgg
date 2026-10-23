@@ -253,6 +253,46 @@ class Intern extends Model
     }
 
 
+    /** Penilaian per penilai (mentor/pembimbing/pimpinan), satu baris per role. */
+    public function appraisals(): HasMany
+    {
+        return $this->hasMany(InternAppraisal::class);
+    }
+
+    /**
+     * Hitung ulang nilai akumulasi di kolom nilai_* : tiap kriteria = rata-rata dari semua
+     * penilai yang sudah mengisi kriteria itu. nilai_akhir ikut terhitung lewat booted().
+     */
+    public function syncAppraisals(): void
+    {
+        $appraisals = $this->appraisals()->get();
+
+        foreach (array_keys(self::CRITERIA) as $field) {
+            $scores = $appraisals->pluck($field)->filter(fn ($v) => $v !== null)->map(fn ($v) => (float) $v);
+
+            $this->{$field} = $scores->isEmpty() ? null : round($scores->avg(), 2);
+        }
+
+        // Catatan tiap penilai digabung supaya tetap muncul di form penilaian PKL (PDF).
+        $notes = $appraisals->filter(fn ($a) => filled($a->catatan))
+            ->map(fn ($a) => (InternAppraisal::ROLES[$a->role] ?? ucfirst($a->role)).': '.$a->catatan);
+        $this->catatan_penilaian = $notes->isEmpty() ? null : $notes->implode("\n");
+
+        // saveQuietly() melewati event saving, jadi nilai_akhir dihitung langsung di sini.
+        $this->nilai_akhir = $this->averageOfCriteria();
+        $this->saveQuietly();
+    }
+
+    private function averageOfCriteria(): ?float
+    {
+        $skor = array_values(array_filter(
+            array_map(fn ($field) => $this->{$field}, array_keys(self::CRITERIA)),
+            fn ($value) => $value !== null,
+        ));
+
+        return $skor === [] ? null : round(array_sum($skor) / count($skor), 2);
+    }
+
     /**
      * Pembimbing/Mentor (atau admin) yang memberi penilaian akhir ini.
      */

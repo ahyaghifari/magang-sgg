@@ -5,14 +5,14 @@
     <div style="width: 100%; max-width: 400px;">
 
         {{-- theme toggle --}}
-        <div class="flex justify-end" style="margin-bottom: 1rem;">
+        <div class="flex justify-end" style="margin-bottom: 0.25rem;">
             <button type="button" class="theme-toggle" onclick="toggleTheme()" aria-label="Ganti tema">
                 <i class="fa-solid fa-circle-half-stroke"></i>
             </button>
         </div>
 
         {{-- brand (mobile only — desktop sudah ada di auth-hero) --}}
-        <div class="flex items-center justify-center" style="flex-direction: column; margin-bottom: 1.75rem;">
+        <div class="flex items-center justify-center" style="flex-direction: column; margin-bottom: 1.25rem;">
             <h1 style="font-size: 1.2rem; font-weight: 700; text-align: center;">Masuk</h1>
             <p class="text-sm" style="color: var(--text-muted); margin-top: 0.25rem;"></p>
         </div>

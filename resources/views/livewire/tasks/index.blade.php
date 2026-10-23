@@ -175,11 +175,11 @@
         </div>
 
         @if ($tasks->hasPages())
-            <div class="flex items-center justify-between" style="margin-top:1.25rem;">
+            <div class="pager" style="margin-top:1.25rem;">
                 <button wire:click="previousPage" class="btn-ghost" @disabled($tasks->onFirstPage())>
                     <i class="fa-solid fa-chevron-left"></i> Sebelumnya
                 </button>
-                <span style="font-size:0.8rem; color:var(--text-muted);">
+                <span class="pager-info">
                     Halaman {{ $tasks->currentPage() }} dari {{ $tasks->lastPage() }}
                 </span>
                 <button wire:click="nextPage" class="btn-ghost" @disabled(! $tasks->hasMorePages())>
