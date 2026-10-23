@@ -167,6 +167,7 @@ class Dashboard extends Component
             'allInterns' => $allInterns,
             ...$this->internDetailModalData(),
             'interns' => Intern::orderBy('nama')->get(['id', 'nama']),
+            'rekapNilai' => Intern::with(['unit', 'appraisals'])->orderBy('nama')->get(),
             'totalInterns' => Intern::count(),
             'totalJournals' => Journal::count(),
             'journalsThisMonth' => Journal::whereBetween('date', [

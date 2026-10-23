@@ -28,6 +28,15 @@
                                 belum dinilai
                             @endif
                         </p>
+                        {{-- Rincian nilai per penilai — Nilai Akhir di atas adalah rata-rata yang sudah masuk. --}}
+                        <p class="text-sm" style="margin-top:0.3rem; display:flex; gap:0.35rem; flex-wrap:wrap;">
+                            @foreach ($roles as $roleKey => $roleLabel)
+                                @php($avg = $intern->appraisals->firstWhere('role', $roleKey)?->average())
+                                <span class="badge {{ $avg !== null ? 'badge-neutral' : '' }}" style="{{ $avg === null ? 'color:var(--text-faint); border:1px dashed var(--border);' : '' }}">
+                                    {{ $roleLabel }}: {{ $avg !== null ? number_format($avg, 2) : 'belum' }}
+                                </span>
+                            @endforeach
+                        </p>
                     </div>
                     <div class="flex items-center" style="gap:0.4rem; flex-wrap:wrap;">
                         <a href="{{ route('interns.certificate.view', $intern) }}" target="_blank" class="btn-ghost" style="padding:0.5rem 0.85rem;">
@@ -51,17 +60,21 @@
 
                 {{-- ===== 10 kriteria — terbagi 2 kategori, tiap kriteria dinilai lewat klik bintang
                      1-5 (sama seperti penilaian jurnal), auto-simpan begitu diklik. Cuma untuk intern
-                     yang memang dibimbing/dimentori (manageableInterns()) — intern lain (yang cuma
+                     yang boleh dinilai user ini (appraisableInterns(): binaan/mentee, atau semua untuk Pimpinan) — intern lain (yang cuma
                      bisa DILIHAT oleh Mentor) tidak punya tombol "Edit Penilaian" sama sekali, jadi
                      blok ini tidak akan pernah tampil untuk mereka. ===== --}}
                 @if (in_array($intern->id, $manageableInternIds, true))
+                    @php($mine = $intern->appraisals->firstWhere('role', $myRole))
                     <div x-show="showNilai" x-cloak>
+                        <p class="text-sm" style="color:var(--text-muted); margin-top:0.5rem;">
+                            Kamu menilai sebagai <strong>{{ $roles[$myRole] }}</strong> — nilai ini dirata-rata dengan penilaian lainnya.
+                        </p>
                         @foreach (['ATTITUDE', 'KNOWLEDGE & SKILL'] as $category)
                             <p class="text-sm" style="font-weight:700; color:var(--text-muted); margin:0.75rem 0 0.4rem; letter-spacing:0.03em;">{{ $category }}</p>
                             <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:0.6rem;">
                                 @foreach ($criteria as $field => $c)
                                     @continue($c['category'] !== $category)
-                                    @php($currentStars = $intern->{$field} !== null ? (float) $intern->{$field} : null)
+                                    @php($currentStars = $mine?->{$field} !== null ? (float) $mine->{$field} : null)
                                     <div wire:key="crit-{{ $intern->id }}-{{ $field }}"
                                          style="border:1px solid var(--border); border-radius:10px; padding:0.6rem 0.75rem; background:var(--surface-alt);">
                                         <p class="text-sm" style="font-weight:600; color:var(--text-heading); margin-bottom:0.1rem;">{{ $c['title'] }}</p>
@@ -115,7 +128,7 @@
                         x-cloak
                         x-data="{
                             editing: false,
-                            val: @js($intern->catatan_penilaian ?? ''),
+                            val: @js($mine?->catatan ?? ''),
                             error: null,
                             saving: false,
                             save() {

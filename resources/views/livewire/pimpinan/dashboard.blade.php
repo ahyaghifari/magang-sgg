@@ -80,6 +80,54 @@
         @endif
     </section>
 
+    {{-- ===== Rekap Penilaian: nilai Mentor, Pembimbing, Pimpinan → Nilai Akhir (akumulasi) ===== --}}
+    <section style="margin-bottom:1.75rem;">
+        <h2 style="font-size:1rem; font-weight:700; color:var(--text-heading); margin-bottom:0.2rem;">
+            <i class="fa-solid fa-star" style="color:var(--brand); margin-right:0.35rem;"></i>
+            Rekap Penilaian Intern
+        </h2>
+        <p class="text-sm" style="color:var(--text-muted); margin-bottom:0.7rem;">
+            Nilai Akhir = rata-rata penilaian Mentor, Pembimbing, dan Pimpinan yang sudah masuk.
+            Pimpinan menilai lewat menu <a href="{{ route('pembimbing.certificates') }}" wire:navigate style="color:var(--brand); font-weight:600;">Sertifikat</a>.
+        </p>
+        <div class="surface-card" style="padding:0; overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                    <tr style="text-align:left; color:var(--text-muted); border-bottom:1px solid var(--border);">
+                        <th style="padding:0.6rem 0.8rem;">Intern</th>
+                        @foreach (\App\Models\InternAppraisal::ROLES as $roleLabel)
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">{{ $roleLabel }}</th>
+                        @endforeach
+                        <th style="padding:0.6rem 0.8rem; text-align:center;">Nilai Akhir</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($rekapNilai as $row)
+                        <tr style="border-bottom:1px solid var(--border);">
+                            <td style="padding:0.55rem 0.8rem; font-weight:600; color:var(--text-heading);">
+                                {{ $row->nama }}
+                                @if ($row->unit)<span class="text-sm" style="font-weight:400; color:var(--text-muted);"> · {{ $row->unit->name }}</span>@endif
+                            </td>
+                            @foreach (\App\Models\InternAppraisal::ROLES as $roleKey => $roleLabel)
+                                @php($avg = $row->appraisals->firstWhere('role', $roleKey)?->average())
+                                <td style="padding:0.55rem 0.8rem; text-align:center; font-variant-numeric:tabular-nums; {{ $avg === null ? 'color:var(--text-faint);' : '' }}">
+                                    {{ $avg !== null ? number_format($avg, 2) : '—' }}
+                                </td>
+                            @endforeach
+                            <td style="padding:0.55rem 0.8rem; text-align:center; font-weight:700; color:var(--brand);">
+                                @if ($row->nilai_akhir !== null)
+                                    {{ number_format($row->nilai_akhir, 2) }} <span class="text-sm" style="font-weight:400; color:var(--text-muted);">({{ $row->predikat() }})</span>
+                                @else
+                                    <span style="font-weight:400; color:var(--text-faint);">belum dinilai</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </section>
+
     {{-- ===== Kegiatan & Jurnal (semua) ===== --}}
     <section style="margin-bottom:1.75rem;">
         <h2 style="font-size:1rem; font-weight:700; color:var(--text-heading); margin-bottom:0.7rem;">

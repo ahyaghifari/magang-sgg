@@ -118,6 +118,11 @@
                             <i class="fa-solid fa-gauge-high"></i>
                             <span>Dashboard</span>
                         </a>
+                        <a href="{{ route('pembimbing.certificates') }}" wire:navigate @click="nav = false"
+                           class="portal-nav-link {{ request()->routeIs('pembimbing.certificates') ? 'active' : '' }}">
+                            <i class="fa-solid fa-award"></i>
+                            <span>Sertifikat</span>
+                        </a>
                     @elseif ($portalUser->isPortalMentor())
                         @php
                             // Jaring pengaman selain push notification (yang bisa gagal — izin ditolak,
