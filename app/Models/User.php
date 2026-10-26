@@ -28,6 +28,7 @@ class User extends Authenticatable implements FilamentUser
     protected $fillable = [
         'name',
         'email',
+        'nip',
         'password',
         'approved_at',
         'approved_by',
@@ -157,16 +158,17 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Intern-intern yang boleh DINILAI (penilaian akhir 10 kriteria di halaman Sertifikat).
-     * Sama dengan manageableInterns(), kecuali Pimpinan yang boleh menilai SEMUA intern —
-     * khusus untuk penilaian akhir; hak kelola lain (tugas, jurnal, komentar) tetap tidak ada.
+     * Semua role selain Intern boleh menilai SEMUA intern (bukan cuma binaan/mentee-nya) —
+     * khusus untuk penilaian akhir; hak kelola lain (tugas, jurnal, komentar) tetap lewat
+     * manageableInterns().
      */
     public function appraisableInterns(): Builder
     {
-        if ($this->isPimpinan()) {
-            return Intern::query();
+        if ($this->isIntern() || $this->isViewingAsIntern()) {
+            return Intern::query()->whereRaw('1 = 0');
         }
 
-        return $this->manageableInterns();
+        return Intern::query();
     }
 
     /**
