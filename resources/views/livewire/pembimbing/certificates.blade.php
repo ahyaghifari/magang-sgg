@@ -58,11 +58,9 @@
                     </div>
                 </div>
 
-                {{-- ===== 10 kriteria — terbagi 2 kategori, tiap kriteria dinilai lewat klik bintang
-                     1-5 (sama seperti penilaian jurnal), auto-simpan begitu diklik. Cuma untuk intern
-                     yang boleh dinilai user ini (appraisableInterns(): binaan/mentee, atau semua untuk Pimpinan) — intern lain (yang cuma
-                     bisa DILIHAT oleh Mentor) tidak punya tombol "Edit Penilaian" sama sekali, jadi
-                     blok ini tidak akan pernah tampil untuk mereka. ===== --}}
+                {{-- ===== 10 kriteria — terbagi 2 kategori, tiap kriteria dinilai lewat input angka
+                     1-5 (desimal boleh, mis. 4,5), auto-simpan saat input selesai diisi. Cuma untuk intern
+                     yang boleh dinilai user ini (appraisableInterns(): semua intern untuk semua role selain Intern). ===== --}}
                 @if (in_array($intern->id, $manageableInternIds, true))
                     @php($mine = $intern->appraisals->firstWhere('role', $myRole))
                     <div x-show="showNilai" x-cloak>
@@ -79,42 +77,16 @@
                                          style="border:1px solid var(--border); border-radius:10px; padding:0.6rem 0.75rem; background:var(--surface-alt);">
                                         <p class="text-sm" style="font-weight:600; color:var(--text-heading); margin-bottom:0.1rem;">{{ $c['title'] }}</p>
                                         <p style="font-size:0.72rem; line-height:1.35; color:var(--text-muted); margin-bottom:0.45rem;">{{ $c['description'] }}</p>
-                                        <div class="flex items-center justify-between" style="gap:0.5rem;">
-                                            {{-- Tiap bintang: garis abu-abu (bagian kosong) + isian kuning yang dipotong
-                                                 per persen, ditumpuk di kotak selebar glyph Font Awesome (1.125em) supaya
-                                                 keduanya pas menumpuk. Klik kiri = setengah, klik kanan = penuh. --}}
-                                            <div class="flex items-center" style="gap:0.2rem;">
-                                                @for ($i = 1; $i <= 5; $i++)
-                                                    @php($fillPercent = $currentStars === null ? 0 : ($currentStars >= $i ? 100 : ($currentStars >= $i - 0.5 ? 50 : 0)))
-                                                    <span style="position:relative; display:inline-block; width:1.125em; height:1em; font-size:1.25rem; line-height:1;">
-                                                        @if ($fillPercent < 100)
-                                                            <i class="fa-regular fa-star" style="position:absolute; left:0; top:0; width:1.125em; text-align:left; color:#cbd5e1;"></i>
-                                                        @endif
-                                                        @if ($fillPercent > 0)
-                                                            <span style="position:absolute; left:0; top:0; height:100%; width:{{ $fillPercent }}%; overflow:hidden; pointer-events:none;">
-                                                                <i class="fa-solid fa-star" style="position:absolute; left:0; top:0; width:1.125em; text-align:left; color:#f59e0b;"></i>
-                                                            </span>
-                                                        @endif
-                                                        <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i - 0.5 }})"
-                                                                aria-label="{{ number_format($i - 0.5, 1) }} bintang"
-                                                                style="position:absolute; left:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
-                                                        <button type="button" wire:click="rate({{ $intern->id }}, '{{ $field }}', {{ $i }})"
-                                                                aria-label="{{ $i }} bintang"
-                                                                style="position:absolute; right:0; top:0; width:50%; height:100%; background:none; border:0; padding:0; cursor:pointer;"></button>
-                                                    </span>
-                                                @endfor
-                                            </div>
-                                            @if ($currentStars)
-                                                <div class="flex items-center" style="gap:0.5rem; flex-shrink:0;">
-                                                    <span style="font-size:0.85rem; font-weight:700; color:var(--text-heading); font-variant-numeric:tabular-nums;">{{ number_format($currentStars, 1) }}</span>
-                                                    <button type="button" wire:click="clearRating({{ $intern->id }}, '{{ $field }}')"
-                                                            style="font-size:0.75rem; color:var(--text-muted); text-decoration:underline;">
-                                                        hapus
-                                                    </button>
-                                                </div>
-                                            @else
-                                                <span style="font-size:0.75rem; color:var(--text-faint);">belum dinilai</span>
-                                            @endif
+                                        {{-- Input desimal bebas (4,5 / 3.75), simpan saat blur/Enter; kosong = hapus.
+                                             Server mengembalikan nilai ternormalisasi (batas 1-5) untuk ditampilkan lagi. --}}
+                                        <div class="flex items-center" style="gap:0.5rem;"
+                                             x-data="{ val: @js($currentStars !== null ? rtrim(rtrim(number_format($currentStars, 2, ',', ''), '0'), ',') : '') }">
+                                            <input type="text" inputmode="decimal" x-model="val" class="form-input"
+                                                   placeholder="1 - 5" autocomplete="off"
+                                                   style="width:5.5rem; text-align:center; font-variant-numeric:tabular-nums;"
+                                                   @change="val = await $wire.rate({{ $intern->id }}, '{{ $field }}', val)"
+                                                   @keydown.enter.prevent="$event.target.blur()">
+                                            <span style="font-size:0.75rem; color:var(--text-faint);" x-text="val === '' ? 'belum dinilai' : '/ 5'"></span>
                                         </div>
                                     </div>
                                 @endforeach

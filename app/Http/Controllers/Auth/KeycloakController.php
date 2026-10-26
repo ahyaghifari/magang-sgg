@@ -27,17 +27,18 @@ class KeycloakController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Login SSO gagal. Coba lagi.']);
         }
 
-        // Penghubung antar-sistem: EMAIL. Normalisasi ke lowercase.
-        $email = strtolower(trim((string) $kc->getEmail()));
+        // Penghubung antar-sistem: preferred_username Keycloak (= getNickname()) dicocokkan
+        // ke kolom users.nip.
+        $nip = trim((string) $kc->getNickname());
 
-        if ($email === '') {
+        if ($nip === '') {
             return redirect()->route('login')->withErrors([
-                'email' => 'Akun SSO tidak mengirim email. Hubungi admin.',
+                'email' => 'Akun SSO tidak mengirim username. Hubungi admin.',
             ]);
         }
 
         // Tidak auto-provision: user harus sudah ada di aplikasi ini.
-        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+        $user = User::where('nip', $nip)->first();
 
         if (! $user) {
             return redirect()->route('login')->withErrors([

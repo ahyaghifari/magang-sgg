@@ -25,6 +25,11 @@ class UserForm
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
+                TextInput::make('nip')
+                    ->label('NIP')
+                    ->unique(ignoreRecord: true)
+                    ->maxLength(50)
+                    ->helperText('Dipakai untuk mencocokkan akun dengan Keycloak.'),
                 Select::make('role')
                     ->label('Peran')
                     ->options(UserRole::class)

@@ -27,6 +27,10 @@ class UsersTable
                 TextColumn::make('email')
                     ->label('Email')
                     ->searchable(),
+                TextColumn::make('nip')
+                    ->label('NIP')
+                    ->searchable()
+                    ->placeholder('—'),
                 TextColumn::make('role')
                     ->label('Peran')
                     ->badge(),

@@ -46,46 +46,44 @@ class Certificates extends Component
     }
 
     /**
-     * Beri nilai untuk satu kriteria — klik separuh bintang untuk nilai ",5" (mis. 4,5),
-     * separuh lain untuk bilangan bulat (mis. 5). Sengaja pakai appraisableInterns(), BUKAN
-     * visibleInterns() — Mentor bisa MELIHAT sertifikat semua intern, tapi cuma boleh
-     * MENILAI intern yang memang dimentorinya. Pimpinan boleh menilai semua intern.
-     * Nilai disimpan di baris penilaian milik role user ini saja.
+     * Beri nilai untuk satu kriteria dari input teks — desimal bebas (mis. 4,5 atau 3.75),
+     * koma/titik sama saja; kosong = hapus nilai (kembali ke "belum dinilai"). Pakai
+     * appraisableInterns() — semua role selain Intern boleh menilai semua intern (Intern
+     * sendiri ditolak di sana). Nilai disimpan di baris penilaian milik role user ini saja.
+     * Mengembalikan nilai yang tersimpan (format "4,5", atau "" bila kosong/ditolak) supaya
+     * input di browser disamakan dengan hasil pembulatan/batas 1-5.
      */
-    public function rate(int $internId, string $field, float $stars): void
+    public function rate(int $internId, string $field, string $value): string
     {
-        if (! array_key_exists($field, Intern::CRITERIA)) {
-            return;
-        }
-
         $intern = auth()->user()->appraisableInterns()->whereKey($internId)->first();
 
-        if (! $intern) {
-            return;
+        if (! $intern || ! array_key_exists($field, Intern::CRITERIA)) {
+            return '';
         }
 
-        // Bulatkan ke kelipatan 0,5 terdekat supaya nilai selalu rapi (1, 1.5, 2, ... 5)
-        // walau input yang dikirim dari klik separuh bintang seharusnya sudah tepat.
-        $stars = round($stars * 2) / 2;
-        $stars = max(Intern::SCALE_MIN, min(Intern::SCALE_MAX, $stars));
+        $value = str_replace(',', '.', trim($value));
+        $mine = $this->myAppraisal($intern);
 
-        $this->myAppraisal($intern)->fill([$field => $stars])->save();
+        if ($value === '' || ! is_numeric($value)) {
+            // Input kosong/sampah: kosongkan hanya bila memang dikosongkan; sampah → balik ke nilai lama.
+            if ($value === '') {
+                $mine->fill([$field => null])->save();
+
+                return '';
+            }
+
+            return $mine->{$field} !== null ? $this->formatScore((float) $mine->{$field}) : '';
+        }
+
+        $score = round(max(Intern::SCALE_MIN, min(Intern::SCALE_MAX, (float) $value)), 2);
+        $mine->fill([$field => $score])->save();
+
+        return $this->formatScore($score);
     }
 
-    /** Hapus nilai satu kriteria milik penilai ini (kembali ke "belum dinilai"). */
-    public function clearRating(int $internId, string $field): void
+    protected function formatScore(float $score): string
     {
-        if (! array_key_exists($field, Intern::CRITERIA)) {
-            return;
-        }
-
-        $intern = auth()->user()->appraisableInterns()->whereKey($internId)->first();
-
-        if (! $intern) {
-            return;
-        }
-
-        $this->myAppraisal($intern)->fill([$field => null])->save();
+        return rtrim(rtrim(number_format($score, 2, ',', ''), '0'), ',');
     }
 
     /**
@@ -145,8 +143,7 @@ class Certificates extends Component
                 ->with(['unit.company', 'appraisals'])
                 ->orderBy('nama')
                 ->paginate(15),
-            // Dipakai view untuk menyembunyikan tombol "Edit Penilaian" pada intern yang
-            // cuma boleh DILIHAT (Mentor) tapi bukan mentee-nya sendiri.
+            // Dipakai view untuk menampilkan tombol "Edit Penilaian" (appraisableInterns()).
             'manageableInternIds' => auth()->user()->appraisableInterns()->pluck('id')->all(),
             'criteria' => Intern::CRITERIA,
             'myRole' => $this->myRole(),
