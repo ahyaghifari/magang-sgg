@@ -29,9 +29,8 @@ class KeycloakController extends Controller
         }
 
         // Penghubung antar-sistem: username Keycloak dicocokkan ke kolom users.nip.
-        // Klaim bisa bernama "preferred_username" (standar OIDC) atau "username" (custom mapper).
         $raw = $kc->getRaw();
-        $nip = trim((string) ($raw['preferred_username'] ?? $raw['username'] ?? ''));
+        $nip = trim((string) ($raw['preferred_username'] ?? ''));
 
         if ($nip === '') {
             report(new \RuntimeException('SSO: klaim username kosong. Klaim userinfo: '.implode(',', array_keys($raw))));
