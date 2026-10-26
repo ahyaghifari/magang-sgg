@@ -14,7 +14,8 @@ class KeycloakController extends Controller
 {
     public function redirect(): SymfonyRedirectResponse
     {
-        return Socialite::driver('keycloak')->redirect();
+        // Scope default cuma "openid" → userinfo tidak berisi username/email.
+        return Socialite::driver('keycloak')->scopes(['profile', 'email'])->redirect();
     }
 
     public function callback(Request $request): RedirectResponse
@@ -27,11 +28,14 @@ class KeycloakController extends Controller
             return redirect()->route('login')->withErrors(['email' => 'Login SSO gagal. Coba lagi.']);
         }
 
-        // Penghubung antar-sistem: preferred_username Keycloak (= getNickname()) dicocokkan
-        // ke kolom users.nip.
-        $nip = trim((string) $kc->getNickname());
+        // Penghubung antar-sistem: username Keycloak dicocokkan ke kolom users.nip.
+        // Klaim bisa bernama "preferred_username" (standar OIDC) atau "username" (custom mapper).
+        $raw = $kc->getRaw();
+        $nip = trim((string) ($raw['preferred_username'] ?? $raw['username'] ?? ''));
 
         if ($nip === '') {
+            report(new \RuntimeException('SSO: klaim username kosong. Klaim userinfo: '.implode(',', array_keys($raw))));
+
             return redirect()->route('login')->withErrors([
                 'email' => 'Akun SSO tidak mengirim username. Hubungi admin.',
             ]);
