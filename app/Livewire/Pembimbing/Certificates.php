@@ -140,7 +140,7 @@ class Certificates extends Component
     {
         return view('livewire.pembimbing.certificates', [
             'interns' => $this->visibleInterns()
-                ->with(['unit.company', 'appraisals'])
+                ->with(['unit.company', 'appraisals.user'])
                 ->orderBy('nama')
                 ->paginate(15),
             // Dipakai view untuk menampilkan tombol "Edit Penilaian" (appraisableInterns()).
