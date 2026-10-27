@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d699d34eec9ddb739105eda1cccbcd2c",
+    "content-hash": "7f372fda587f349f1d93e3a12a9096d2",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -6640,6 +6640,64 @@
             "time": "2026-09-08T07:15:08+00:00"
         },
         {
+            "name": "syifa/keycloak-sso",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ahyaghifari/sgg-sso.git",
+                "reference": "f72e973d84343513ac2d380625e79abc9cd17954"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ahyaghifari/sgg-sso/zipball/f72e973d84343513ac2d380625e79abc9cd17954",
+                "reference": "f72e973d84343513ac2d380625e79abc9cd17954",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/auth": "^11.0|^12.0",
+                "illuminate/http": "^11.0|^12.0",
+                "illuminate/support": "^11.0|^12.0",
+                "laravel/socialite": "^5.0",
+                "php": "^8.2",
+                "socialiteproviders/keycloak": "^5.0",
+                "socialiteproviders/manager": "^4.0"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^9.0|^10.0",
+                "phpunit/phpunit": "^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Syifa\\KeycloakSso\\KeycloakSsoServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Syifa\\KeycloakSso\\": "src/"
+                },
+                "files": [
+                    "src/helpers.php"
+                ]
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Syifa\\KeycloakSso\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Login SSO Keycloak + resolver unit organisasi (departemen/divisi/dst) buat aplikasi Laravel internal Syifa Global Group. Pasang, isi config model, selesai.",
+            "support": {
+                "source": "https://github.com/ahyaghifari/sgg-sso/tree/v1.1.0",
+                "issues": "https://github.com/ahyaghifari/sgg-sso/issues"
+            },
+            "time": "2026-09-14T06:55:00+00:00"
+        },
+        {
             "name": "symfony/clock",
             "version": "v7.4.8",
             "source": {
@@ -12192,5 +12250,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

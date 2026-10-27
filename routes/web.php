@@ -89,24 +89,7 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('home');
     })->name('portal.toggle-intern-view');
 
-    Route::post('/logout', function () {
-        $wasSso = request()->session()->get('sso');
-
-        Auth::guard('web')->logout();
-        request()->session()->invalidate();
-        request()->session()->regenerateToken();
-
-        // Single logout: akhiri juga sesi Keycloak supaya login SSO berikutnya minta prompt.
-        if ($wasSso && config('services.keycloak.base_url')) {
-            $base = rtrim((string) config('services.keycloak.base_url'), '/');
-            $realm = config('services.keycloak.realms');
-
-            return redirect($base.'/realms/'.$realm.'/protocol/openid-connect/logout?'.http_build_query([
-                'client_id' => config('services.keycloak.client_id'),
-                'post_logout_redirect_uri' => route('login'),
-            ]));
-        }
-
-        return redirect()->route('login');
-    })->name('logout');
+    // Logout (termasuk single logout Keycloak bila login lewat SSO) ditangani oleh
+    // Syifa\KeycloakSso\Http\Controllers\KeycloakSsoController@logout — route
+    // POST /auth/keycloak/logout ('keycloak-sso.logout').
 });
