@@ -30,7 +30,7 @@ class KeycloakController extends Controller
 
         // Penghubung antar-sistem: username Keycloak dicocokkan ke kolom users.nip.
         $raw = $kc->getRaw();
-        $nip = trim((string) ($raw['preferred_username'] ?? ''));
+        $nip = trim((string) ($raw['nip'] ?? $raw['preferred_username'] ?? ''));
 
         if ($nip === '') {
             report(new \RuntimeException('SSO: klaim username kosong. Klaim userinfo: '.implode(',', array_keys($raw))));
