@@ -54,12 +54,12 @@ class CertificateAccess
     }
 
     /**
-     * Boleh MENGEDIT teks di editor sertifikat: super admin, atau user yang boleh mengelola
-     * intern ini (User::manageableInterns() — admin semua, Pembimbing binaannya, Mentor
-     * hanya mentee-nya sendiri). Sama dengan aturan siapa yang boleh mengisi penilaian.
+     * Boleh MENGEDIT teks di editor sertifikat (termasuk nomor sertifikat): semua role selain
+     * Intern dan super admin, untuk intern mana pun — sama dengan hasFullAccess(). Parameter
+     * $intern dipertahankan supaya pemanggil tidak berubah.
      */
     public static function canEdit(User $user, Intern $intern): bool
     {
-        return $user->isSuperAdmin() || $user->manageableInterns()->whereKey($intern->id)->exists();
+        return self::hasFullAccess($user);
     }
 }
