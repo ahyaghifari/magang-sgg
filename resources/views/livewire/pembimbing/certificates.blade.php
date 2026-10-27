@@ -51,8 +51,10 @@
                             <i class="fa-solid fa-pen-ruler"></i> Buka Editor
                         </a>
                         @if (in_array($intern->id, $manageableInternIds, true))
+                            {{-- "Isi" selama penilaian milik user ini (role-nya) belum ada satu pun nilai; setelahnya "Edit". --}}
+                            @php($belumKuNilai = $intern->appraisals->firstWhere('role', $myRole)?->average() === null)
                             <button type="button" @click="showNilai = !showNilai" class="btn-ghost" style="padding:0.5rem 0.85rem;">
-                                <i class="fa-solid fa-pen"></i> <span x-text="showNilai ? 'Tutup Penilaian' : 'Edit Penilaian'"></span>
+                                <i class="fa-solid fa-pen"></i> <span x-text="showNilai ? 'Tutup Penilaian' : '{{ $belumKuNilai ? 'Isi Penilaian' : 'Edit Penilaian' }}'"></span>
                             </button>
                         @endif
                     </div>
