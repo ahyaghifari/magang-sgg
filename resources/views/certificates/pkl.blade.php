@@ -68,6 +68,9 @@
     /* Elemen teks halaman depan — posisi & gaya dari inline style (CertificateContent::styleCss). */
     .el { position: absolute; }
     .el b { color: #042c6c; }
+    /* Stempel di bawah, tanda tangan di atasnya (urutan elemen = urutan tumpukan di DomPDF). */
+    .sig-stamp { position: absolute; top: 592px; left: 445px; width: 125px; }
+    .sig-sign { position: absolute; top: 602px; left: 535px; width: 150px; }
     .deco-underline { border-bottom: 2px solid #c74ba0; padding-bottom: 10px; }
     .deco-signline { border-top: 2px solid #475569; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid; border-radius: 999px; padding: 6px 20px; }
@@ -163,6 +166,11 @@
                 @endif
             </div>
         @endforeach
+
+        @if ($signatureImages)
+            <img class="sig-stamp" src="{{ $signatureImages['stamp'] }}" alt="">
+            <img class="sig-sign" src="{{ $signatureImages['signature'] }}" alt="">
+        @endif
     </div>
     @endif
 

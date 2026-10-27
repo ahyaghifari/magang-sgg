@@ -176,6 +176,10 @@
     /* ===== Elemen teks halaman depan (posisi & gaya dari inline style) ===== */
     .el { position: absolute; white-space: pre-line; border-radius: 3px; }
     .el b { color: var(--navy); }
+    /* Stempel di bawah, tanda tangan di atasnya; tidak ikut diedit/diklik. */
+    .sig-stamp, .sig-sign { position: absolute; pointer-events: none; user-select: none; }
+    .sig-stamp { top: 592px; left: 445px; width: 125px; }
+    .sig-sign { top: 602px; left: 535px; width: 150px; }
     .deco-underline { border-bottom: 2px solid var(--magenta); padding-bottom: 10px; }
     .deco-signline { border-top: 2px solid #475569; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid currentColor; border-radius: 999px; padding: 6px 20px; }
@@ -365,6 +369,11 @@
                 {{-- Isi ditulis rapat tanpa baris baru di awal: .el memakai white-space: pre-line, jadi baris baru di template akan tampil sebagai baris kosong (menggeser teks ke bawah). --}}
                 <div class="{{ $decoClass($key) }}" {!! $front($key) !!} data-label="{{ $labels[$key] ?? $key }}">@if ($key === 'no')<span class="prefix-no">No. </span><span class="txt">{{ $content['no'] }}</span>@elseif ($key === 'kegiatan' && ! $isOverridden('kegiatan'))<span class="txt">Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.</span>@else{{ $prefix($key) }}<span class="txt">{{ $content[$key] }}</span>@endif</div>
             @endforeach
+
+            @if ($signatureImages)
+                <img class="sig-stamp" src="{{ $signatureImages['stamp'] }}" alt="">
+                <img class="sig-sign" src="{{ $signatureImages['signature'] }}" alt="">
+            @endif
         </section>
 
         {{-- ===== Halaman 2: Form penilaian (10 kriteria) ===== --}}
