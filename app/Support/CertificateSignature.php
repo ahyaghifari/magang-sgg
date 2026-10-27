@@ -2,13 +2,16 @@
 
 namespace App\Support;
 
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
 
 /**
  * Gambar tanda tangan & stempel di sertifikat. File asli ada di storage/app/private (tidak
- * masuk git — salin manual ke tiap server); latar putihnya dibuat transparan dan dipangkas
- * sekali, hasilnya (data URI PNG kecil) di-cache. Kalau file belum ada → null, sertifikat
- * tetap tampil tanpa gambar.
+ * masuk git — salin manual ke tiap server). Boleh berupa PNG biasa atau versi terenkripsi
+ * `<nama>.png.enc` (php artisan certificate:encrypt-images) — yang terenkripsi diutamakan.
+ * Latar putihnya dibuat transparan dan dipangkas sekali; hasilnya (PNG kecil) di-cache dalam
+ * keadaan terenkripsi juga. Kalau file belum ada → null, sertifikat tetap tampil tanpa gambar.
  */
 class CertificateSignature
 {
@@ -16,6 +19,8 @@ class CertificateSignature
     private const STAMP_FILE = 'stempel.png';
 
     private const SIGNATURE_FILE = 'ttd.png';
+
+    public const FILES = [self::STAMP_FILE, self::SIGNATURE_FILE];
 
     /** Lebar maksimum hasil olahan (px) — cukup tajam untuk dicetak ±150px di kanvas A4 1123px. */
     private const MAX_WIDTH = 600;
@@ -31,21 +36,45 @@ class CertificateSignature
 
     private static function dataUri(string $file): ?string
     {
-        $path = storage_path("app/private/{$file}");
-
-        if (! is_file($path) || ! function_exists('imagecreatefrompng')) {
+        if (! function_exists('imagecreatefromstring')) {
             return null;
         }
 
+        $path = storage_path("app/private/{$file}");
+        $encrypted = is_file($path . '.enc');
+
+        if (! $encrypted && ! is_file($path)) {
+            return null;
+        }
+
+        $path = $encrypted ? $path . '.enc' : $path;
+
         // Kunci cache ikut isi file (hash) → ganti/tukar file otomatis memakai hasil baru
         // (waktu ubah saja tidak cukup: rename/tukar nama tidak mengubahnya).
-        return Cache::rememberForever('certificate-signature:' . md5_file($path), fn () => self::process($path));
+        // Nilai di cache dienkripsi supaya gambar rahasia tidak tersimpan polos di cache store.
+        $cached = Cache::rememberForever('certificate-signature:v2:' . md5_file($path), function () use ($path, $encrypted) {
+            $raw = file_get_contents($path);
+
+            try {
+                $png = $encrypted ? Crypt::decryptString($raw) : $raw;
+            } catch (DecryptException $e) {
+                report($e);
+
+                return null;
+            }
+
+            $uri = self::process($png);
+
+            return $uri ? Crypt::encryptString($uri) : null;
+        });
+
+        return $cached ? Crypt::decryptString($cached) : null;
     }
 
     /** Putihkan→transparan (halus di tepi), pangkas margin kosong, kecilkan, lalu jadi data URI. */
-    private static function process(string $path): ?string
+    private static function process(string $png): ?string
     {
-        $src = @imagecreatefrompng($path);
+        $src = @imagecreatefromstring($png);
 
         if (! $src) {
             return null;
