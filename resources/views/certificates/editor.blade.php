@@ -179,7 +179,7 @@
     /* Stempel di bawah, tanda tangan di atasnya; tidak ikut diedit/diklik. */
     .sig-stamp, .sig-sign { position: absolute; pointer-events: none; user-select: none; }
     .sig-stamp { top: 592px; left: 445px; width: 125px; }
-    .sig-sign { top: 602px; left: 535px; width: 150px; }
+    .sig-sign { top: 602px; left: 486.5px; width: 150px; }
     .deco-underline { border-bottom: 2px solid var(--magenta); padding-bottom: 10px; }
     .deco-signline { border-top: 2px solid #475569; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid currentColor; border-radius: 999px; padding: 6px 20px; }
