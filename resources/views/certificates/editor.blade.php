@@ -176,6 +176,10 @@
     /* ===== Elemen teks halaman depan (posisi & gaya dari inline style) ===== */
     .el { position: absolute; white-space: pre-line; border-radius: 3px; }
     .el b { color: var(--navy); }
+    /* Stempel di bawah, tanda tangan di atasnya; tidak ikut diedit/diklik. */
+    .sig-stamp, .sig-sign { position: absolute; pointer-events: none; user-select: none; }
+    .sig-stamp { top: 592px; left: 445px; width: 125px; }
+    .sig-sign { top: 602px; left: 486.5px; width: 150px; }
     .deco-underline { border-bottom: 2px solid var(--magenta); padding-bottom: 10px; }
     .deco-signline { border-top: 2px solid #475569; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid currentColor; border-radius: 999px; padding: 6px 20px; }
@@ -235,6 +239,10 @@
     /* Tepat di bawah kotak Total Score/Rating (kolom kanan), rata tengah terhadap kotak itu. */
     .b-sign { position: absolute; top: 566px; left: 578px; width: 492px; text-align: center; }
     .b-sign-date { font-size: 12.5px; margin-bottom: 96px; }
+    /* Stempel & tanda tangan mengisi ruang kosong antara tanggal dan garis TTD. */
+    .b-sign-stamp, .b-sign-sign { position: absolute; pointer-events: none; user-select: none; }
+    .b-sign-stamp { top: 56px; left: 172px; width: 80px; }
+    .b-sign-sign { top: 66px; left: 198px; width: 95px; }
     .b-sign-line { border-top: 1px solid #000; width: 230px; margin: 0 auto; padding-top: 6px; font-size: 12.5px; }
     .b-sign-line .who { font-weight: 700; }
 
@@ -365,6 +373,11 @@
                 {{-- Isi ditulis rapat tanpa baris baru di awal: .el memakai white-space: pre-line, jadi baris baru di template akan tampil sebagai baris kosong (menggeser teks ke bawah). --}}
                 <div class="{{ $decoClass($key) }}" {!! $front($key) !!} data-label="{{ $labels[$key] ?? $key }}">@if ($key === 'no')<span class="prefix-no">No. </span><span class="txt">{{ $content['no'] }}</span>@elseif ($key === 'kegiatan' && ! $isOverridden('kegiatan'))<span class="txt">Atas partisipasi dan dedikasinya dalam menyelesaikan program <b>Praktik Kerja Lapangan (PKL)</b> di <b>{{ $company }}</b>. Semoga pengalaman ini menjadi bekal yang bermanfaat bagi pengembangan diri dan karier ke depan.</span>@else{{ $prefix($key) }}<span class="txt">{{ $content[$key] }}</span>@endif</div>
             @endforeach
+
+            @if ($signatureImages)
+                <img class="sig-stamp" src="{{ $signatureImages['stamp'] }}" alt="">
+                <img class="sig-sign" src="{{ $signatureImages['signature'] }}" alt="">
+            @endif
         </section>
 
         {{-- ===== Halaman 2: Form penilaian (10 kriteria) ===== --}}
@@ -419,6 +432,10 @@
 
             <div class="b-sign">
                 <div class="b-sign-date" {!! $ed('form_tanggal') !!}>{{ $content['form_tanggal'] }}</div>
+                @if ($signatureImages)
+                    <img class="b-sign-stamp" src="{{ $signatureImages['stamp'] }}" alt="">
+                    <img class="b-sign-sign" src="{{ $signatureImages['signature'] }}" alt="">
+                @endif
                 <div class="b-sign-line">
                     <div class="who" {!! $ed('form_ttd_nama') !!}>{{ $content['form_ttd_nama'] }}</div>
                     <div {!! $ed('form_ttd_jabatan') !!}>{{ $content['form_ttd_jabatan'] }}</div>

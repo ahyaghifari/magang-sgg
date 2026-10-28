@@ -32,6 +32,11 @@ class CertificateContent
 
     public const PAGE_HEIGHT = 794;
 
+    /** Penanda tangan bawaan sertifikat (depan & form penilaian). */
+    public const SIGNER_NAME = 'Muhammad Rizky Afriani, S.Psi';
+
+    public const SIGNER_TITLE = 'Learning & Development Syifa Global Group';
+
     /**
      * Font yang boleh dipilih di editor (daftar tertutup supaya pasti bisa dirender DomPDF).
      * 'dir' = folder TTF di resources/fonts (null = font bawaan DomPDF/sistem).
@@ -124,8 +129,8 @@ class CertificateContent
             ? $intern->tanggal_mulai->translatedFormat('d F Y') . ' – ' . $intern->tanggal_selesai->translatedFormat('d F Y')
             : '-';
         $company = $intern->unit->company->name ?? 'Syifa Global Group';
-        // Penanda tangan kiri = Mentor peserta; kosong (hanya garis tanda tangan) kalau belum punya mentor.
-        $signer = $intern->mentor->name ?? '';
+        // Penanda tangan bawaan sama untuk semua intern; tetap bisa diubah per sertifikat di editor.
+        $signer = self::SIGNER_NAME;
 
         $kriteria = [];
         foreach (Intern::CRITERIA as $field => $c) {
@@ -148,7 +153,7 @@ class CertificateContent
             'predikat' => $intern->predikat() ?? '-',
             'tanggal' => $tanggal,
             'ttd_nama' => $signer,
-            'ttd_jabatan' => 'Mentor',
+            'ttd_jabatan' => self::SIGNER_TITLE,
             'no' => sprintf('%03d/SGG-INT/%s', $intern->id, now()->format('Y')),
 
             'form_judul' => 'PENILAIAN',
@@ -165,7 +170,7 @@ class CertificateContent
             'rating' => $intern->predikat() ?? 'Poor',
             'form_tanggal' => $tanggal,
             'form_ttd_nama' => $signer,
-            'form_ttd_jabatan' => 'Mentor',
+            'form_ttd_jabatan' => self::SIGNER_TITLE,
         ];
     }
 

@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
-use NotificationChannels\WebPush\Events\NotificationFailed;
 use Illuminate\Support\ServiceProvider;
-use SocialiteProviders\Manager\SocialiteWasCalled;
+use NotificationChannels\WebPush\Events\NotificationFailed;
+use Syifa\KeycloakSso\Events\KeycloakLoginSucceeded;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -47,9 +49,21 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        // Daftarkan driver Socialite "keycloak" (Laravel 12 tanpa EventServiceProvider default).
-        Event::listen(function (SocialiteWasCalled $event) {
-            $event->extendSocialite('keycloak', \SocialiteProviders\Keycloak\Provider::class);
+        // Driver Socialite "keycloak" didaftarkan oleh Syifa\KeycloakSso\KeycloakSsoServiceProvider.
+        // Aturan sama seperti login lokal (Livewire\Auth\Login): pendaftar mandiri harus
+        // disetujui admin dulu — dicek di sini (bukan closure di config, supaya config:cache aman).
+        Event::listen(function (KeycloakLoginSucceeded $event) {
+            if ($event->user->isApproved() || $event->user->isAdmin()) {
+                return;
+            }
+
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            throw new HttpResponseException(redirect()->route('login')->withErrors([
+                'email' => 'Akun kamu belum disetujui oleh admin. Silakan tunggu konfirmasi.',
+            ]));
         });
     }
 }

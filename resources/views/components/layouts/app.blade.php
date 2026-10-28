@@ -246,7 +246,7 @@
                             @endif
                         </form>
                     @endif
-                    <form id="logout-form" method="POST" action="{{ route('logout') }}">
+                    <form id="logout-form" method="POST" action="{{ route('keycloak-sso.logout') }}">
                         @csrf
                         <button type="button" @click="confirmLogout = true" class="portal-logout">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>

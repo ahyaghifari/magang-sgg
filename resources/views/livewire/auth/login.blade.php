@@ -85,7 +85,7 @@
             <span class="text-sm" style="color:var(--text-muted);">atau</span>
             <span style="flex:1; height:1px; background:var(--border, #e5e7eb);"></span>
         </div>
-        <a href="{{ route('sso.redirect') }}" class="btn-primary"
+        <a href="{{ route('keycloak-sso.redirect') }}" class="btn-primary"
            style="display:block; width:100%; text-align:center; padding:0.7rem 0; text-decoration:none;">
             <i class="fa-solid fa-key" style="margin-right:0.45rem;"></i>Masuk dengan SSO
         </a>

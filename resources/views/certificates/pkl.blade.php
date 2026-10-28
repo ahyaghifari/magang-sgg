@@ -68,6 +68,9 @@
     /* Elemen teks halaman depan — posisi & gaya dari inline style (CertificateContent::styleCss). */
     .el { position: absolute; }
     .el b { color: #042c6c; }
+    /* Stempel di bawah, tanda tangan di atasnya (urutan elemen = urutan tumpukan di DomPDF). */
+    .sig-stamp { position: absolute; top: 592px; left: 445px; width: 125px; }
+    .sig-sign { position: absolute; top: 602px; left: 486.5px; width: 150px; }
     .deco-underline { border-bottom: 2px solid #c74ba0; padding-bottom: 10px; }
     .deco-signline { border-top: 2px solid #475569; padding-top: 7px; min-height: 22px; }
     .deco-pill .pill { display: inline-block; border: 1.5px solid; border-radius: 999px; padding: 6px 20px; }
@@ -109,7 +112,10 @@
     .appraisal-inner .bottom-block { position: absolute; top: 125mm; width: 121mm; }
     .appraisal-inner .bottom-block.left { left: 14mm; }
     .appraisal-inner .bottom-block.right { left: 145mm; }
-    .appraisal-inner .sign-block { margin-top: 4mm; text-align: center; }
+    .appraisal-inner .sign-block { position: relative; margin-top: 4mm; text-align: center; }
+    /* Stempel & tanda tangan mengisi ruang kosong antara tanggal dan garis TTD (sign-date margin-bottom 25mm). */
+    .appraisal-inner .sign-stamp { position: absolute; top: 14.5mm; left: 41.5mm; width: 21mm; }
+    .appraisal-inner .sign-sign { position: absolute; top: 16.5mm; left: 48mm; width: 25mm; }
     .appraisal-inner .sign-date { margin-bottom: 25mm; font-size: 9pt; text-align: center; }
     .appraisal-inner .sign-line { border-top: 0.75pt solid #000; width: 50mm; margin: 0 auto; padding-top: 1.5mm; font-size: 8.5pt; text-align: center; }
     .appraisal-inner .summary { width: 100%; border-collapse: collapse; margin-bottom: 3mm; background-color: #eef4fc; border-radius: 1.5mm; }
@@ -163,6 +169,11 @@
                 @endif
             </div>
         @endforeach
+
+        @if ($signatureImages)
+            <img class="sig-stamp" src="{{ $signatureImages['stamp'] }}" alt="">
+            <img class="sig-sign" src="{{ $signatureImages['signature'] }}" alt="">
+        @endif
     </div>
     @endif
 
@@ -221,6 +232,10 @@
                 </table>
                 <div class="sign-block">
                     <div class="sign-date">{{ $content['form_tanggal'] }}</div>
+                    @if ($signatureImages)
+                        <img class="sign-stamp" src="{{ $signatureImages['stamp'] }}" alt="">
+                        <img class="sign-sign" src="{{ $signatureImages['signature'] }}" alt="">
+                    @endif
                     <div class="sign-line"><b>{{ $content['form_ttd_nama'] }}</b><br>{{ $content['form_ttd_jabatan'] }}</div>
                 </div>
             </div>

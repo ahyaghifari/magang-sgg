@@ -4,7 +4,7 @@
     {{-- ===== Daftar ===== --}}
     <div class="flex" style="flex-direction:column; gap:0.75rem;">
         @forelse ($interns as $intern)
-            <article class="surface-card" style="padding:0.95rem 1.1rem;" x-data="{ showNilai: false }">
+            <article class="surface-card" style="padding:0.95rem 1.1rem;" x-data="{ showNilai: false, showRincian: false }">
                 <div class="flex items-center justify-between" style="gap:0.75rem; flex-wrap:wrap; margin-bottom:0.75rem;">
                     <div style="min-width:0;">
                         <p style="font-size:0.9rem; font-weight:700; color:var(--text-heading);">
@@ -50,12 +50,56 @@
                         <a href="{{ route('interns.certificate.editor', $intern) }}" target="_blank" class="btn-ghost" style="padding:0.5rem 0.85rem;">
                             <i class="fa-solid fa-pen-ruler"></i> Buka Editor
                         </a>
+                        <button type="button" @click="showRincian = !showRincian" class="btn-ghost" style="padding:0.5rem 0.85rem;">
+                            <i class="fa-solid fa-table-list"></i> <span x-text="showRincian ? 'Tutup Rincian' : 'Rincian Nilai'"></span>
+                        </button>
                         @if (in_array($intern->id, $manageableInternIds, true))
+                            {{-- "Isi" selama penilaian milik user ini (role-nya) belum ada satu pun nilai; setelahnya "Edit". --}}
+                            @php($belumKuNilai = $intern->appraisals->firstWhere('role', $myRole)?->average() === null)
                             <button type="button" @click="showNilai = !showNilai" class="btn-ghost" style="padding:0.5rem 0.85rem;">
-                                <i class="fa-solid fa-pen"></i> <span x-text="showNilai ? 'Tutup Penilaian' : 'Edit Penilaian'"></span>
+                                <i class="fa-solid fa-pen"></i> <span x-text="showNilai ? 'Tutup Penilaian' : '{{ $belumKuNilai ? 'Isi Penilaian' : 'Edit Penilaian' }}'"></span>
                             </button>
                         @endif
                     </div>
+                </div>
+
+                {{-- ===== Rincian nilai (baca-saja): tiap kriteria × tiap penilai + rata-rata, plus nama penilainya. ===== --}}
+                <div x-show="showRincian" x-cloak style="overflow-x:auto; margin-bottom:0.75rem;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                        <thead>
+                            <tr style="background:var(--surface-alt);">
+                                <th style="text-align:left; padding:0.4rem 0.6rem; border:1px solid var(--border);">Kriteria</th>
+                                @foreach ($roles as $roleKey => $roleLabel)
+                                    @php($appraisal = $intern->appraisals->firstWhere('role', $roleKey))
+                                    <th style="padding:0.4rem 0.6rem; border:1px solid var(--border); text-align:center; white-space:nowrap;">
+                                        {{ $roleLabel }}
+                                        <div style="font-weight:400; font-size:0.7rem; color:var(--text-muted);">{{ $appraisal?->user?->name ?? '—' }}</div>
+                                    </th>
+                                @endforeach
+                                <th style="padding:0.4rem 0.6rem; border:1px solid var(--border); text-align:center;">Rata-rata</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($criteria as $field => $c)
+                                <tr>
+                                    <td style="padding:0.35rem 0.6rem; border:1px solid var(--border);">{{ $c['title'] }}</td>
+                                    @foreach ($roles as $roleKey => $roleLabel)
+                                        @php($score = $intern->appraisals->firstWhere('role', $roleKey)?->{$field})
+                                        <td style="padding:0.35rem 0.6rem; border:1px solid var(--border); text-align:center; font-variant-numeric:tabular-nums;">{{ $score !== null ? number_format((float) $score, 2, ',', '') : '—' }}</td>
+                                    @endforeach
+                                    <td style="padding:0.35rem 0.6rem; border:1px solid var(--border); text-align:center; font-weight:700; font-variant-numeric:tabular-nums;">{{ $intern->{$field} !== null ? number_format((float) $intern->{$field}, 2, ',', '') : '—' }}</td>
+                                </tr>
+                            @endforeach
+                            <tr style="background:var(--surface-alt); font-weight:700;">
+                                <td style="padding:0.35rem 0.6rem; border:1px solid var(--border);">Nilai Akhir</td>
+                                @foreach ($roles as $roleKey => $roleLabel)
+                                    @php($avg = $intern->appraisals->firstWhere('role', $roleKey)?->average())
+                                    <td style="padding:0.35rem 0.6rem; border:1px solid var(--border); text-align:center; font-variant-numeric:tabular-nums;">{{ $avg !== null ? number_format($avg, 2, ',', '') : '—' }}</td>
+                                @endforeach
+                                <td style="padding:0.35rem 0.6rem; border:1px solid var(--border); text-align:center; color:var(--brand); font-variant-numeric:tabular-nums;">{{ $intern->nilai_akhir !== null ? number_format((float) $intern->nilai_akhir, 2, ',', '') : '—' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 {{-- ===== 10 kriteria — terbagi 2 kategori, tiap kriteria dinilai lewat input angka

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Intern;
 use App\Support\CertificateAccess;
 use App\Support\CertificateContent;
+use App\Support\CertificateSignature;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -117,6 +118,7 @@ class InternCertificateController extends Controller
         return [
             'intern' => $intern,
             'logoDataUri' => $logoDataUri,
+            'signatureImages' => CertificateSignature::dataUris(),
             'nomor' => sprintf('%03d/SGG-INT/%s', $intern->id, now()->format('Y')),
             'tanggalTerbit' => Carbon::now()->translatedFormat('d F Y'),
         ];
